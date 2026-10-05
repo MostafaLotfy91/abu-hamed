@@ -1,12 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Zap } from "lucide-react";
+import { Sparkles, Zap } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { useAuth } from "@/lib/auth";
-import { fetchBanners, fetchCategories, fetchProductsHome, PRODUCT_FIELDS, type Product } from "@/lib/queries";
+import { fetchBanners, fetchCategories, fetchProductsHome, type Product } from "@/lib/queries";
 import { ProductCard } from "@/components/store/ProductCard";
 import { SectionHeader } from "@/components/store/SiteShell";
 import { Countdown } from "@/components/store/Countdown";
@@ -16,10 +14,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "تسوق البقالة أونلاين · Online Grocery" },
-      { name: "description", content: "اطلب احتياجات بيتك من السوبر ماركت ووصلها لحد الباب. Order groceries online with fast delivery." },
-      { property: "og:title", content: "تسوق البقالة أونلاين · Online Grocery" },
-      { property: "og:description", content: "Fresh groceries delivered to your door." },
+      { title: "أبو حامد · مول الأزياء والموضة" },
+      { name: "description", content: "ملابس رجالي وحريمي وأطفال، أحذية، عبايات، جلابيب، عطور وإكسسوارات بتوصيل سريع. Fashion for the whole family." },
+      { property: "og:title", content: "أبو حامد · مول الأزياء والموضة" },
+      { property: "og:description", content: "ملابس، أحذية، عبايات، عطور وإكسسوارات لكل العيلة." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Home,
@@ -96,44 +96,30 @@ function Rail({ title, products, loading, extra }: { title: React.ReactNode; pro
   );
 }
 
-function OrderAgain() {
-  const { user } = useAuth();
-  const { t } = useI18n();
-  const { data, isLoading } = useQuery({
-    queryKey: ["order_again", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data: items } = await supabase.from("order_items").select("product_id, orders!inner(user_id)").eq("orders.user_id", user!.id).limit(60);
-      const ids = Array.from(new Set((items ?? []).map((i) => i.product_id).filter(Boolean))) as string[];
-      if (!ids.length) return [];
-      const { data: prods } = await supabase.from("products").select(PRODUCT_FIELDS).in("id", ids.slice(0, 12)).eq("is_active", true);
-      return (prods ?? []) as Product[];
-    },
-  });
-  if (!user) return null;
-  return <Rail title={t("order_again")} products={data} loading={isLoading} />;
-}
-
 function Home() {
   const { t } = useI18n();
   const flash = useQuery({ queryKey: ["home", "flash"], queryFn: () => fetchProductsHome("flash") });
   const best = useQuery({ queryKey: ["home", "best"], queryFn: () => fetchProductsHome("best") });
   const fresh = useQuery({ queryKey: ["home", "new"], queryFn: () => fetchProductsHome("new") });
+  const season = useQuery({ queryKey: ["home", "season"], queryFn: () => fetchProductsHome("season") });
   const soonest = flash.data?.[0]?.flash_ends_at;
 
   return (
     <div className="space-y-7">
       <BannerSlider />
-      <CategoryGrid />
+      <Rail title={<><Sparkles className="h-5 w-5 text-brand-secondary" />{t("new_arrivals")}</>} products={fresh.data} loading={fresh.isLoading} />
+      <Rail title={t("best_sellers")} products={best.data} loading={best.isLoading} />
       <Rail
         title={<><Zap className="h-5 w-5 fill-deal text-deal" />{t("flash_deals")}</>}
         extra={soonest ? <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">{t("ends_in")} <Countdown to={soonest} /></span> : null}
         products={flash.data}
         loading={flash.isLoading}
       />
-      <OrderAgain />
-      <Rail title={t("best_sellers")} products={best.data} loading={best.isLoading} />
-      <Rail title={t("new_arrivals")} products={fresh.data} loading={fresh.isLoading} />
+      <section>
+        <SectionHeader title={t("shop_by_department")} action={<Link to="/categories" className="text-sm font-semibold text-primary">{t("see_all")}</Link>} />
+        <CategoryGrid />
+      </section>
+      <Rail title={t("seasonal_collection")} products={season.data} loading={season.isLoading} />
       {(flash.error || best.error) && <ErrorState onRetry={() => { flash.refetch(); best.refetch(); fresh.refetch(); }} />}
     </div>
   );
