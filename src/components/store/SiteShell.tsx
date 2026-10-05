@@ -1,3 +1,4 @@
+import { ShoppingAssistant } from "./ShoppingAssistant";
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, LayoutGrid, Languages, LayoutDashboard, ReceiptText, ShoppingCart, User } from "lucide-react";
@@ -72,6 +73,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className="mx-auto max-w-7xl px-3 py-4 md:px-6">{children}</main>
+      <ShoppingAssistant />
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card shadow-float md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="grid grid-cols-5">
