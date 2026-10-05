@@ -32,7 +32,7 @@ export async function fetchProductsHome(kind: "flash" | "best" | "new" | "season
   }
   const { data, error } = await q;
   if (error) throw error;
-  return data as Product[];
+  return data as unknown as Product[];
 }
 
 /** Collects a category and all descendants (unlimited depth via parent_id). */
