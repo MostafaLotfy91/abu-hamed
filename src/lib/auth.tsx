@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Only update state when the signed-in user actually changes; token refreshes
       // also emit SIGNED_IN and reacting to them caused a refresh loop.
       setSession((prev) => (prev?.access_token === s?.access_token ? prev : s));
+      setReady(true);
       const changed = uid !== lastUid;
       lastUid = uid;
       if (!changed) return;
