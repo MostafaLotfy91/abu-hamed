@@ -14,9 +14,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "أبو حامد · مول الأزياء والموضة" },
+      { title: "تسوق الأزياء أونلاين · Fashion mall" },
       { name: "description", content: "ملابس رجالي وحريمي وأطفال، أحذية، عبايات، جلابيب، عطور وإكسسوارات بتوصيل سريع. Fashion for the whole family." },
-      { property: "og:title", content: "أبو حامد · مول الأزياء والموضة" },
+      { property: "og:title", content: "تسوق الأزياء أونلاين · Fashion mall" },
       { property: "og:description", content: "ملابس، أحذية، عبايات، عطور وإكسسوارات لكل العيلة." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
