@@ -1,0 +1,101 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { RotateCcw } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
+import { useCart } from "@/lib/cart";
+import { reorder } from "@/lib/reorder";
+import { formatQty, unitLabel } from "@/lib/format";
+import { rpcErrorMessage } from "@/lib/queries";
+import { useMoney } from "@/components/store/use-money";
+import { OrderTimeline, StatusBadge } from "@/components/store/OrderTimeline";
+import { addressLine } from "@/components/store/AddressForm";
+import { EmptyState, ErrorState, RowSkeleton } from "@/components/store/states";
+import { ProductImage } from "@/components/store/ProductCard";
+import { Button } from "@/components/ui/button";
+
+export const Route = createFileRoute("/_authenticated/orders/$id")({
+  head: () => ({ meta: [{ title: "تفاصيل الطلب · Order details" }, { name: "description", content: "Order details and live status" }, { property: "og:title", content: "Order details" }, { property: "og:description", content: "Live order status" }] }),
+  component: OrderDetail,
+});
+
+export function useOrder(id: string) {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["order", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("orders").select("*, order_items(*), order_status_history(status,created_at,note)").eq("id", id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  useEffect(() => {
+    const ch = supabase
+      .channel(`order-${id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` }, () => qc.invalidateQueries({ queryKey: ["order", id] }))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "order_status_history", filter: `order_id=eq.${id}` }, () => qc.invalidateQueries({ queryKey: ["order", id] }))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [id, qc]);
+  return q;
+}
+
+function OrderDetail() {
+  const { id } = Route.useParams();
+  const { t, tx, lang } = useI18n();
+  const money = useMoney();
+  const cart = useCart();
+  const q = useOrder(id);
+  if (q.isLoading) return <RowSkeleton n={4} />;
+  if (q.error) return <ErrorState onRetry={() => q.refetch()} />;
+  const o = q.data;
+  if (!o) return <EmptyState title={t("no_orders")} />;
+  const addr = o.address as Record<string, string>;
+  const cancel = async () => {
+    const { error } = await supabase.rpc("cancel_my_order", { _order_id: id });
+    if (error) toast.error(rpcErrorMessage(error.message, lang)); else q.refetch();
+  };
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-4">
+        <section className="rounded-3xl bg-card p-4 shadow-card">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h1 className="text-xl font-extrabold">{t("order")} #{o.order_number}</h1>
+            <div className="flex items-center gap-2"><span className="flex items-center gap-1 text-xs text-success"><span className="h-2 w-2 animate-pulse rounded-full bg-success" />{t("live")}</span><StatusBadge status={o.status} /></div>
+          </div>
+          <OrderTimeline status={o.status} history={o.order_status_history} />
+        </section>
+        <section className="rounded-3xl bg-card p-4 shadow-card">
+          <ul className="divide-y">
+            {o.order_items.map((i) => (
+              <li key={i.id} className="flex gap-3 py-3">
+                <ProductImage src={i.image_url} alt="" className="h-14 w-14 rounded-xl" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">{tx(i, "name")} {i.variant_name_ar && <span className="text-muted-foreground">· {tx(i, "variant_name")}</span>}</p>
+                  <p className="text-xs text-muted-foreground">{formatQty(Number(i.quantity), lang)} {unitLabel(i.unit, lang)} × {money(i.unit_price)}</p>
+                  {i.notes && <p className="text-xs italic text-muted-foreground">{i.notes}</p>}
+                </div>
+                <span className="font-bold">{money(i.line_total)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+      <aside className="h-fit space-y-3 rounded-3xl bg-card p-4 text-sm shadow-card">
+        <p><span className="text-muted-foreground">{t("delivery_address")}: </span>{addressLine(addr)}</p>
+        <p><span className="text-muted-foreground">{t("delivery_time")}: </span>{o.delivery_slot === "asap" ? t("asap") : o.delivery_slot}</p>
+        <p><span className="text-muted-foreground">{t("payment_method")}: </span>{o.payment_method === "cod" ? t("cod") : t("online")}</p>
+        <div className="space-y-1 border-t pt-3">
+          <div className="flex justify-between"><span>{t("subtotal")}</span><span>{money(o.subtotal)}</span></div>
+          <div className="flex justify-between"><span>{t("delivery_fee")}</span><span>{Number(o.delivery_fee) === 0 ? t("free") : money(o.delivery_fee)}</span></div>
+          {Number(o.discount) > 0 && <div className="flex justify-between text-success"><span>{t("discount")}</span><span>- {money(o.discount)}</span></div>}
+          <div className="flex justify-between text-base font-extrabold"><span>{t("total")}</span><span>{money(o.total)}</span></div>
+        </div>
+        <Button className="w-full gap-1" onClick={async () => { const n = await reorder(o.id, cart); if (n) cart.setDrawerOpen(true); }}><RotateCcw className="h-4 w-4" />{t("reorder")}</Button>
+        {o.status === "pending" && <Button variant="outline" className="w-full text-destructive" onClick={cancel}>{t("cancel_order")}</Button>}
+      </aside>
+    </div>
+  );
+}
