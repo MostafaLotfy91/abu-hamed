@@ -15,6 +15,33 @@ import { addressLine } from "@/components/store/AddressForm";
 import { EmptyState, ErrorState, RowSkeleton } from "@/components/store/states";
 import { ProductImage } from "@/components/store/ProductCard";
 import { Button } from "@/components/ui/button";
+import { useLatestLocation } from "@/lib/drivers";
+import { LiveMap } from "@/components/store/LiveMap";
+
+function LiveTracking({ orderId }: { orderId: string }) {
+  const { lang } = useI18n();
+  const ar = lang === "ar";
+  const loc = useLatestLocation(orderId, true);
+  const driver = useQuery({
+    queryKey: ["order_driver", orderId],
+    queryFn: async () => (await supabase.rpc("order_driver_info", { _order_id: orderId })).data as { name: string | null; phone: string | null } | null,
+  });
+  return (
+    <section className="space-y-3 rounded-3xl bg-card p-4 shadow-card">
+      <div className="flex items-center justify-between">
+        <h2 className="font-extrabold">{ar ? "تتبع المندوب مباشرة" : "Live driver tracking"}</h2>
+        {driver.data?.phone && <Button size="sm" variant="outline" asChild><a href={`tel:${driver.data.phone}`}>{ar ? "اتصل بالمندوب" : "Call driver"}</a></Button>}
+      </div>
+      {driver.data?.name && <p className="text-sm text-muted-foreground">{driver.data.name}</p>}
+      {loc.data ? (
+        <>
+          <LiveMap lat={loc.data.lat} lng={loc.data.lng} />
+          <p className="text-xs text-muted-foreground">{ar ? "آخر تحديث: " : "Updated: "}{new Date(loc.data.created_at).toLocaleTimeString(ar ? "ar-EG" : "en-US")}</p>
+        </>
+      ) : <p className="text-sm text-muted-foreground">{ar ? "في انتظار موقع المندوب…" : "Waiting for the driver's location…"}</p>}
+    </section>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   head: () => ({ meta: [{ title: "تفاصيل الطلب · Order details" }, { name: "description", content: "Order details and live status" }, { property: "og:title", content: "Order details" }, { property: "og:description", content: "Live order status" }] }),
@@ -67,6 +94,7 @@ function OrderDetail() {
           </div>
           <OrderTimeline status={o.status} history={o.order_status_history} />
         </section>
+        {o.status === "out_for_delivery" && <LiveTracking orderId={o.id} />}
         <section className="rounded-3xl bg-card p-4 shadow-card">
           <ul className="divide-y">
             {o.order_items.map((i) => (

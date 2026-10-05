@@ -235,6 +235,71 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_locations: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          driver_id: string
+          heading: number | null
+          id: string
+          lat: number
+          lng: number
+          order_id: string
+          speed: number | null
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          driver_id: string
+          heading?: number | null
+          id?: string
+          lat: number
+          lng: number
+          order_id: string
+          speed?: number | null
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          driver_id?: string
+          heading?: number | null
+          id?: string
+          lat?: number
+          lng?: number
+          order_id?: string
+          speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_locations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_profiles: {
+        Row: {
+          is_available: boolean
+          updated_at: string
+          user_id: string
+          vehicle: string | null
+        }
+        Insert: {
+          is_available?: boolean
+          updated_at?: string
+          user_id: string
+          vehicle?: string | null
+        }
+        Update: {
+          is_available?: boolean
+          updated_at?: string
+          user_id?: string
+          vehicle?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
@@ -352,6 +417,7 @@ export type Database = {
           delivery_fee: number
           delivery_slot: string
           discount: number
+          driver_accepted_at: string | null
           driver_id: string | null
           id: string
           notes: string | null
@@ -372,6 +438,7 @@ export type Database = {
           delivery_fee?: number
           delivery_slot?: string
           discount?: number
+          driver_accepted_at?: string | null
           driver_id?: string | null
           id?: string
           notes?: string | null
@@ -392,6 +459,7 @@ export type Database = {
           delivery_fee?: number
           delivery_slot?: string
           discount?: number
+          driver_accepted_at?: string | null
           driver_id?: string | null
           id?: string
           notes?: string | null
@@ -745,9 +813,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_add_driver: { Args: { _email: string }; Returns: string }
+      admin_remove_driver: { Args: { _user_id: string }; Returns: undefined }
       admin_stats: { Args: never; Returns: Json }
       cancel_my_order: { Args: { _order_id: string }; Returns: undefined }
       claim_first_admin: { Args: never; Returns: boolean }
+      driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
+      driver_set_status: {
+        Args: { _order_id: string; _status: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -756,6 +831,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      order_driver_info: { Args: { _order_id: string }; Returns: Json }
       place_order: {
         Args: {
           _address_id: string

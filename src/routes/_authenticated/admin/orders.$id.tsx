@@ -11,8 +11,38 @@ import { ALL_STATUSES, OrderTimeline, StatusBadge, statusKey } from "@/component
 import { addressLine } from "@/components/store/AddressForm";
 import { ErrorState, RowSkeleton } from "@/components/store/states";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDrivers, useLatestLocation } from "@/lib/drivers";
+import { LiveMap } from "@/components/store/LiveMap";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/$id")({ component: Page });
+
+function DriverAssign({ orderId, driverId, status, onDone }: { orderId: string; driverId: string | null; status: string; onDone: () => void }) {
+  const { lang } = useI18n();
+  const ar = lang === "ar";
+  const drivers = useDrivers();
+  const loc = useLatestLocation(orderId, status === "out_for_delivery");
+  const assign = async (v: string) => {
+    const { error } = await supabase.from("orders").update({ driver_id: v === "none" ? null : v, driver_accepted_at: null }).eq("id", orderId);
+    if (error) toast.error(error.message); else { toast.success(ar ? "تم التعيين" : "Assigned"); onDone(); }
+  };
+  const list = [...(drivers.data ?? [])].sort((a, b) => Number(b.is_available) - Number(a.is_available));
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-bold">{ar ? "المندوب" : "Driver"}</p>
+      <Select value={driverId ?? "none"} onValueChange={assign} disabled={status === "delivered" || status === "cancelled"}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">{ar ? "بدون مندوب" : "Unassigned"}</SelectItem>
+          {list.map((d) => (
+            <SelectItem key={d.user_id} value={d.user_id}>{d.is_available ? "🟢" : "⚪"} {d.full_name ?? d.email}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {status === "out_for_delivery" && loc.data && <LiveMap lat={loc.data.lat} lng={loc.data.lng} className="h-48 w-full rounded-xl border" />}
+    </div>
+  );
+}
 
 function Page() {
   const { id } = Route.useParams();
@@ -77,6 +107,7 @@ function Page() {
             <Button key={s} size="sm" variant={o.status === s ? "default" : "outline"} onClick={() => setStatus(s)} disabled={o.status === s}>{t(statusKey(s))}</Button>
           ))}
         </div>
+        <DriverAssign orderId={o.id} driverId={o.driver_id} status={o.status} onDone={() => q.refetch()} />
         <OrderTimeline status={o.status} history={o.order_status_history} />
       </aside>
     </div>
