@@ -1,9 +1,9 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ImageOff, Plus, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
-import { effectivePrice, unitLabel } from "@/lib/format";
+import { effectivePrice } from "@/lib/format";
 import type { Product } from "@/lib/queries";
 import { useMoney } from "./use-money";
 import { QtyStepper } from "./QtyStepper";
@@ -19,20 +19,19 @@ export function ProductImage({ src, alt, className }: { src?: string | null; alt
 }
 
 export function ProductCard({ p }: { p: Product }) {
-  const { lang, t, tx } = useI18n();
+  const { t, tx } = useI18n();
   const money = useMoney();
   const cart = useCart();
   const { current, was, pct } = effectivePrice(p);
   const name = tx(p, "name");
   const stock = Number(p.stock);
   const qty = cart.qtyOf(p.id);
-  const step = Number(p.step), min = Number(p.min_qty);
+  const hasVariants = (p.product_variants?.length ?? 0) > 0;
+  const navigate = useNavigate();
 
   const addToCart = () => {
-    cart.add({
-      productId: p.id, variantId: null, name_ar: p.name_ar, name_en: p.name_en,
-      image: p.images?.[0], unit: p.unit, step, minQty: min, price: current,
-    });
+    if (hasVariants) return navigate({ to: "/product/$id", params: { id: p.id } });
+    cart.add({ productId: p.id, variantId: null, name_ar: p.name_ar, name_en: p.name_en, image: p.images?.[0], maxQty: stock, price: current });
     toast.success(t("added_to_cart"));
   };
 
@@ -59,17 +58,16 @@ export function ProductCard({ p }: { p: Product }) {
         )}
         <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
           <span className="font-extrabold text-primary">{money(current)}</span>
-          <span className="text-xs text-muted-foreground">/ {unitLabel(p.unit, lang)}</span>
           {was && <span className="text-xs text-muted-foreground line-through">{money(was)}</span>}
         </div>
         <div className="mt-auto pt-2">
           {stock <= 0 ? (
             <div className="flex h-9 items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">{t("out_of_stock")}</div>
-          ) : qty > 0 ? (
-            <QtyStepper size="sm" qty={qty} step={step} min={min} unit={p.unit} max={stock} onChange={(q) => cart.setQty(`${p.id}|`, q)} />
+          ) : qty > 0 && !hasVariants ? (
+            <QtyStepper size="sm" qty={qty} max={stock} onChange={(q) => cart.setQty(`${p.id}|`, q)} />
           ) : (
             <button onClick={addToCart} className="flex h-9 w-full items-center justify-center gap-1 rounded-xl bg-primary-soft text-sm font-bold text-primary transition hover:bg-primary hover:text-primary-foreground">
-              <Plus className="h-4 w-4" /> {t("add")}
+              {!hasVariants && <Plus className="h-4 w-4" />} {hasVariants ? t("choose_size") : t("add")}
             </button>
           )}
         </div>
