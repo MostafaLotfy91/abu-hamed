@@ -1,7 +1,7 @@
 import { ShoppingAssistant } from "./ShoppingAssistant";
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, LayoutGrid, Languages, LayoutDashboard, ReceiptText, ShoppingCart, User } from "lucide-react";
+import { Bike, Home, LayoutGrid, Languages, LayoutDashboard, ReceiptText, ShoppingCart, User } from "lucide-react";
 import { useI18n, type DictKey } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
@@ -39,9 +39,10 @@ export function StoreLogo() {
 }
 
 export function SiteShell({ children }: { children: ReactNode }) {
-  const { t, toggle } = useI18n();
+  const { t, toggle, lang } = useI18n();
   const cart = useCart();
-  const { isStaff, user } = useAuth();
+  const { isStaff, user, roles } = useAuth();
+  const isDriver = roles.includes("driver");
   const nav = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -60,6 +61,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </nav>
           {isStaff && (
             <Button asChild variant="ghost" size="icon" aria-label={t("admin")}><Link to="/admin"><LayoutDashboard className="h-5 w-5" /></Link></Button>
+          )}
+          {isDriver && (
+            <Button asChild size="sm" className="gap-1 px-2" aria-label={lang === "ar" ? "تطبيق المندوب" : "Driver app"}>
+              <Link to="/driver"><Bike className="h-4 w-4" /><span className="hidden sm:inline">{lang === "ar" ? "تطبيق المندوب" : "Driver app"}</span></Link>
+            </Button>
           )}
           <Button variant="ghost" size="sm" onClick={toggle} className="gap-1 px-2" aria-label="language">
             <Languages className="h-4 w-4" /><span className="hidden sm:inline">{t("language")}</span>
