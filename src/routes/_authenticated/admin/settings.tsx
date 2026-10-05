@@ -61,7 +61,7 @@ function Page() {
         {txt("currency_code", "Code (EGP, SAR...)")}{txt("currency_symbol_ar", "الرمز (عربي)")}{txt("currency_symbol_en", "Symbol (EN)")}
       </Section>
       <Section title="التوصيل / Delivery">
-        {txt("delivery_fee", "Delivery fee", "number")}{txt("free_delivery_threshold", "Free delivery over", "number")}{txt("min_order_amount", "Minimum order", "number")}
+        {txt("delivery_fee", "Delivery fee", "number")}{txt("free_delivery_threshold", "Free delivery over", "number")}{txt("min_order_amount", "Minimum order", "number")}{txt("return_window_days", "مدة الاسترجاع (أيام) / Return window (days)", "number")}
         <div><Label>Delivery slots (comma separated)</Label><Input dir="ltr" defaultValue={slots} onBlur={(e) => set("delivery_slots", e.target.value.split(",").map((x) => x.trim()).filter(Boolean))} /></div>
         <div><Label>Opens</Label><Input type="time" value={hours.open ?? ""} onChange={(e) => set("working_hours", { ...hours, open: e.target.value })} /></div>
         <div><Label>Closes</Label><Input type="time" value={hours.close ?? ""} onChange={(e) => set("working_hours", { ...hours, close: e.target.value })} /></div>

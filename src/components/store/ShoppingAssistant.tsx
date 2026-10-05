@@ -32,7 +32,7 @@ export function ShoppingAssistant() {
 
   const addOne = (p: AssistantProduct, qty?: number) =>
     cart.add(
-      { productId: p.id, variantId: null, name_ar: p.name_ar, name_en: p.name_en, image: p.image, unit: p.unit, step: p.step, minQty: p.min_qty, price: p.price },
+      { productId: p.id, variantId: null, name_ar: p.name_ar, name_en: p.name_en, image: p.image, price: p.price },
       qty,
     );
 
@@ -118,7 +118,7 @@ export function ShoppingAssistant() {
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm font-semibold">{lang === "ar" ? p.name_ar : p.name_en}</div>
                             <div className="text-xs text-muted-foreground">
-                              {formatMoney(p.price, lang, sym)} / {unitLabel(p.unit, lang)} · {formatQty(p.suggested_qty ?? p.min_qty, lang)}
+                              {formatMoney(p.price, lang, sym)} · {formatQty(p.suggested_qty ?? 1, lang)}
                               {!p.in_stock && <span className="text-destructive"> · غير متوفر</span>}
                             </div>
                           </div>

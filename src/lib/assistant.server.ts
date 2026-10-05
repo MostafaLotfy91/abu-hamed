@@ -18,7 +18,7 @@ const bodySchema = z.object({
     .max(30),
 });
 
-const COLS = "id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,unit,step,min_qty,stock,images";
+const COLS = "id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,stock,images,product_variants(id)";
 
 function toProduct(r: any): AssistantProduct {
   return {
@@ -26,9 +26,7 @@ function toProduct(r: any): AssistantProduct {
     name_ar: r.name_ar,
     name_en: r.name_en,
     price: effectivePrice(r).current,
-    unit: r.unit,
-    step: Number(r.step),
-    min_qty: Number(r.min_qty),
+    has_variants: (r.product_variants?.length ?? 0) > 0,
     image: r.images?.[0] ?? null,
     in_stock: Number(r.stock) > 0,
   };
@@ -60,7 +58,7 @@ export async function handleAssistant(request: Request): Promise<Response> {
 
   const tools = {
     search_products: tool({
-      description: "Search the store catalog. Use short Arabic or English keywords (one item type per call, e.g. 'أرز', 'فراخ', 'طماطم').",
+      description: "Search the store catalog. Use short Arabic or English keywords (one item type per call, e.g. 'قميص', 'عباية', 'كوتشي').",
       inputSchema: z.object({ query: z.string().min(1).max(60) }),
       execute: async ({ query }) => {
         const q = query.replace(/[%,()]/g, " ").trim();
@@ -72,20 +70,20 @@ export async function handleAssistant(request: Request): Promise<Response> {
           .limit(8);
         const list = (data ?? []).map(toProduct);
         list.forEach((p) => seen.set(p.id, p));
-        return list.map((p) => ({ id: p.id, name: p.name_ar, price: p.price, unit: p.unit, step: p.step, min_qty: p.min_qty, in_stock: p.in_stock }));
+        return list.map((p) => ({ id: p.id, name: p.name_ar, price: p.price, needs_size_choice: p.has_variants, in_stock: p.in_stock }));
       },
     }),
     suggest_items: tool({
       description: "Show product cards to the user with an add-to-cart button. Only use ids returned by search_products.",
       inputSchema: z.object({
-        items: z.array(z.object({ product_id: z.string(), quantity: z.number().positive() })).min(1).max(20),
+        items: z.array(z.object({ product_id: z.string(), quantity: z.number().int().positive() })).min(1).max(20),
       }),
       execute: async ({ items }) => {
         const rejected: string[] = [];
         for (const it of items) {
           const p = seen.get(it.product_id);
           if (!p) { rejected.push(it.product_id); continue; }
-          suggested.set(p.id, { ...p, suggested_qty: Math.max(p.min_qty, it.quantity) });
+          suggested.set(p.id, { ...p, suggested_qty: Math.max(1, Math.round(it.quantity)) });
         }
         return { shown: items.length - rejected.length, rejected_unknown_ids: rejected };
       },
@@ -96,7 +94,7 @@ export async function handleAssistant(request: Request): Promise<Response> {
   const instructions = `أنت مساعد تسوق لمتجر "${(settings as any)?.name_ar ?? "المتجر"}". رد دائماً بالعربية (عامية مصرية بسيطة ومهذبة) وباختصار.
 قواعد صارمة:
 - لا تذكر أي منتج أو سعر إلا إذا رجع من أداة search_products. ممنوع اختراع منتجات أو أسعار أو عروض.
-- لو المستخدم طلب حاجة (مثلاً عشا لـ 4 أفراد) فكّر في المكونات، وابحث عن كل صنف بكلمة قصيرة، ثم استدعِ suggest_items بالمنتجات المناسبة والكميات (احترم min_qty و step والوحدة).
+- لو المستخدم طلب حاجة (مثلاً لبس عيد لطفل 5 سنين) فكّر في المكونات، وابحث عن كل صنف بكلمة قصيرة، ثم استدعِ suggest_items بالمنتجات المناسبة والكميات (الكميات أعداد صحيحة؛ المنتجات اللي needs_size_choice=true العميل هيختار مقاسها ولونها من صفحة المنتج).
 - لو صنف مش موجود في المتجر قول بوضوح إنه غير متوفر.
 - تجنب المنتجات غير المتوفرة (in_stock=false) أو نبّه عليها.
 - العملة: ${currency}. الأسعار تقريبية والسعر النهائي يُحسب عند الدفع.
