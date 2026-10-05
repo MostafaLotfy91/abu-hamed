@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { snapQty } from "./format";
 
+/** Cart quantities are always whole pieces. */
 export type CartItem = {
   key: string; // productId|variantId
   productId: string;
@@ -9,10 +9,12 @@ export type CartItem = {
   name_en: string;
   variant_ar?: string | null;
   variant_en?: string | null;
+  size?: string | null;
+  color_ar?: string | null;
+  color_en?: string | null;
+  color_hex?: string | null;
   image?: string | null;
-  unit: string;
-  step: number;
-  minQty: number;
+  maxQty?: number;
   price: number; // display snapshot; server recomputes at checkout
   quantity: number;
   notes?: string;
@@ -35,7 +37,12 @@ type Ctx = {
 };
 
 const CartContext = createContext<Ctx | null>(null);
-const LS = "app.cart.v1";
+const LS = "app.cart.v2";
+
+const clampQty = (q: number, max?: number) => {
+  const n = Math.max(1, Math.round(q));
+  return max != null && max > 0 ? Math.min(n, max) : n;
+};
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -61,32 +68,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (loaded) localStorage.setItem(LS, JSON.stringify({ items, coupon }));
   }, [items, coupon, loaded]);
 
-  const add = useCallback<Ctx["add"]>((item, qty) => {
+  const add = useCallback<Ctx["add"]>((item, qty = 1) => {
     const key = `${item.productId}|${item.variantId ?? ""}`;
     setItems((prev) => {
       const existing = prev.find((i) => i.key === key);
-      const inc = qty ?? (existing ? item.step : Math.max(item.minQty, item.step));
-      if (existing) {
-        return prev.map((i) => (i.key === key ? { ...i, quantity: snapQty(i.quantity + inc, i.step, i.minQty) } : i));
-      }
-      return [...prev, { ...item, key, quantity: snapQty(inc, item.step, item.minQty) }];
+      if (existing) return prev.map((i) => (i.key === key ? { ...i, ...item, quantity: clampQty(i.quantity + qty, item.maxQty) } : i));
+      return [...prev, { ...item, key, quantity: clampQty(qty, item.maxQty) }];
     });
   }, []);
 
   const setQty = useCallback((key: string, qty: number) => {
-    setItems((prev) =>
-      prev.flatMap((i) => {
-        if (i.key !== key) return [i];
-        if (qty < i.minQty - 1e-9) return [];
-        return [{ ...i, quantity: snapQty(qty, i.step, i.minQty) }];
-      }),
-    );
+    setItems((prev) => prev.flatMap((i) => (i.key !== key ? [i] : qty < 1 ? [] : [{ ...i, quantity: clampQty(qty, i.maxQty) }])));
   }, []);
 
   const value = useMemo<Ctx>(
     () => ({
       items,
-      count: items.length,
+      count: items.reduce((s, i) => s + i.quantity, 0),
       subtotal: items.reduce((s, i) => s + Math.round(i.price * i.quantity * 100) / 100, 0),
       coupon,
       setCoupon,
