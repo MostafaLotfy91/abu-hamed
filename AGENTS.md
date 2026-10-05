@@ -12,6 +12,7 @@
 ## Architecture rules
 - Keep the application in React with small, focused modules and clear feature boundaries so it remains easy to maintain.
 - White-label: no store-specific data in code; branding, currency, fees, flags come from the single-row `store_settings` table (applied as CSS vars at runtime) so one codebase serves every client deployment.
+- Reveal the application only after the initial settings request settles and brand CSS variables are applied, so reloads never flash the fallback theme.
 - All schema lives in migrations (drizzle/migrations) so it can be replayed on each new client backend.
 - Order totals are computed only in the `place_order` DB function, never trusted from the client, to prevent price tampering.
 - Roles live in `user_roles` and are checked via `has_role`/`is_staff` security-definer functions; RLS is the real security boundary, UI gates are cosmetic.
