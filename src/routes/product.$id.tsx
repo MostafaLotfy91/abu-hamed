@@ -196,7 +196,7 @@ function ProductPage() {
             </div>
           )}
 
-          <p className={cn("text-sm font-semibold", stock <= 0 ? "text-destructive" : stock <= LOW_STOCK ? "text-deal" : "text-success")}>
+          <p className={cn("text-sm font-semibold", !ready ? "text-muted-foreground" : stock <= 0 ? "text-destructive" : stock <= LOW_STOCK ? "text-deal" : "text-success")}>
             {!ready && needSize && !pickedSize ? t("select_size_color") : stock <= 0 ? t("out_of_stock") : stock <= LOW_STOCK ? t("only_left").replace("{n}", String(stock)) : t("in_stock")}
           </p>
 
