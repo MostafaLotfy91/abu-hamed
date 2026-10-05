@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
+- Keep the application in React with small, focused modules and clear feature boundaries so it remains easy to maintain.
 - White-label: no store-specific data in code; branding, currency, fees, flags come from the single-row `store_settings` table (applied as CSS vars at runtime) so one codebase serves every client deployment.
 - All schema lives in migrations (drizzle/migrations) so it can be replayed on each new client backend.
 - Order totals are computed only in the `place_order` DB function, never trusted from the client, to prevent price tampering.
