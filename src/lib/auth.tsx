@@ -22,11 +22,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
 
   useEffect(() => {
+    let lastUid: string | null | undefined = undefined;
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      setSession(s);
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        if (event !== "SIGNED_OUT") qc.invalidateQueries();
-      }
+      const uid = s?.user?.id ?? null;
+      // Only update state when the signed-in user actually changes; token refreshes
+      // also emit SIGNED_IN and reacting to them caused a refresh loop.
+      setSession((prev) => (prev?.access_token === s?.access_token ? prev : s));
+      setReady(true);
+      const changed = uid !== lastUid;
+      lastUid = uid;
+      if (!changed) return;
+      if (uid) setTimeout(() => qc.invalidateQueries(), 0);
       if (event === "SIGNED_IN" && s?.user) {
         // ensure a profile row exists (no triggers on auth schema)
         const u = s.user;
