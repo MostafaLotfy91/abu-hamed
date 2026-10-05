@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -36,26 +36,28 @@ function readableOn(hex: string) {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { data, isLoading } = useQuery(settingsQuery);
+  const [themeReady, setThemeReady] = useState(false);
 
   useEffect(() => {
-    if (!data) return;
+    if (isLoading) return;
     const root = document.documentElement.style;
-    if (data.primary_color) {
+    if (data?.primary_color) {
       root.setProperty("--primary", data.primary_color);
       root.setProperty("--primary-foreground", readableOn(data.primary_color));
     }
-    if (data.secondary_color) {
+    if (data?.secondary_color) {
       root.setProperty("--brand-secondary", data.secondary_color);
       root.setProperty("--brand-secondary-foreground", readableOn(data.secondary_color));
     }
-    document.title = data.name_ar || data.name_en || document.title;
-  }, [data]);
+    if (data) document.title = data.name_ar || data.name_en || document.title;
+    setThemeReady(true);
+  }, [data, isLoading]);
 
   return (
     <SettingsContext.Provider
       value={{ settings: data ?? null, loading: isLoading, features: ((data?.features ?? {}) as FeatureFlags) }}
     >
-      {children}
+      {themeReady ? children : <div className="min-h-screen bg-card" aria-busy="true" />}
     </SettingsContext.Provider>
   );
 }
