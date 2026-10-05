@@ -15,6 +15,10 @@ export const Route = createFileRoute("/_authenticated/admin/settings")({ compone
 
 const FLAGS = ["delivery_tracking", "online_payment", "loyalty", "ai_assistant", "ai_analytics"] as const;
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="rounded-2xl bg-card p-4 shadow-card"><h2 className="mb-3 font-bold">{title}</h2><div className="grid gap-3 sm:grid-cols-2">{children}</div></section>;
+}
+
 function Page() {
   const qc = useQueryClient();
   const q = useQuery(settingsQuery);
@@ -37,10 +41,6 @@ function Page() {
     toast.success("✓");
     qc.invalidateQueries({ queryKey: settingsQuery.queryKey });
   };
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <section className="rounded-2xl bg-card p-4 shadow-card"><h2 className="mb-3 font-bold">{title}</h2><div className="grid gap-3 sm:grid-cols-2">{children}</div></section>
-  );
 
   return (
     <div className="max-w-4xl space-y-4">

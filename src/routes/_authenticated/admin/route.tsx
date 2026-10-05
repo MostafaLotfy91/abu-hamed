@@ -23,24 +23,14 @@ const LINKS = [
 ] as const;
 
 function AdminLayout() {
-  const { isStaff, roles, user } = useAuth();
+  const { isStaff, rolesLoading } = useAuth();
   const { lang, toggle, t } = useI18n();
-  // roles query may still be loading on first paint
-  if (user && roles.length === 0 && isStaff === false) {
-    // show skeleton briefly; if truly not staff, the message below renders after load
-  }
+  if (rolesLoading) return <div className="p-6"><Skeleton className="h-40" /></div>;
   if (!isStaff)
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
-        {roles.length === 0 ? (
-          <div className="w-full max-w-sm space-y-3">
-            <Skeleton className="h-10" />
-            <EmptyState title={lang === "ar" ? "غير مصرح لك بالدخول" : "You don't have access"} hint={lang === "ar" ? "هذه الصفحة للإدارة فقط" : "This area is for store staff only"}
-              action={<Button asChild><Link to="/">{t("home")}</Link></Button>} />
-          </div>
-        ) : (
-          <EmptyState title={lang === "ar" ? "غير مصرح لك بالدخول" : "You don't have access"} action={<Button asChild><Link to="/">{t("home")}</Link></Button>} />
-        )}
+        <EmptyState title={lang === "ar" ? "غير مصرح لك بالدخول" : "You don't have access"} hint={lang === "ar" ? "هذه الصفحة للإدارة فقط" : "This area is for store staff only"}
+          action={<Button asChild><Link to="/">{t("home")}</Link></Button>} />
       </div>
     );
   return (
