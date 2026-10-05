@@ -18,3 +18,4 @@
 - Media bucket is private (workspace blocks public buckets); uploads store long-lived signed URLs.
 - Customer text strings live in `src/lib/i18n.tsx` (ar/en); DB content uses `*_ar`/`*_en` columns read via `tx()`.
 - Driver app and AI features are not built; extension points are `orders.driver_id`, the `driver` role, and feature flags.
+- Driver app at /driver (PWA via manifest only, no service worker); driver writes go through driver_* security-definer RPCs, locations via RLS-gated driver_locations.
