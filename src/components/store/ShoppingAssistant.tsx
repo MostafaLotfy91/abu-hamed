@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import { Bot, Loader2, Plus, Send, ShoppingBasket, X } from "lucide-react";
 import { toast } from "sonner";
@@ -129,11 +130,11 @@ export function ShoppingAssistant() {
                           )}
                         </div>
                       ))}
-                      {m.products.filter((p) => p.in_stock).length > 1 && (
+                      {m.products.filter((p) => p.in_stock && !p.has_variants).length > 1 && (
                         <Button
                           className="w-full"
                           onClick={() => {
-                            const ok = m.products!.filter((p) => p.in_stock);
+                            const ok = m.products!.filter((p) => p.in_stock && !p.has_variants);
                             ok.forEach((p) => addOne(p, p.suggested_qty));
                             toast.success(`اتضاف ${ok.length} صنف للسلة`);
                             cart.setDrawerOpen(true);

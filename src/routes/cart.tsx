@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/cart")({
   head: () => ({
     meta: [
-      { title: "سلة التسوق · Cart" },
+      { title: "سلة المشتريات · Cart" },
       { name: "description", content: "راجع منتجاتك قبل إتمام الطلب. Review your cart before checkout." },
-      { property: "og:title", content: "سلة التسوق · Cart" },
+      { property: "og:title", content: "سلة المشتريات · Cart" },
       { property: "og:description", content: "Review your cart before checkout." },
     ],
   }),
