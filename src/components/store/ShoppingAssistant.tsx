@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import { Bot, Loader2, Plus, Send, ShoppingBasket, X } from "lucide-react";
 import { toast } from "sonner";
 import { useSettings } from "@/lib/store-settings";
 import { useCart } from "@/lib/cart";
 import { useI18n } from "@/lib/i18n";
-import { formatMoney, formatQty, unitLabel } from "@/lib/format";
+import { formatMoney, formatQty } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { AssistantProduct } from "@/lib/assistant-types";
 
 type Msg = { role: "user" | "assistant"; content: string; products?: AssistantProduct[]; error?: boolean };
 
-const EXAMPLES = ["عايز مستلزمات عشا لـ 4 أفراد", "إيه عروض الخضار النهارده؟", "محتاج حاجات فطار صحي"];
+const EXAMPLES = ["عايز لبس عيد لولد 6 سنين", "إيه عروض العبايات النهارده؟", "محتاج عطر رجالي هدية"];
 
 export function ShoppingAssistant() {
   const { features, settings } = useSettings();
@@ -32,7 +33,7 @@ export function ShoppingAssistant() {
 
   const addOne = (p: AssistantProduct, qty?: number) =>
     cart.add(
-      { productId: p.id, variantId: null, name_ar: p.name_ar, name_en: p.name_en, image: p.image, unit: p.unit, step: p.step, minQty: p.min_qty, price: p.price },
+      { productId: p.id, variantId: null, name_ar: p.name_ar, name_en: p.name_en, image: p.image, price: p.price },
       qty,
     );
 
@@ -118,18 +119,22 @@ export function ShoppingAssistant() {
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm font-semibold">{lang === "ar" ? p.name_ar : p.name_en}</div>
                             <div className="text-xs text-muted-foreground">
-                              {formatMoney(p.price, lang, sym)} / {unitLabel(p.unit, lang)} · {formatQty(p.suggested_qty ?? p.min_qty, lang)}
+                              {formatMoney(p.price, lang, sym)} · {formatQty(p.suggested_qty ?? 1, lang)}
                               {!p.in_stock && <span className="text-destructive"> · غير متوفر</span>}
                             </div>
                           </div>
-                          <Button size="icon" variant="outline" disabled={!p.in_stock} onClick={() => { addOne(p, p.suggested_qty); toast.success("اتضاف للسلة"); }} aria-label="أضف للسلة"><Plus className="h-4 w-4" /></Button>
+                          {p.has_variants ? (
+                            <Button size="sm" variant="outline" asChild><Link to="/product/$id" params={{ id: p.id }} onClick={() => setOpen(false)}>اختار المقاس</Link></Button>
+                          ) : (
+                            <Button size="icon" variant="outline" disabled={!p.in_stock} onClick={() => { addOne(p, p.suggested_qty); toast.success("اتضاف للسلة"); }} aria-label="أضف للسلة"><Plus className="h-4 w-4" /></Button>
+                          )}
                         </div>
                       ))}
-                      {m.products.filter((p) => p.in_stock).length > 1 && (
+                      {m.products.filter((p) => p.in_stock && !p.has_variants).length > 1 && (
                         <Button
                           className="w-full"
                           onClick={() => {
-                            const ok = m.products!.filter((p) => p.in_stock);
+                            const ok = m.products!.filter((p) => p.in_stock && !p.has_variants);
                             ok.forEach((p) => addOne(p, p.suggested_qty));
                             toast.success(`اتضاف ${ok.length} صنف للسلة`);
                             cart.setDrawerOpen(true);

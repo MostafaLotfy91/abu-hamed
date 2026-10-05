@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCategories } from "@/lib/queries";
+import { SIZE_TYPE_OPTIONS } from "@/lib/fashion";
 import { CrudPage } from "@/components/admin/CrudPage";
 
 export const Route = createFileRoute("/_authenticated/admin/categories")({ component: Page });
@@ -14,6 +15,7 @@ function Page() {
       { key: "name_ar", label: "الاسم (عربي)", required: true, list: true },
       { key: "name_en", label: "Name (EN)", required: true, list: true },
       { key: "parent_id", label: "Parent / القسم الأب", type: "select", options, list: true },
+      { key: "size_type", label: "نوع المقاس / Size type", type: "select", options: SIZE_TYPE_OPTIONS, default: "none", required: true, list: true },
       { key: "sort_order", label: "Sort", type: "number", default: 0, list: true },
       { key: "is_active", label: "Active", type: "bool", list: true },
     ]} />
