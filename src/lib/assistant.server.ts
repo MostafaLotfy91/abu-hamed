@@ -40,7 +40,7 @@ const json = (status: number, data: unknown) =>
 export async function handleAssistant(request: Request): Promise<Response> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   const url = process.env["SUPABASE_URL"];
-  const anon = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  const anon = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
   if (!apiKey || !url || !anon) return json(500, { error: "config" });
 
   let body: z.infer<typeof bodySchema>;
