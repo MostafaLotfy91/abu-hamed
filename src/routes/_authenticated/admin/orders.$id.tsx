@@ -12,7 +12,7 @@ import { addressLine } from "@/components/store/AddressForm";
 import { ErrorState, RowSkeleton } from "@/components/store/states";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useDrivers, useLatestLocation } from "@/lib/drivers";
+import { DRIVER_STATUSES, DriverStatusBadge, driverStatusLabel, useDrivers, useLatestLocation } from "@/lib/drivers";
 import { LiveMap } from "@/components/store/LiveMap";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/$id")({ component: Page });
@@ -26,20 +26,28 @@ function DriverAssign({ orderId, driverId, status, onDone }: { orderId: string; 
     const { error } = await supabase.from("orders").update({ driver_id: v === "none" ? null : v, driver_accepted_at: null }).eq("id", orderId);
     if (error) toast.error(error.message); else { toast.success(ar ? "تم التعيين" : "Assigned"); onDone(); }
   };
-  const list = [...(drivers.data ?? [])].sort((a, b) => Number(b.is_available) - Number(a.is_available));
+  const rank = (s: string) => DRIVER_STATUSES.indexOf(s as never);
+  const list = [...(drivers.data ?? [])].filter((d) => d.is_active || d.user_id === driverId).sort((a, b) => rank(a.status) - rank(b.status));
+  const current = drivers.data?.find((d) => d.user_id === driverId);
   return (
     <div className="space-y-2">
       <p className="text-sm font-bold">{ar ? "المندوب" : "Driver"}</p>
+      {current && (
+        <div className="flex items-center justify-between rounded-xl bg-muted/50 p-2 text-sm">
+          <div><p className="font-semibold">{current.full_name ?? current.email}</p>{current.phone && <a className="text-xs text-primary" dir="ltr" href={`tel:${current.phone}`}>{current.phone}</a>}</div>
+          <DriverStatusBadge status={current.status} active={current.is_active} />
+        </div>
+      )}
       <Select value={driverId ?? "none"} onValueChange={assign} disabled={status === "delivered" || status === "cancelled"}>
         <SelectTrigger><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem value="none">{ar ? "بدون مندوب" : "Unassigned"}</SelectItem>
           {list.map((d) => (
-            <SelectItem key={d.user_id} value={d.user_id}>{d.is_available ? "🟢" : "⚪"} {d.full_name ?? d.email}</SelectItem>
+            <SelectItem key={d.user_id} value={d.user_id}>{d.full_name ?? d.email} · {driverStatusLabel(d.status, ar)}</SelectItem>
           ))}
         </SelectContent>
       </Select>
-      {status === "out_for_delivery" && loc.data && <LiveMap lat={loc.data.lat} lng={loc.data.lng} className="h-48 w-full rounded-xl border" />}
+      {status === "out_for_delivery" && loc.data && <LiveMap lat={loc.data.lat} lng={loc.data.lng} className="z-0 h-48 w-full overflow-hidden rounded-xl border" />}
     </div>
   );
 }

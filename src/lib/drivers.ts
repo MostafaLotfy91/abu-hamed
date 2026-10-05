@@ -1,8 +1,21 @@
-import { useEffect } from "react";
+import { createElement, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
-export type DriverRow = { user_id: string; is_available: boolean; vehicle: string | null; full_name: string | null; phone: string | null; email: string | null };
+export type DriverStatus = "available" | "busy" | "offline";
+export const DRIVER_STATUSES: DriverStatus[] = ["available", "busy", "offline"];
+export const driverStatusLabel = (s: string, ar: boolean) =>
+  ({ available: ar ? "متاح" : "Available", busy: ar ? "مشغول" : "Busy", offline: ar ? "غير متصل" : "Offline" })[s] ?? s;
+
+export type DriverRow = { user_id: string; is_available: boolean; status: DriverStatus; is_active: boolean; vehicle: string | null; full_name: string | null; phone: string | null; email: string | null };
+
+export function DriverStatusBadge({ status, active }: { status: string; active: boolean }) {
+  const { lang } = useI18n();
+  const ar = lang === "ar";
+  const tone = !active ? "bg-destructive/10 text-destructive" : status === "available" ? "bg-success/15 text-success" : status === "busy" ? "bg-brand-secondary/25 text-brand-secondary-foreground" : "bg-muted text-muted-foreground";
+  return createElement("span", { className: `rounded-full px-2 py-0.5 text-xs font-bold ${tone}` }, !active ? (ar ? "موقوف" : "Deactivated") : driverStatusLabel(status, ar));
+}
 
 /** Staff-only: all drivers with availability + profile info. */
 export function useDrivers() {
@@ -11,10 +24,11 @@ export function useDrivers() {
     queryFn: async (): Promise<DriverRow[]> => {
       const { data: dp, error } = await supabase.from("driver_profiles").select("*");
       if (error) throw error;
-      const ids = (dp ?? []).map((d) => d.user_id);
+      const rows = (dp ?? []) as unknown as Omit<DriverRow, "full_name" | "phone" | "email">[];
+      const ids = rows.map((d) => d.user_id);
       const { data: profs } = ids.length ? await supabase.from("profiles").select("id,full_name,phone,email").in("id", ids) : { data: [] };
       const map = new Map((profs ?? []).map((p) => [p.id, p]));
-      return (dp ?? []).map((d) => ({ ...d, full_name: map.get(d.user_id)?.full_name ?? null, phone: map.get(d.user_id)?.phone ?? null, email: map.get(d.user_id)?.email ?? null }));
+      return rows.map((d) => ({ ...d, full_name: map.get(d.user_id)?.full_name ?? null, phone: map.get(d.user_id)?.phone ?? null, email: map.get(d.user_id)?.email ?? null }));
     },
   });
 }
