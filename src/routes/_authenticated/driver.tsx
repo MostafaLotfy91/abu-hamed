@@ -132,7 +132,7 @@ function DriverApp() {
                 <Button className="w-full" onClick={() => act(() => supabase.rpc("driver_set_status", { _order_id: o.id, _status: "out_for_delivery" }))}><Bike className="me-1 h-4 w-4" />{ar ? "بدء التوصيل" : "Start delivery"}</Button>
               )}
               {o.status === "out_for_delivery" && (
-                <Button className="w-full bg-success text-success-foreground hover:bg-success/90" onClick={() => act(() => supabase.rpc("driver_set_status", { _order_id: o.id, _status: "delivered" }))}><CheckCircle2 className="me-1 h-4 w-4" />{ar ? "تم التسليم" : "Mark delivered"}</Button>
+                <Button className="w-full bg-success text-background hover:bg-success/90" onClick={() => act(() => supabase.rpc("driver_set_status", { _order_id: o.id, _status: "delivered" }))}><CheckCircle2 className="me-1 h-4 w-4" />{ar ? "تم التسليم" : "Mark delivered"}</Button>
               )}
             </article>
           );

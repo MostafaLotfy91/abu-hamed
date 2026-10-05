@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { BarChart3, FolderTree, Image, Package, ReceiptText, Settings, Store, Ticket } from "lucide-react";
+import { BarChart3, Bike, FolderTree, Image, Package, ReceiptText, Settings, Store, Ticket } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { StoreLogo } from "@/components/store/SiteShell";
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 const LINKS = [
   { to: "/admin", icon: BarChart3, ar: "الإحصائيات", en: "Dashboard", exact: true },
   { to: "/admin/orders", icon: ReceiptText, ar: "الطلبات", en: "Orders" },
+  { to: "/admin/drivers", icon: Bike, ar: "المندوبين", en: "Drivers" },
   { to: "/admin/products", icon: Package, ar: "المنتجات", en: "Products" },
   { to: "/admin/categories", icon: FolderTree, ar: "الأقسام", en: "Categories" },
   { to: "/admin/banners", icon: Image, ar: "البانرات", en: "Banners" },
