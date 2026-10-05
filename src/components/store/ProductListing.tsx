@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { COLORS, GENDERS, SIZE_SETS, sizeLabel } from "@/lib/fashion";
 import { fetchBrands, fetchProductPage, PAGE_SIZE, type ListFilters } from "@/lib/queries";
 import { ProductCard } from "./ProductCard";
 import { EmptyState, ErrorState, ProductGridSkeleton } from "./states";
@@ -15,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 type Base = Pick<ListFilters, "q" | "categoryIds">;
 
 export function ProductListing({ base, title }: { base: Base; title?: React.ReactNode }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [f, setF] = useState<Omit<ListFilters, "q" | "categoryIds">>({ sort: "newest" });
   const [draft, setDraft] = useState(f);
   const [open, setOpen] = useState(false);
@@ -41,7 +42,7 @@ export function ProductListing({ base, title }: { base: Base; title?: React.Reac
   }, [q.hasNextPage, q.isFetchingNextPage, q]);
 
   const items = q.data?.pages.flat() ?? [];
-  const activeCount = [f.minPrice, f.maxPrice, f.brand, f.discounted || undefined, f.inStock || undefined].filter((x) => x != null && x !== "").length;
+  const activeCount = [f.minPrice, f.maxPrice, f.brand, f.discounted || undefined, f.inStock || undefined, f.gender, f.size, f.color].filter((x) => x != null && x !== "").length;
 
   return (
     <div className="space-y-4">
@@ -73,6 +74,35 @@ export function ProductListing({ base, title }: { base: Base; title?: React.Reac
                     </div>
                   </div>
                 )}
+                <div>
+                  <Label>{t("gender")}</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {GENDERS.map((g) => (
+                      <button key={g.value} onClick={() => setDraft({ ...draft, gender: draft.gender === g.value ? undefined : g.value })}
+                        className={`rounded-full border px-3 py-1 text-sm ${draft.gender === g.value ? "border-primary bg-primary text-primary-foreground" : "bg-card"}`}>{g[lang]}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>{t("size")}</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[...SIZE_SETS.clothes, ...SIZE_SETS.shoes, ...SIZE_SETS.kids].map((sz) => (
+                      <button key={sz} onClick={() => setDraft({ ...draft, size: draft.size === sz ? undefined : sz })}
+                        className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${draft.size === sz ? "border-primary bg-primary text-primary-foreground" : "bg-card"}`}>{sizeLabel(sz, lang)}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>{t("color")}</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {COLORS.map((c) => (
+                      <button key={c.en} title={lang === "ar" ? c.ar : c.en} aria-label={lang === "ar" ? c.ar : c.en} onClick={() => setDraft({ ...draft, color: draft.color === c.en ? undefined : c.en })}
+                        className={`h-8 w-8 rounded-full border-2 p-0.5 ${draft.color === c.en ? "border-primary" : "border-transparent"}`}>
+                        <span className="block h-full w-full rounded-full border" style={{ background: c.hex }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex items-center justify-between"><Label>{t("discounted_only")}</Label><Switch checked={!!draft.discounted} onCheckedChange={(v) => setDraft({ ...draft, discounted: v })} /></div>
                 <div className="flex items-center justify-between"><Label>{t("in_stock_only")}</Label><Switch checked={!!draft.inStock} onCheckedChange={(v) => setDraft({ ...draft, inStock: v })} /></div>
                 <div className="grid grid-cols-2 gap-2">
