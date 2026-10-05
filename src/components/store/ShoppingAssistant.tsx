@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { formatMoney, formatQty, unitLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { AssistantProduct } from "@/lib/assistant.server";
+import type { AssistantProduct } from "@/lib/assistant-types";
 
 type Msg = { role: "user" | "assistant"; content: string; products?: AssistantProduct[]; error?: boolean };
 

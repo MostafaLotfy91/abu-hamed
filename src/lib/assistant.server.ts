@@ -8,18 +8,8 @@ const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 const MODEL = "openai/gpt-6-astra";
 const RUN_HEADER = "X-Lovable-AIG-Run-ID";
 
-export type AssistantProduct = {
-  id: string;
-  name_ar: string;
-  name_en: string;
-  price: number;
-  unit: string;
-  step: number;
-  min_qty: number;
-  image: string | null;
-  in_stock: boolean;
-  suggested_qty?: number;
-};
+import type { AssistantProduct } from "./assistant-types";
+export type { AssistantProduct };
 
 const bodySchema = z.object({
   messages: z

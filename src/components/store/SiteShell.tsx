@@ -1,3 +1,4 @@
+import { ShoppingAssistant } from "./ShoppingAssistant";
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, LayoutGrid, Languages, LayoutDashboard, ReceiptText, ShoppingCart, User } from "lucide-react";
