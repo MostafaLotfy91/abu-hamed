@@ -1,0 +1,3 @@
+revoke execute on function public.has_role(uuid, public.app_role), public.is_staff(uuid), public.claim_first_admin(), public.place_order(jsonb, uuid, text, text, text, text), public.cancel_my_order(uuid), public.admin_stats(), public.refresh_product_rating(), public.log_order_status() from public, anon;
+revoke execute on function public.refresh_product_rating(), public.log_order_status() from authenticated;
+grant execute on function public.has_role(uuid, public.app_role), public.is_staff(uuid) to authenticated, anon;
