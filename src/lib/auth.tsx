@@ -1,7 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+let clockWarned = false;
 
 type Role = "admin" | "staff" | "driver" | "customer";
 type Ctx = {
@@ -25,6 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let lastUid: string | null | undefined = undefined;
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       const uid = s?.user?.id ?? null;
+      // A freshly issued token lasts ~1h. If it already looks expired, the device
+      // clock is wrong: the client would refresh nonstop until the server revokes
+      // the session. Warn the user once so they can fix their clock.
+      if (event === "TOKEN_REFRESHED" && s?.expires_at && s.expires_at * 1000 - Date.now() < 5 * 60_000 && !clockWarned) {
+        clockWarned = true;
+        toast.error("تاريخ أو ساعة جهازك غير مضبوطة، وهذا يسبب تسجيل خروجك. اضبط الوقت تلقائياً ثم أعد تسجيل الدخول. · Your device clock is wrong, which logs you out. Set date/time to automatic and sign in again.", { duration: 20000 });
+      }
       // Only update state when the signed-in user actually changes; token refreshes
       // also emit SIGNED_IN and reacting to them caused a refresh loop.
       setSession((prev) => (prev?.access_token === s?.access_token ? prev : s));
