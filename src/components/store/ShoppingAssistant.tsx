@@ -5,14 +5,14 @@ import { toast } from "sonner";
 import { useSettings } from "@/lib/store-settings";
 import { useCart } from "@/lib/cart";
 import { useI18n } from "@/lib/i18n";
-import { formatMoney, formatQty, unitLabel } from "@/lib/format";
+import { formatMoney, formatQty } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { AssistantProduct } from "@/lib/assistant-types";
 
 type Msg = { role: "user" | "assistant"; content: string; products?: AssistantProduct[]; error?: boolean };
 
-const EXAMPLES = ["عايز مستلزمات عشا لـ 4 أفراد", "إيه عروض الخضار النهارده؟", "محتاج حاجات فطار صحي"];
+const EXAMPLES = ["عايز لبس عيد لولد 6 سنين", "إيه عروض العبايات النهارده؟", "محتاج عطر رجالي هدية"];
 
 export function ShoppingAssistant() {
   const { features, settings } = useSettings();
@@ -122,7 +122,11 @@ export function ShoppingAssistant() {
                               {!p.in_stock && <span className="text-destructive"> · غير متوفر</span>}
                             </div>
                           </div>
-                          <Button size="icon" variant="outline" disabled={!p.in_stock} onClick={() => { addOne(p, p.suggested_qty); toast.success("اتضاف للسلة"); }} aria-label="أضف للسلة"><Plus className="h-4 w-4" /></Button>
+                          {p.has_variants ? (
+                            <Button size="sm" variant="outline" asChild><Link to="/product/$id" params={{ id: p.id }} onClick={() => setOpen(false)}>اختار المقاس</Link></Button>
+                          ) : (
+                            <Button size="icon" variant="outline" disabled={!p.in_stock} onClick={() => { addOne(p, p.suggested_qty); toast.success("اتضاف للسلة"); }} aria-label="أضف للسلة"><Plus className="h-4 w-4" /></Button>
+                          )}
                         </div>
                       ))}
                       {m.products.filter((p) => p.in_stock).length > 1 && (
