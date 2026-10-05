@@ -11,6 +11,7 @@ type Ctx = {
   roles: Role[];
   isStaff: boolean;
   isAdmin: boolean;
+  rolesLoading: boolean;
   signOut: () => Promise<void>;
 };
 const AuthContext = createContext<Ctx | null>(null);
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [qc]);
 
   const uid = session?.user.id;
-  const { data: roles = [] } = useQuery({
+  const { data: roles = [], isLoading: rolesLoading } = useQuery({
     queryKey: ["my_roles", uid],
     enabled: !!uid,
     queryFn: async () => {
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roles,
     isStaff: roles.includes("admin") || roles.includes("staff"),
     isAdmin: roles.includes("admin"),
+    rolesLoading: !!uid && rolesLoading,
     signOut: async () => {
       await qc.cancelQueries();
       qc.clear();

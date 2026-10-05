@@ -1,0 +1,84 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Printer } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
+import { useSettings } from "@/lib/store-settings";
+import { formatQty, unitLabel } from "@/lib/format";
+import { useOrder } from "../orders.$id";
+import { useMoney } from "@/components/store/use-money";
+import { ALL_STATUSES, OrderTimeline, StatusBadge, statusKey } from "@/components/store/OrderTimeline";
+import { addressLine } from "@/components/store/AddressForm";
+import { ErrorState, RowSkeleton } from "@/components/store/states";
+import { Button } from "@/components/ui/button";
+
+export const Route = createFileRoute("/_authenticated/admin/orders/$id")({ component: Page });
+
+function Page() {
+  const { id } = Route.useParams();
+  const { t, tx, lang } = useI18n();
+  const { settings } = useSettings();
+  const money = useMoney();
+  const q = useOrder(id);
+  if (q.isLoading) return <RowSkeleton n={4} />;
+  if (q.error || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
+  const o = q.data;
+  const a = o.address as Record<string, string>;
+  const setStatus = async (s: string) => {
+    const { error } = await supabase.from("orders").update({ status: s }).eq("id", id);
+    if (error) toast.error(error.message); else q.refetch();
+  };
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <section className="space-y-4 rounded-2xl bg-card p-5 shadow-card print:shadow-none">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-lg font-extrabold">{tx(settings as Record<string, unknown> | null, "name")}</p>
+            <p className="text-xs text-muted-foreground" dir="ltr">{settings?.contact_phone}</p>
+          </div>
+          <div className="text-end">
+            <p className="text-xl font-extrabold">{t("order")} #{o.order_number}</p>
+            <p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US")}</p>
+            <div className="mt-1"><StatusBadge status={o.status} /></div>
+          </div>
+        </div>
+        <div className="rounded-xl bg-secondary p-3 text-sm">
+          <p className="font-semibold">{a.recipient_name ?? a.label} · <span dir="ltr">{a.phone}</span></p>
+          <p>{addressLine(a)} {a.floor && `· ${t("floor")} ${a.floor}`} {a.apartment && `· ${t("apartment")} ${a.apartment}`}</p>
+          {a.notes && <p className="text-muted-foreground">{a.notes}</p>}
+          <p className="mt-1">{t("delivery_time")}: {o.delivery_slot === "asap" ? t("asap") : o.delivery_slot} · {o.payment_method === "cod" ? t("cod") : t("online")}</p>
+          {o.notes && <p className="mt-1 font-semibold">{t("order_notes")}: {o.notes}</p>}
+        </div>
+        <table className="w-full text-sm">
+          <thead className="border-b text-xs text-muted-foreground"><tr><th className="py-2 text-start">#</th><th className="text-start">{t("description")}</th><th>{t("quantity")}</th><th>{t("price")}</th><th className="text-end">{t("total")}</th></tr></thead>
+          <tbody className="divide-y">
+            {o.order_items.map((i, n) => (
+              <tr key={i.id}>
+                <td className="py-2">{n + 1}</td>
+                <td>{tx(i, "name")}{i.variant_name_ar && ` · ${tx(i, "variant_name")}`}{i.notes && <div className="text-xs italic text-muted-foreground">{i.notes}</div>}</td>
+                <td className="text-center">{formatQty(Number(i.quantity), lang)} {unitLabel(i.unit, lang)}</td>
+                <td className="text-center">{money(i.unit_price)}</td>
+                <td className="text-end font-semibold">{money(i.line_total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="ms-auto max-w-xs space-y-1 text-sm">
+          <div className="flex justify-between"><span>{t("subtotal")}</span><span>{money(o.subtotal)}</span></div>
+          <div className="flex justify-between"><span>{t("delivery_fee")}</span><span>{money(o.delivery_fee)}</span></div>
+          {Number(o.discount) > 0 && <div className="flex justify-between"><span>{t("discount")} {o.coupon_code && `(${o.coupon_code})`}</span><span>- {money(o.discount)}</span></div>}
+          <div className="flex justify-between border-t pt-1 text-base font-extrabold"><span>{t("total")}</span><span>{money(o.total)}</span></div>
+        </div>
+      </section>
+      <aside className="no-print h-fit space-y-4 rounded-2xl bg-card p-4 shadow-card">
+        <Button className="w-full gap-1" variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />{lang === "ar" ? "طباعة الفاتورة" : "Print invoice"}</Button>
+        <div className="grid grid-cols-2 gap-2">
+          {ALL_STATUSES.map((s) => (
+            <Button key={s} size="sm" variant={o.status === s ? "default" : "outline"} onClick={() => setStatus(s)} disabled={o.status === s}>{t(statusKey(s))}</Button>
+          ))}
+        </div>
+        <OrderTimeline status={o.status} history={o.order_status_history} />
+      </aside>
+    </div>
+  );
+}
