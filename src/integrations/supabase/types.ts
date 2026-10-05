@@ -284,19 +284,25 @@ export type Database = {
       }
       driver_profiles: {
         Row: {
+          is_active: boolean
           is_available: boolean
+          status: string
           updated_at: string
           user_id: string
           vehicle: string | null
         }
         Insert: {
+          is_active?: boolean
           is_available?: boolean
+          status?: string
           updated_at?: string
           user_id: string
           vehicle?: string | null
         }
         Update: {
+          is_active?: boolean
           is_available?: boolean
+          status?: string
           updated_at?: string
           user_id?: string
           vehicle?: string | null
@@ -939,6 +945,14 @@ export type Database = {
       cancel_my_order: { Args: { _order_id: string }; Returns: undefined }
       claim_first_admin: { Args: never; Returns: boolean }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
+      driver_order_customers: {
+        Args: never
+        Returns: {
+          full_name: string
+          order_id: string
+          phone: string
+        }[]
+      }
       driver_set_status: {
         Args: { _order_id: string; _status: string }
         Returns: undefined
@@ -950,6 +964,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_driver: { Args: { _uid: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       order_driver_info: { Args: { _order_id: string }; Returns: Json }
       place_order: {
