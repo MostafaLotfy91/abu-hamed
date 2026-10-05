@@ -19,6 +19,7 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
+import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
 import { Route as CategoryIdRouteImport } from './routes/category.$id'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
@@ -81,6 +82,11 @@ const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   id: '/driver',
   path: '/driver',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiAssistantRoute = ApiAssistantRouteImport.update({
+  id: '/api/assistant',
+  path: '/api/assistant',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CategoryIdRoute = CategoryIdRouteImport.update({
   id: '/category/$id',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/checkout'
     | '/driver'
+    | '/api/assistant'
     | '/category/$id'
     | '/product/$id'
     | '/admin/banners'
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/checkout'
     | '/driver'
+    | '/api/assistant'
     | '/category/$id'
     | '/product/$id'
     | '/admin/banners'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/checkout'
     | '/_authenticated/driver'
+    | '/api/assistant'
     | '/category/$id'
     | '/product/$id'
     | '/_authenticated/admin/banners'
@@ -312,6 +324,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
   ProductsRoute: typeof ProductsRoute
+  ApiAssistantRoute: typeof ApiAssistantRoute
   CategoryIdRoute: typeof CategoryIdRoute
   ProductIdRoute: typeof ProductIdRoute
 }
@@ -387,6 +400,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/driver'
       preLoaderRoute: typeof AuthenticatedDriverRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/assistant': {
+      id: '/api/assistant'
+      path: '/api/assistant'
+      fullPath: '/api/assistant'
+      preLoaderRoute: typeof ApiAssistantRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/category/$id': {
       id: '/category/$id'
@@ -540,6 +560,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
   ProductsRoute: ProductsRoute,
+  ApiAssistantRoute: ApiAssistantRoute,
   CategoryIdRoute: CategoryIdRoute,
   ProductIdRoute: ProductIdRoute,
 }
