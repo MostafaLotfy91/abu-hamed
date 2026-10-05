@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { useDrivers } from "@/lib/drivers";
+import { DriverStatusBadge, useDrivers } from "@/lib/drivers";
 import { EmptyState, RowSkeleton } from "@/components/store/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +27,8 @@ function Page() {
     const { error } = await supabase.rpc("admin_remove_driver", { _user_id: id });
     if (error) toast.error(error.message); else q.refetch();
   };
-  const toggle = async (id: string, v: boolean) => {
-    const { error } = await supabase.from("driver_profiles").update({ is_available: v }).eq("user_id", id);
+  const setActive = async (id: string, v: boolean) => {
+    const { error } = await supabase.from("driver_profiles").update({ is_active: v } as never).eq("user_id", id);
     if (error) toast.error(error.message); else q.refetch();
   };
   return (
@@ -47,8 +47,8 @@ function Page() {
                 <p className="font-semibold">{d.full_name ?? d.email}</p>
                 <p className="text-xs text-muted-foreground" dir="ltr">{[d.email, d.phone].filter(Boolean).join(" · ")}</p>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${d.is_available ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{d.is_available ? (ar ? "متاح" : "Available") : (ar ? "غير متاح" : "Offline")}</span>
-              <Switch checked={d.is_available} onCheckedChange={(v) => toggle(d.user_id, v)} />
+              <DriverStatusBadge status={d.status} active={d.is_active} />
+              <label className="flex items-center gap-2 text-xs">{ar ? "مفعّل" : "Active"}<Switch checked={d.is_active} onCheckedChange={(v) => setActive(d.user_id, v)} /></label>
               <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(d.user_id)}>{ar ? "إزالة" : "Remove"}</Button>
             </div>
           ))}
