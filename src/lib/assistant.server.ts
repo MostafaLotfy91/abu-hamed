@@ -61,7 +61,7 @@ export async function handleAssistant(request: Request): Promise<Response> {
   }
 
   const db = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: settings } = await db.from("store_settings").select("features,store_name_ar,currency_symbol_ar").limit(1).maybeSingle();
+  const { data: settings } = await db.from("store_settings").select("features,name_ar,currency_symbol_ar").limit(1).maybeSingle();
   if (!(settings as any)?.features?.ai_assistant) return json(403, { error: "disabled" });
 
   // Every product the model saw, so suggestions can only reference real rows.
@@ -103,7 +103,7 @@ export async function handleAssistant(request: Request): Promise<Response> {
   };
 
   const currency = (settings as any)?.currency_symbol_ar ?? "";
-  const instructions = `أنت مساعد تسوق لمتجر "${(settings as any)?.store_name_ar ?? "المتجر"}". رد دائماً بالعربية (عامية مصرية بسيطة ومهذبة) وباختصار.
+  const instructions = `أنت مساعد تسوق لمتجر "${(settings as any)?.name_ar ?? "المتجر"}". رد دائماً بالعربية (عامية مصرية بسيطة ومهذبة) وباختصار.
 قواعد صارمة:
 - لا تذكر أي منتج أو سعر إلا إذا رجع من أداة search_products. ممنوع اختراع منتجات أو أسعار أو عروض.
 - لو المستخدم طلب حاجة (مثلاً عشا لـ 4 أفراد) فكّر في المكونات، وابحث عن كل صنف بكلمة قصيرة، ثم استدعِ suggest_items بالمنتجات المناسبة والكميات (احترم min_qty و step والوحدة).
