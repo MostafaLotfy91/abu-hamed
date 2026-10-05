@@ -1,19 +1,5 @@
 import type { Lang } from "./i18n";
 
-export type Unit = "piece" | "kg" | "gram" | "pack" | "liter";
-
-const unitLabels: Record<Unit, { ar: string; en: string }> = {
-  piece: { ar: "قطعة", en: "pc" },
-  kg: { ar: "كجم", en: "kg" },
-  gram: { ar: "جم", en: "g" },
-  pack: { ar: "عبوة", en: "pack" },
-  liter: { ar: "لتر", en: "L" },
-};
-
-export function unitLabel(u: string, lang: Lang) {
-  return (unitLabels[u as Unit] ?? unitLabels.piece)[lang];
-}
-
 export function formatMoney(value: number | string | null | undefined, lang: Lang, symbol: { ar?: string | null; en?: string | null }) {
   const n = Number(value ?? 0);
   const num = new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", {
@@ -26,12 +12,6 @@ export function formatMoney(value: number | string | null | undefined, lang: Lan
 
 export function formatQty(q: number, lang: Lang) {
   return new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", { maximumFractionDigits: 3 }).format(q);
-}
-
-/** Round quantity to the product's step (avoids float drift like 1.5000001). */
-export function snapQty(q: number, step: number, min: number) {
-  const snapped = Math.round(q / step) * step;
-  return Math.max(min, Number(snapped.toFixed(3)));
 }
 
 type PriceInput = {

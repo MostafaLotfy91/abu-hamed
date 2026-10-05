@@ -1,11 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ReceiptText, RotateCcw } from "lucide-react";
-import { toast } from "sonner";
+import { ReceiptText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { useCart } from "@/lib/cart";
-import { reorder } from "@/lib/reorder";
 import { useMoney } from "@/components/store/use-money";
 import { StatusBadge } from "@/components/store/OrderTimeline";
 import { EmptyState, ErrorState, RowSkeleton } from "@/components/store/states";
@@ -19,7 +16,6 @@ export const Route = createFileRoute("/_authenticated/orders/")({
 function Orders() {
   const { t, lang } = useI18n();
   const money = useMoney();
-  const cart = useCart();
   const q = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
@@ -41,9 +37,6 @@ function Orders() {
             <p className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US")} · {(o.order_items as unknown as { count: number }[])[0]?.count ?? 0} {t("items")}</p>
             <p className="font-extrabold text-primary">{money(o.total)}</p>
           </Link>
-          <Button variant="outline" size="sm" className="gap-1" onClick={async () => { const n = await reorder(o.id, cart); if (n) { toast.success(t("added_to_cart")); cart.setDrawerOpen(true); } else toast.error(t("out_of_stock")); }}>
-            <RotateCcw className="h-4 w-4" />{t("reorder")}
-          </Button>
         </div>
       ))}
     </div>

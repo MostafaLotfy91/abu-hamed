@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { useCart } from "@/lib/cart";
-import { reorder } from "@/lib/reorder";
-import { formatQty, unitLabel } from "@/lib/format";
+import { formatQty } from "@/lib/format";
+import { VariantLine } from "@/components/store/CartContents";
+import { ReturnSection } from "@/components/store/ReturnRequest";
 import { rpcErrorMessage } from "@/lib/queries";
 import { useMoney } from "@/components/store/use-money";
 import { OrderTimeline, StatusBadge } from "@/components/store/OrderTimeline";
@@ -73,7 +72,6 @@ function OrderDetail() {
   const { id } = Route.useParams();
   const { t, tx, lang } = useI18n();
   const money = useMoney();
-  const cart = useCart();
   const q = useOrder(id);
   if (q.isLoading) return <RowSkeleton n={4} />;
   if (q.error) return <ErrorState onRetry={() => q.refetch()} />;
@@ -101,8 +99,9 @@ function OrderDetail() {
               <li key={i.id} className="flex gap-3 py-3">
                 <ProductImage src={i.image_url} alt="" className="h-14 w-14 rounded-xl" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">{tx(i, "name")} {i.variant_name_ar && <span className="text-muted-foreground">· {tx(i, "variant_name")}</span>}</p>
-                  <p className="text-xs text-muted-foreground">{formatQty(Number(i.quantity), lang)} {unitLabel(i.unit, lang)} × {money(i.unit_price)}</p>
+                  <p className="text-sm font-semibold">{tx(i, "name")}</p>
+                  <VariantLine size={i.size} colorName={tx(i, "color")} hex={i.color_hex} fallback={tx(i, "variant_name")} />
+                  <p className="text-xs text-muted-foreground">{formatQty(Number(i.quantity), lang)} × {money(i.unit_price)}</p>
                   {i.notes && <p className="text-xs italic text-muted-foreground">{i.notes}</p>}
                 </div>
                 <span className="font-bold">{money(i.line_total)}</span>
@@ -110,6 +109,8 @@ function OrderDetail() {
             ))}
           </ul>
         </section>
+        <ReturnSection orderId={o.id} status={o.status} items={o.order_items}
+          deliveredAt={o.order_status_history.filter((h) => h.status === "delivered").map((h) => h.created_at).sort().at(-1) ?? null} />
       </div>
       <aside className="h-fit space-y-3 rounded-3xl bg-card p-4 text-sm shadow-card">
         <p><span className="text-muted-foreground">{t("delivery_address")}: </span>{addressLine(addr)}</p>
@@ -121,7 +122,6 @@ function OrderDetail() {
           {Number(o.discount) > 0 && <div className="flex justify-between text-success"><span>{t("discount")}</span><span>- {money(o.discount)}</span></div>}
           <div className="flex justify-between text-base font-extrabold"><span>{t("total")}</span><span>{money(o.total)}</span></div>
         </div>
-        <Button className="w-full gap-1" onClick={async () => { const n = await reorder(o.id, cart); if (n) cart.setDrawerOpen(true); }}><RotateCcw className="h-4 w-4" />{t("reorder")}</Button>
         {o.status === "pending" && <Button variant="outline" className="w-full text-destructive" onClick={cancel}>{t("cancel_order")}</Button>}
       </aside>
     </div>

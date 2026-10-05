@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { useSettings } from "@/lib/store-settings";
 import { deliveryFeeFor } from "@/lib/format";
+import { sizeLabel } from "@/lib/fashion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMoney } from "./use-money";
@@ -29,14 +30,14 @@ export function CartLines({ editableNotes = true, onNavigate }: { editableNotes?
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="line-clamp-2 text-sm font-semibold">{tx(i, "name")}</p>
-                {(i.variant_ar || i.variant_en) && <p className="text-xs text-muted-foreground">{tx(i, "variant")}</p>}
+                <VariantLine size={i.size} colorName={tx(i, "color")} hex={i.color_hex} fallback={tx(i, "variant")} />
               </div>
               <button aria-label={t("remove")} onClick={() => cart.remove(i.key)} className="text-muted-foreground hover:text-destructive">
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <div className="w-36"><QtyStepper size="sm" qty={i.quantity} step={i.step} min={i.minQty} unit={i.unit} onChange={(q) => cart.setQty(i.key, q)} /></div>
+              <div className="w-36"><QtyStepper size="sm" qty={i.quantity} max={i.maxQty} onChange={(q) => cart.setQty(i.key, q)} /></div>
               <span className="font-bold">{money(i.price * i.quantity)}</span>
             </div>
             {editableNotes && (
@@ -76,4 +77,16 @@ export function CartTotals({ discount = 0 }: { discount?: number }) {
 
 function Row({ label, value, className }: { label: string; value: string; className?: string }) {
   return <div className={`flex justify-between ${className ?? ""}`}><span className="text-muted-foreground">{label}</span><span className="font-semibold">{value}</span></div>;
+}
+
+/** "M · ● Black" line for cart / order items. */
+export function VariantLine({ size, colorName, hex, fallback }: { size?: string | null; colorName?: string; hex?: string | null; fallback?: string }) {
+  const { t, lang } = useI18n();
+  if (!size && !colorName) return fallback ? <p className="text-xs text-muted-foreground">{fallback}</p> : null;
+  return (
+    <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      {size && <span>{t("size")}: <b className="text-foreground">{sizeLabel(size, lang)}</b></span>}
+      {colorName && <span className="flex items-center gap-1">{hex && <span className="inline-block h-3 w-3 rounded-full border" style={{ background: hex }} />}{colorName}</span>}
+    </p>
+  );
 }

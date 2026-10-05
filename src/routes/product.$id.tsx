@@ -7,7 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
-import { effectivePrice, snapQty, unitLabel } from "@/lib/format";
+import { effectivePrice } from "@/lib/format";
+import { findVariant, GENDERS, LOW_STOCK, SEASONS, sizeLabel, sortSizes, type SizeType } from "@/lib/fashion";
+import { SizeGuide } from "@/components/store/SizeGuide";
 import { PRODUCT_FIELDS, type Product } from "@/lib/queries";
 import { useMoney } from "@/components/store/use-money";
 import { ProductCard, ProductImage } from "@/components/store/ProductCard";
@@ -24,9 +26,9 @@ export const Route = createFileRoute("/product/$id")({
   head: () => ({
     meta: [
       { title: "تفاصيل المنتج · Product" },
-      { name: "description", content: "تفاصيل المنتج والسعر والتقييمات. Product details, price and reviews." },
+      { name: "description", content: "المقاسات والألوان والسعر والتقييمات. Sizes, colors, price and reviews." },
       { property: "og:title", content: "تفاصيل المنتج · Product" },
-      { property: "og:description", content: "Product details, price and reviews." },
+      { property: "og:description", content: "Sizes, colors, price and reviews." }, { property: "og:type", content: "product" }, { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ProductPage,
@@ -40,13 +42,14 @@ function ProductPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [img, setImg] = useState(0);
-  const [variantId, setVariantId] = useState<string | null>(null);
-  const [qty, setQty] = useState<number | null>(null);
+  const [size, setSize] = useState<string | null>(null);
+  const [color, setColor] = useState<string | null>(null);
+  const [qty, setQty] = useState(1);
 
   const q = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select(`${PRODUCT_FIELDS}, product_variants(*)`).eq("id", id).maybeSingle();
+      const { data, error } = await supabase.from("products").select(`*, product_variants(*), categories(size_type)`).eq("id", id).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -80,19 +83,34 @@ function ProductPage() {
   if (!p) return <EmptyState title={t("no_products")} />;
 
   const variants = (p.product_variants ?? []).filter((v) => v.is_active).sort((a, b) => a.sort_order - b.sort_order);
-  const variant = variants.find((v) => v.id === (variantId ?? variants[0]?.id)) ?? null;
-  const pricing = variant ? { current: Number(variant.price), was: variant.old_price ? Number(variant.old_price) : null, pct: 0, flashActive: false } : effectivePrice(p);
-  if (variant && pricing.was) pricing.pct = Math.round(((pricing.was - pricing.current) / pricing.was) * 100);
-  const stock = Number(variant ? variant.stock : p.stock);
-  const step = Number(p.step), min = Number(p.min_qty);
-  const curQty = qty ?? Math.max(min, step);
+  const sizeType = (p.size_type ?? (p.categories as { size_type?: string } | null)?.size_type ?? "none") as SizeType;
+  const sizes = sortSizes(Array.from(new Set(variants.map((v) => v.size).filter(Boolean) as string[])));
+  const colors = Array.from(new Map(variants.filter((v) => v.color_en).map((v) => [v.color_en!, v])).values());
+  const pickedColor = color ?? (colors.length === 1 ? colors[0].color_en : colors.find((c) => variants.some((v) => v.color_en === c.color_en && v.stock > 0))?.color_en ?? null);
+  const pickedSize = size ?? (sizes.length === 0 ? null : sizes.length === 1 ? sizes[0] : null);
+  const needSize = sizes.length > 0, needColor = colors.length > 0;
+  const variant = variants.length ? findVariant(variants, needSize ? pickedSize : null, needColor ? pickedColor : null) : null;
+  const sizeStock = (s: string) => variants.filter((v) => v.size === s && (!needColor || v.color_en === pickedColor)).reduce((n, v) => n + v.stock, 0);
+  const colorStock = (c: string) => variants.filter((v) => v.color_en === c).reduce((n, v) => n + v.stock, 0);
+  const base = effectivePrice(p);
+  const pricing = variant?.price != null
+    ? { current: Number(variant.price), was: variant.old_price ? Number(variant.old_price) : base.was, pct: 0, flashActive: false }
+    : base;
+  if (variant?.price != null && pricing.was) pricing.pct = Math.round(((pricing.was - pricing.current) / pricing.was) * 100);
+  const stock = variants.length ? (variant ? variant.stock : needColor && pickedColor && !needSize ? colorStock(pickedColor) : Number(p.stock)) : Number(p.stock);
+  const ready = !variants.length || !!variant;
+  const curQty = Math.min(qty, Math.max(1, stock));
   const images = p.images?.length ? p.images : [null];
   const name = tx(p, "name");
+  const g = GENDERS.find((x) => x.value === p.gender), se = SEASONS.find((x) => x.value === p.season);
+  const isPerfume = !!(p.top_notes || p.middle_notes || p.base_notes || p.volume_ml || p.concentration);
 
   const add = () => {
+    if (!ready) return toast.error(t("select_size_color"));
     cart.add({
       productId: p.id, variantId: variant?.id ?? null, name_ar: p.name_ar, name_en: p.name_en,
-      variant_ar: variant?.name_ar, variant_en: variant?.name_en, image: p.images?.[0], unit: p.unit, step, minQty: min, price: pricing.current,
+      variant_ar: variant?.name_ar, variant_en: variant?.name_en, size: variant?.size, color_ar: variant?.color_ar, color_en: variant?.color_en, color_hex: variant?.color_hex,
+      image: p.images?.[0], maxQty: stock, price: pricing.current,
     }, curQty);
     toast.success(t("added_to_cart"), { action: { label: t("view_cart"), onClick: () => cart.setDrawerOpen(true) } });
   };
@@ -135,33 +153,86 @@ function ProductPage() {
           )}
           <div className="flex flex-wrap items-baseline gap-3">
             <span className="text-3xl font-extrabold text-primary">{money(pricing.current)}</span>
-            <span className="text-muted-foreground">/ {unitLabel(p.unit, lang)}</span>
             {pricing.was && <span className="text-lg text-muted-foreground line-through">{money(pricing.was)}</span>}
           </div>
           {pricing.flashActive && p.flash_ends_at && (
             <div className="flex items-center gap-2 text-sm font-semibold text-deal">{t("flash_deals")} · {t("ends_in")} <Countdown to={p.flash_ends_at} /></div>
           )}
-          <p className={cn("text-sm font-semibold", stock <= 0 ? "text-destructive" : stock < 10 ? "text-brand-secondary-foreground" : "text-success")}>
-            {stock <= 0 ? t("out_of_stock") : stock < 10 ? t("low_stock") : t("in_stock")}
-          </p>
-
-          {variants.length > 0 && (
+          {needColor && (
             <div>
-              <p className="mb-2 text-sm font-semibold">{t("options")}</p>
+              <p className="mb-2 text-sm font-semibold">{t("color")}: <span className="font-normal text-muted-foreground">{lang === "ar" ? colors.find((c) => c.color_en === pickedColor)?.color_ar : pickedColor}</span></p>
               <div className="flex flex-wrap gap-2">
-                {variants.map((v) => (
-                  <button key={v.id} onClick={() => setVariantId(v.id)} className={cn("rounded-xl border px-4 py-2 text-sm font-semibold", v.id === variant?.id ? "border-primary bg-primary-soft text-primary" : "bg-card")}>
-                    {tx(v, "name")}
-                  </button>
-                ))}
+                {colors.map((c) => {
+                  const out = colorStock(c.color_en!) <= 0;
+                  return (
+                    <button key={c.color_en} type="button" title={tx(c, "color")} aria-label={tx(c, "color")} onClick={() => { setColor(c.color_en); setQty(1); }}
+                      className={cn("relative h-9 w-9 rounded-full border-2 p-0.5", c.color_en === pickedColor ? "border-primary" : "border-transparent", out && "opacity-40")}>
+                      <span className="block h-full w-full rounded-full border" style={{ background: c.color_hex ?? undefined }} />
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
+          {needSize && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-semibold">{t("size")}</p>
+                <SizeGuide type={sizeType} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {sizes.map((s) => {
+                  const out = sizeStock(s) <= 0;
+                  return (
+                    <button key={s} type="button" disabled={out} onClick={() => { setSize(s); setQty(1); }}
+                      className={cn("min-w-12 rounded-xl border px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:line-through",
+                        s === pickedSize ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-primary")}>
+                      {sizeLabel(s, lang)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <p className={cn("text-sm font-semibold", stock <= 0 ? "text-destructive" : stock <= LOW_STOCK ? "text-deal" : "text-success")}>
+            {!ready && needSize && !pickedSize ? t("select_size_color") : stock <= 0 ? t("out_of_stock") : stock <= LOW_STOCK ? t("only_left").replace("{n}", String(stock)) : t("in_stock")}
+          </p>
+
           {stock > 0 && (
             <div className="flex gap-3">
-              <div className="w-44"><QtyStepper qty={curQty} step={step} min={min} unit={p.unit} max={stock} onChange={(n) => setQty(snapQty(n, step, min))} /></div>
-              <Button size="lg" className="h-11 flex-1 font-bold" onClick={add}>{t("add_to_cart")} · {money(pricing.current * curQty)}</Button>
+              <div className="w-36"><QtyStepper qty={curQty} max={stock} allowRemove={false} onChange={(n) => setQty(Math.max(1, n))} /></div>
+              <Button size="lg" className="h-11 flex-1 font-bold" onClick={add} disabled={!ready}>{t("add_to_cart")} · {money(pricing.current * curQty)}</Button>
+            </div>
+          )}
+
+          {(g || se || p.material_ar || p.sku || tx(p, "care")) && (
+            <div className="rounded-2xl bg-secondary p-3 text-sm">
+              <h2 className="mb-2 font-bold">{t("details")}</h2>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+                {p.brand && <><dt className="text-muted-foreground">{t("brand")}</dt><dd>{p.brand}</dd></>}
+                {tx(p, "material") && <><dt className="text-muted-foreground">{t("material")}</dt><dd>{tx(p, "material")}</dd></>}
+                {g && <><dt className="text-muted-foreground">{t("gender")}</dt><dd>{g[lang]}</dd></>}
+                {se && <><dt className="text-muted-foreground">{t("season")}</dt><dd>{se[lang]}</dd></>}
+                {tx(p, "care") && <><dt className="text-muted-foreground">{t("care")}</dt><dd>{tx(p, "care")}</dd></>}
+                {(variant?.sku ?? p.sku) && <><dt className="text-muted-foreground">SKU</dt><dd dir="ltr" className="text-start">{variant?.sku ?? p.sku}</dd></>}
+              </dl>
+            </div>
+          )}
+
+          {isPerfume && (
+            <div className="rounded-2xl border border-brand-secondary/50 p-3 text-sm">
+              <h2 className="mb-2 font-bold">{t("fragrance")}</h2>
+              <div className="mb-3 flex flex-wrap gap-2">
+                {p.volume_ml && <span className="rounded-full bg-secondary px-3 py-1 font-semibold">{t("volume")}: {p.volume_ml} {lang === "ar" ? "مل" : "ml"}</span>}
+                {p.concentration && <span className="rounded-full bg-secondary px-3 py-1 font-semibold">{t("concentration")}: {p.concentration}</span>}
+              </div>
+              <dl className="space-y-1">
+                {p.top_notes && <div><dt className="inline font-semibold">{t("top_notes")}: </dt><dd className="inline text-muted-foreground">{p.top_notes}</dd></div>}
+                {p.middle_notes && <div><dt className="inline font-semibold">{t("middle_notes")}: </dt><dd className="inline text-muted-foreground">{p.middle_notes}</dd></div>}
+                {p.base_notes && <div><dt className="inline font-semibold">{t("base_notes")}: </dt><dd className="inline text-muted-foreground">{p.base_notes}</dd></div>}
+              </dl>
             </div>
           )}
 
