@@ -16,6 +16,7 @@ import { ProductImage } from "@/components/store/ProductCard";
 import { Button } from "@/components/ui/button";
 import { useLatestLocation } from "@/lib/drivers";
 import { LiveMap } from "@/components/store/LiveMap";
+import { useSettings } from "@/lib/store-settings";
 
 function LiveTracking({ orderId }: { orderId: string }) {
   const { lang } = useI18n();
@@ -73,6 +74,7 @@ function OrderDetail() {
   const { t, tx, lang } = useI18n();
   const money = useMoney();
   const q = useOrder(id);
+  const { features } = useSettings();
   if (q.isLoading) return <RowSkeleton n={4} />;
   if (q.error) return <ErrorState onRetry={() => q.refetch()} />;
   const o = q.data;
@@ -92,7 +94,7 @@ function OrderDetail() {
           </div>
           <OrderTimeline status={o.status} history={o.order_status_history} />
         </section>
-        {o.status === "out_for_delivery" && <LiveTracking orderId={o.id} />}
+        {features.delivery_tracking && o.status === "out_for_delivery" && o.driver_id && <LiveTracking orderId={o.id} />}
         <section className="rounded-3xl bg-card p-4 shadow-card">
           <ul className="divide-y">
             {o.order_items.map((i) => (
