@@ -71,6 +71,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_logs: {
+        Row: {
+          client_hash: string
+          created_at: string
+          id: string
+          message_count: number
+          status: string
+        }
+        Insert: {
+          client_hash: string
+          created_at?: string
+          id?: string
+          message_count?: number
+          status?: string
+        }
+        Update: {
+          client_hash?: string
+          created_at?: string
+          id?: string
+          message_count?: number
+          status?: string
+        }
+        Relationships: []
+      }
       banners: {
         Row: {
           created_at: string
@@ -942,6 +966,10 @@ export type Database = {
       admin_add_driver: { Args: { _email: string }; Returns: string }
       admin_remove_driver: { Args: { _user_id: string }; Returns: undefined }
       admin_stats: { Args: never; Returns: Json }
+      ai_rate_check: {
+        Args: { _client_hash: string; _message_count: number }
+        Returns: boolean
+      }
       cancel_my_order: { Args: { _order_id: string }; Returns: undefined }
       claim_first_admin: { Args: never; Returns: boolean }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
