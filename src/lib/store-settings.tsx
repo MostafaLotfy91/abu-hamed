@@ -10,6 +10,7 @@ export type FeatureFlags = {
   ai_analytics?: boolean;
   online_payment?: boolean;
   loyalty?: boolean;
+  whatsapp_button?: boolean;
 };
 
 export const settingsQuery = {

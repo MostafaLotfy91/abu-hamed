@@ -29,6 +29,8 @@
   --color-primary-soft: var(--primary-soft);
   --color-brand-secondary: var(--brand-secondary);
   --color-brand-secondary-foreground: var(--brand-secondary-foreground);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-foreground: var(--whatsapp-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -67,6 +69,8 @@
   --primary-foreground: oklch(0.99 0 0);
   --brand-secondary: oklch(0.8 0.16 75);
   --brand-secondary-foreground: oklch(0.22 0.03 60);
+  --whatsapp: #25d366;
+  --whatsapp-foreground: #ffffff;
   --primary-soft: color-mix(in oklch, var(--primary) 12%, white);
   --background: oklch(0.982 0.004 120);
   --foreground: oklch(0.2 0.02 160);

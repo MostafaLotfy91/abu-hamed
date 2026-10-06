@@ -848,6 +848,36 @@ export type Database = {
           },
         ]
       }
+      social_links: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          platform: string
+          sort_order: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          platform: string
+          sort_order?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          platform?: string
+          sort_order?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       store_settings: {
         Row: {
           contact_phone: string | null
@@ -872,7 +902,16 @@ export type Database = {
           tagline_ar: string | null
           tagline_en: string | null
           updated_at: string
+          whatsapp_enabled: boolean
+          whatsapp_message_general_ar: string | null
+          whatsapp_message_general_en: string | null
+          whatsapp_message_order_ar: string | null
+          whatsapp_message_order_en: string | null
+          whatsapp_message_product_ar: string | null
+          whatsapp_message_product_en: string | null
           whatsapp_number: string | null
+          whatsapp_reply_hours_text_ar: string | null
+          whatsapp_reply_hours_text_en: string | null
           working_hours: Json
         }
         Insert: {
@@ -898,7 +937,16 @@ export type Database = {
           tagline_ar?: string | null
           tagline_en?: string | null
           updated_at?: string
+          whatsapp_enabled?: boolean
+          whatsapp_message_general_ar?: string | null
+          whatsapp_message_general_en?: string | null
+          whatsapp_message_order_ar?: string | null
+          whatsapp_message_order_en?: string | null
+          whatsapp_message_product_ar?: string | null
+          whatsapp_message_product_en?: string | null
           whatsapp_number?: string | null
+          whatsapp_reply_hours_text_ar?: string | null
+          whatsapp_reply_hours_text_en?: string | null
           working_hours?: Json
         }
         Update: {
@@ -924,7 +972,16 @@ export type Database = {
           tagline_ar?: string | null
           tagline_en?: string | null
           updated_at?: string
+          whatsapp_enabled?: boolean
+          whatsapp_message_general_ar?: string | null
+          whatsapp_message_general_en?: string | null
+          whatsapp_message_order_ar?: string | null
+          whatsapp_message_order_en?: string | null
+          whatsapp_message_product_ar?: string | null
+          whatsapp_message_product_en?: string | null
           whatsapp_number?: string | null
+          whatsapp_reply_hours_text_ar?: string | null
+          whatsapp_reply_hours_text_en?: string | null
           working_hours?: Json
         }
         Relationships: []

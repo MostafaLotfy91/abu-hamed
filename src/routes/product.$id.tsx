@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { usePublishWaContext } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/product/$id")({
   head: () => ({
@@ -55,6 +56,8 @@ function ProductPage() {
     },
   });
   const p = q.data;
+  const waColor = (() => { const v = p?.product_variants?.find((x) => x.color_en === color); return v ? tx(v, "color") : color; })();
+  usePublishWaContext(p ? { kind: "product", name: tx(p, "name"), size, color: waColor } : null);
   const related = useQuery({
     queryKey: ["related", p?.category_id, id],
     enabled: !!p?.category_id,

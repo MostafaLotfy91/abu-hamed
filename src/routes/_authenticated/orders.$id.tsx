@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { WhatsAppOrderButton } from "@/components/store/WhatsAppButton";
+import { usePublishWaContext } from "@/lib/whatsapp";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -66,6 +68,7 @@ export function useOrder(id: string) {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [id, qc]);
+  usePublishWaContext(q.data ? { kind: "order", orderNumber: q.data.order_number } : null);
   return q;
 }
 
@@ -93,6 +96,7 @@ function OrderDetail() {
             <div className="flex items-center gap-2"><span className="flex items-center gap-1 text-xs text-success"><span className="h-2 w-2 animate-pulse rounded-full bg-success" />{t("live")}</span><StatusBadge status={o.status} /></div>
           </div>
           <OrderTimeline status={o.status} history={o.order_status_history} />
+          <div className="mt-3"><WhatsAppOrderButton orderNumber={o.order_number} /></div>
         </section>
         {features.delivery_tracking && o.status === "out_for_delivery" && o.driver_id && <LiveTracking orderId={o.id} />}
         <section className="rounded-3xl bg-card p-4 shadow-card">

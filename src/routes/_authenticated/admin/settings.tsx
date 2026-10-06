@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { ContactSocialSettings } from "@/components/admin/ContactSocialSettings";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({ component: Page });
 
-const FLAGS = ["delivery_tracking", "online_payment", "loyalty", "ai_assistant", "ai_analytics"] as const;
+const FLAGS = ["delivery_tracking", "whatsapp_button", "online_payment", "loyalty", "ai_assistant", "ai_analytics"] as const;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return <section className="rounded-2xl bg-card p-4 shadow-card"><h2 className="mb-3 font-bold">{title}</h2><div className="grid gap-3 sm:grid-cols-2">{children}</div></section>;
@@ -67,11 +68,9 @@ function Page() {
         <div><Label>Closes</Label><Input type="time" value={hours.close ?? ""} onChange={(e) => set("working_hours", { ...hours, close: e.target.value })} /></div>
       </Section>
       <Section title="التواصل / Contact">
-        {txt("contact_phone", "Phone")}{txt("whatsapp_number", "WhatsApp")}{txt("email", "Email")}
-        {["facebook", "instagram", "tiktok", "x"].map((k) => (
-          <div key={k}><Label className="capitalize">{k}</Label><Input dir="ltr" value={social[k] ?? ""} onChange={(e) => set("social_links", { ...social, [k]: e.target.value })} /></div>
-        ))}
+        {txt("contact_phone", "Phone")}{txt("email", "Email")}
       </Section>
+      <ContactSocialSettings s={s} set={set} />
       <Section title="المزايا / Feature flags">
         {FLAGS.map((f) => (
           <div key={f} className="flex items-center justify-between rounded-xl border p-3"><span className="text-sm font-semibold">{f}</span><Switch checked={!!features[f]} onCheckedChange={async (v) => {
