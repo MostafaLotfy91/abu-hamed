@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // the session. Warn the user once so they can fix their clock.
       if (event === "TOKEN_REFRESHED" && s?.expires_at && s.expires_at * 1000 - Date.now() < 5 * 60_000 && !clockWarned) {
         clockWarned = true;
-        toast.error("تاريخ أو ساعة جهازك غير مضبوطة، وهذا يسبب تسجيل خروجك. اضبط الوقت تلقائياً ثم أعد تسجيل الدخول. · Your device clock is wrong, which logs you out. Set date/time to automatic and sign in again.", { duration: 20000 });
+        toast.error("تاريخ أو ساعة جهازك غير مضبوطة، وهذا يسبب تسجيل خروجك. اضبط الوقت تلقائياً ثم أعد تسجيل الدخول. · Your device clock is wrong, which logs you out. Set date/time to automatic and sign in again.", { duration: 20000, closeButton: true });
       }
       // Only update state when the signed-in user actually changes; token refreshes
       // also emit SIGNED_IN and reacting to them caused a refresh loop.
