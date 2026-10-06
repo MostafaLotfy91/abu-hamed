@@ -71,6 +71,24 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_insights_cache: {
+        Row: {
+          created_at: string
+          kind: string
+          payload: Json
+        }
+        Insert: {
+          created_at?: string
+          kind: string
+          payload: Json
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       ai_usage_logs: {
         Row: {
           client_hash: string
@@ -964,6 +982,7 @@ export type Database = {
     }
     Functions: {
       admin_add_driver: { Args: { _email: string }; Returns: string }
+      admin_insight: { Args: { _name: string; _params?: Json }; Returns: Json }
       admin_remove_driver: { Args: { _user_id: string }; Returns: undefined }
       admin_stats: { Args: never; Returns: Json }
       ai_rate_check: {
