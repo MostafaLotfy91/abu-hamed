@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.ai_rate_check(text, int) FROM anon, authenticated;

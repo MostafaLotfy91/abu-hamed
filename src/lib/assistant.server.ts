@@ -3,37 +3,50 @@ import { streamText, tool, isStepCount, type ModelMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { effectivePrice } from "./format";
+import type { AssistantEvent, AssistantProduct } from "./assistant-types";
+
+export type { AssistantProduct };
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 const MODEL = "openai/gpt-6-astra";
 const RUN_HEADER = "X-Lovable-AIG-Run-ID";
-
-import type { AssistantProduct } from "./assistant-types";
-export type { AssistantProduct };
+const MAX_HISTORY = 12;
+const MAX_CHARS = 1000;
 
 const bodySchema = z.object({
-  messages: z
-    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(2000) }))
-    .min(1)
-    .max(30),
+  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1) })).min(1).max(60),
 });
 
-const COLS = "id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,stock,images,product_variants(id)";
+const COLS =
+  "id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,stock,images,gender,season,size_type,category_id,product_variants(id,size,color_ar,color_en,color_hex,price,stock,is_active)";
 
 function toProduct(r: any): AssistantProduct {
+  const base = effectivePrice(r).current;
+  const all = (r.product_variants ?? []).filter((v: any) => v.is_active);
+  const variants = all
+    .filter((v: any) => Number(v.stock) > 0)
+    .map((v: any) => ({ id: v.id, size: v.size, color_ar: v.color_ar, color_en: v.color_en, color_hex: v.color_hex, price: v.price != null ? Number(v.price) : base, stock: Number(v.stock) }));
+  const has_variants = all.length > 0;
   return {
-    id: r.id,
-    name_ar: r.name_ar,
-    name_en: r.name_en,
-    price: effectivePrice(r).current,
-    has_variants: (r.product_variants?.length ?? 0) > 0,
-    image: r.images?.[0] ?? null,
-    in_stock: Number(r.stock) > 0,
+    id: r.id, name_ar: r.name_ar, name_en: r.name_en, price: base, image: r.images?.[0] ?? null,
+    has_variants, variants, size_type: r.size_type ?? null, stock: Number(r.stock),
+    in_stock: has_variants ? variants.length > 0 : Number(r.stock) > 0,
   };
 }
 
 const json = (status: number, data: unknown) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
+
+async function clientHash(request: Request) {
+  const ip = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const salt = process.env["SUPABASE_URL"] ?? "";
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}|${ip}`));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+const clean = (s: string) => s.replace(/[%,()*]/g, " ").trim().slice(0, 60);
+
+const SIZE_GUIDE = `دليل المقاسات (سم): ملابس كبار حسب محيط الصدر: S 88–94، M 95–101، L 102–108، XL 109–115، XXL 116–122، XXXL 123–129. تقريب بالوزن (للمعلومة فقط): أقل من 60كجم S، 60–70 M، 70–80 L، 80–90 XL، 90–100 XXL، أكثر من 100 XXXL. الأحذية 36–46 (طول القدم تقريباً 22.5سم للمقاس 36 ويزيد 0.65سم لكل مقاس). الأطفال بالسن/الطول: 3-4y 98–104، 4-5y 104–110، 5-6y 110–116، 6-7y 116–122، 7-8y 122–128، 8-10y 128–140، 10-12y 140–152، 12-14y 152–164.`;
 
 export async function handleAssistant(request: Request): Promise<Response> {
   const apiKey = process.env["LOVABLE_API_KEY"];
@@ -47,58 +60,124 @@ export async function handleAssistant(request: Request): Promise<Response> {
   } catch {
     return json(400, { error: "bad_request" });
   }
+  // Cap history and length before anything reaches the model.
+  const messages = body.messages.slice(-MAX_HISTORY).map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }));
 
   const db = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: settings } = await db.from("store_settings").select("features,name_ar,currency_symbol_ar").limit(1).maybeSingle();
-  if (!(settings as any)?.features?.ai_assistant) return json(403, { error: "disabled" });
+  const { data: settings } = await db
+    .from("store_settings")
+    .select("features,name_ar,name_en,currency_symbol_ar,whatsapp_number,contact_phone")
+    .limit(1)
+    .maybeSingle();
+  const s = settings as any;
+  if (!s?.features?.ai_assistant) return json(403, { error: "disabled" });
 
-  // Every product the model saw, so suggestions can only reference real rows.
+  // Rate limit + anonymous usage log (server-only function).
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: allowed, error } = await (supabaseAdmin as any).rpc("ai_rate_check", {
+      _client_hash: await clientHash(request),
+      _message_count: messages.length,
+    });
+    if (error) console.error("ai_rate_check", error.message);
+    else if (allowed === false) return json(429, { error: "rate_limited" });
+  } catch (e: any) {
+    console.error("rate check unavailable", e?.message);
+  }
+
   const seen = new Map<string, AssistantProduct>();
   const suggested = new Map<string, AssistantProduct>();
 
   const tools = {
     search_products: tool({
-      description: "Search the store catalog. Use short Arabic or English keywords (one item type per call, e.g. 'قميص', 'عباية', 'كوتشي').",
-      inputSchema: z.object({ query: z.string().min(1).max(60) }),
-      execute: async ({ query }) => {
-        const q = query.replace(/[%,()]/g, " ").trim();
-        const { data } = await db
-          .from("products")
-          .select(COLS)
-          .eq("is_active", true)
-          .or(`name_ar.ilike.%${q}%,name_en.ilike.%${q}%,brand.ilike.%${q}%,description_ar.ilike.%${q}%`)
-          .limit(8);
-        const list = (data ?? []).map(toProduct);
+      description:
+        "Search the store catalog. All filters optional. Use one item type per call (e.g. keywords 'قميص', 'بنطلون', 'جزمة', 'عطر'). Returns only in-stock sizes/colors.",
+      inputSchema: z.object({
+        keywords: z.string().optional().describe("Short Arabic or English keyword"),
+        category: z.string().optional().describe("Department/category name keyword"),
+        gender: z.enum(["men", "women", "kids", "unisex"]).optional(),
+        size: z.string().optional().describe("e.g. L, 42, 6-7y"),
+        color: z.string().optional().describe("Color name in Arabic or English"),
+        min_price: z.number().optional(),
+        max_price: z.number().optional(),
+        season: z.enum(["summer", "winter", "all"]).optional(),
+      }),
+      execute: async (f) => {
+        let q = db.from("products").select(COLS).eq("is_active", true);
+        if (f.keywords && clean(f.keywords)) {
+          const k = clean(f.keywords);
+          q = q.or(`name_ar.ilike.%${k}%,name_en.ilike.%${k}%,brand.ilike.%${k}%,description_ar.ilike.%${k}%`);
+        }
+        if (f.category && clean(f.category)) {
+          const c = clean(f.category);
+          const { data: cats } = await db.from("categories").select("id,parent_id").or(`name_ar.ilike.%${c}%,name_en.ilike.%${c}%`);
+          const ids = new Set((cats ?? []).map((x: any) => x.id));
+          if (ids.size) {
+            const { data: kids } = await db.from("categories").select("id").in("parent_id", [...ids]);
+            (kids ?? []).forEach((x: any) => ids.add(x.id));
+            q = q.in("category_id", [...ids]);
+          }
+        }
+        if (f.gender) q = q.in("gender", [f.gender, "unisex"]);
+        if (f.season && f.season !== "all") q = q.in("season", [f.season, "all"]);
+        const { data } = await q.limit(40);
+        const color = f.color?.trim().toLowerCase();
+        const size = f.size?.trim().toLowerCase();
+        let list = (data ?? []).map(toProduct).filter((p) => p.in_stock);
+        if (size || color) {
+          list = list
+            .map((p) => {
+              if (!p.has_variants) return size ? null : p;
+              const v = p.variants.filter(
+                (x) =>
+                  (!size || x.size?.toLowerCase() === size) &&
+                  (!color || x.color_ar?.toLowerCase().includes(color) || x.color_en?.toLowerCase().includes(color)),
+              );
+              return v.length ? { ...p, variants: v } : null;
+            })
+            .filter(Boolean) as AssistantProduct[];
+        }
+        if (f.min_price != null) list = list.filter((p) => p.price >= f.min_price!);
+        if (f.max_price != null) list = list.filter((p) => p.price <= f.max_price!);
+        list = list.slice(0, 8);
         list.forEach((p) => seen.set(p.id, p));
-        return list.map((p) => ({ id: p.id, name: p.name_ar, price: p.price, needs_size_choice: p.has_variants, in_stock: p.in_stock }));
+        return list.map((p) => ({
+          id: p.id,
+          name: p.name_ar,
+          price: p.price,
+          sizes_in_stock: [...new Set(p.variants.map((v) => v.size).filter(Boolean))],
+          colors_in_stock: [...new Set(p.variants.map((v) => v.color_ar).filter(Boolean))],
+        }));
       },
     }),
     suggest_items: tool({
-      description: "Show product cards to the user with an add-to-cart button. Only use ids returned by search_products.",
-      inputSchema: z.object({
-        items: z.array(z.object({ product_id: z.string(), quantity: z.number().int().positive() })).min(1).max(20),
-      }),
-      execute: async ({ items }) => {
+      description: "Show product cards (with add-to-cart) to the customer. Only use ids returned by search_products.",
+      inputSchema: z.object({ product_ids: z.array(z.string()) }),
+      execute: async ({ product_ids }) => {
         const rejected: string[] = [];
-        for (const it of items) {
-          const p = seen.get(it.product_id);
-          if (!p) { rejected.push(it.product_id); continue; }
-          suggested.set(p.id, { ...p, suggested_qty: Math.max(1, Math.round(it.quantity)) });
+        for (const id of product_ids.slice(0, 12)) {
+          const p = seen.get(id);
+          if (p) suggested.set(id, p);
+          else rejected.push(id);
         }
-        return { shown: items.length - rejected.length, rejected_unknown_ids: rejected };
+        return { shown: suggested.size, rejected_unknown_ids: rejected };
       },
     }),
   };
 
-  const currency = (settings as any)?.currency_symbol_ar ?? "";
-  const instructions = `أنت مساعد تسوق لمتجر "${(settings as any)?.name_ar ?? "المتجر"}". رد دائماً بالعربية (عامية مصرية بسيطة ومهذبة) وباختصار.
-قواعد صارمة:
-- لا تذكر أي منتج أو سعر إلا إذا رجع من أداة search_products. ممنوع اختراع منتجات أو أسعار أو عروض.
-- لو المستخدم طلب حاجة (مثلاً لبس عيد لطفل 5 سنين) فكّر في المكونات، وابحث عن كل صنف بكلمة قصيرة، ثم استدعِ suggest_items بالمنتجات المناسبة والكميات (الكميات أعداد صحيحة؛ المنتجات اللي needs_size_choice=true العميل هيختار مقاسها ولونها من صفحة المنتج).
-- لو صنف مش موجود في المتجر قول بوضوح إنه غير متوفر.
-- تجنب المنتجات غير المتوفرة (in_stock=false) أو نبّه عليها.
-- العملة: ${currency}. الأسعار تقريبية والسعر النهائي يُحسب عند الدفع.
-- اذكر في ردك قائمة مختصرة بالأصناف والأسعار، وقول للمستخدم إنه يقدر يضيفها للسلة من الكروت تحت.`;
+  const contact = s?.whatsapp_number || s?.contact_phone;
+  const instructions = `أنت ستايلست ومساعد تسوق ودود لمتجر "${s?.name_ar ?? "المتجر"}" (${s?.name_en ?? ""}).
+- رد بنفس لغة العميل؛ الافتراضي العربية بلهجة مصرية بسيطة ومهذبة، وباختصار.
+- لا تذكر أي منتج أو سعر أو مقاس أو لون أو توفر إلا لو رجع من search_products. ممنوع الاختراع. لو مفيش حاجة مناسبة قول بصراحة.
+- رشّح المقاسات والألوان المتوفرة فقط.
+- احترم الميزانية اللي العميل ذكرها (استخدم max_price).
+- تقدر تبني أطقم كاملة (مثلاً طقم فرح: قميص + بنطلون + جزمة + إكسسوار؛ جلابية وشبشب للعيد): ابحث عن كل قطعة لوحدها ثم استدعِ suggest_items بكل المنتجات المختارة مرة واحدة.
+- تقدر تقترح هدايا (عطور، إكسسوارات).
+- مساعدة المقاس: اسأل عن الطول والوزن أو المقاس المعتاد، ثم اقترح مقاس من الدليل ده، وفكّر العميل دايماً يراجع "دليل المقاسات" في صفحة المنتج.
+${SIZE_GUIDE}
+- لا تتعامل مع الدفع أو بيانات شخصية أو تعديل/إلغاء طلبات. لأسئلة الطلبات والمرتجعات وجّه العميل لصفحة "طلباتي"${contact ? ` أو واتساب المتجر ${contact}` : ""}.
+- العملة: ${s?.currency_symbol_ar ?? ""}. السعر النهائي يُحسب عند الدفع.
+- بعد suggest_items قول للعميل إنه يقدر يختار المقاس واللون ويضيف للسلة من الكروت تحت.`;
 
   let runId = request.headers.get(RUN_HEADER) ?? undefined;
   const provider = createOpenAI({
@@ -114,32 +193,44 @@ export async function handleAssistant(request: Request): Promise<Response> {
     },
   });
 
-  try {
-    const result = streamText({
-      model: provider.responses(MODEL),
-      instructions,
-      messages: body.messages as ModelMessage[],
-      tools,
-      stopWhen: isStepCount(10),
-      abortSignal: request.signal,
-      providerOptions: {
-        openai: {
-          store: false,
-          forceReasoning: true,
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          include: ["reasoning.encrypted_content"],
-        },
+  const result = streamText({
+    model: provider.responses(MODEL),
+    instructions,
+    messages: messages as ModelMessage[],
+    tools,
+    stopWhen: isStepCount(12),
+    abortSignal: request.signal,
+    providerOptions: {
+      openai: {
+        store: false,
+        forceReasoning: true,
+        reasoningEffort: "low",
+        reasoningSummary: "auto",
+        include: ["reasoning.encrypted_content"],
       },
-    });
-    const text = await result.text;
-    const headers: Record<string, string> = { "content-type": "application/json" };
-    if (runId) headers[RUN_HEADER] = runId;
-    return new Response(JSON.stringify({ text, products: [...suggested.values()] }), { headers });
-  } catch (e: any) {
-    if (request.signal.aborted) return json(499, { error: "aborted" });
-    const status = Number(e?.statusCode ?? e?.lastError?.statusCode) || 500;
-    console.error("assistant error", status, e?.message);
-    return json(status === 402 || status === 429 || status === 403 ? status : 500, { error: "ai_failed" });
-  }
+    },
+  });
+
+  const enc = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (e: AssistantEvent) => controller.enqueue(enc.encode(JSON.stringify(e) + "\n"));
+      try {
+        for await (const part of result.fullStream) {
+          if (part.type === "text-delta") send({ type: "text", delta: part.text });
+          else if (part.type === "error") throw part.error;
+        }
+        send({ type: "products", items: [...suggested.values()] });
+      } catch (e: any) {
+        if (!request.signal.aborted) {
+          const status = Number(e?.statusCode ?? e?.lastError?.statusCode) || 500;
+          console.error("assistant error", status, e?.message);
+          send({ type: "error", status: [402, 403, 429].includes(status) ? status : 500 });
+        }
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(stream, { headers: { "content-type": "application/x-ndjson", "cache-control": "no-store" } });
 }
