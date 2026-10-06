@@ -38,7 +38,7 @@ export function ProductCard({ p }: { p: Product }) {
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl bg-card p-2 shadow-card transition hover:-translate-y-0.5">
       <Link to="/product/$id" params={{ id: p.id }} className="relative block">
-        <ProductImage src={p.images?.[0]} alt={name} className="aspect-square w-full rounded-xl" />
+        <ProductImage src={(p as any).thumbnails?.[0] ?? p.images?.[0]} alt={name} className="aspect-square w-full rounded-xl" />
         {pct > 0 && (
           <span className="absolute start-2 top-2 rounded-full bg-deal px-2 py-0.5 text-xs font-bold text-deal-foreground">-{pct}%</span>
         )}

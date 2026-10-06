@@ -6,7 +6,7 @@ export type Category = Tables<"categories">;
 export type Banner = Tables<"banners">;
 
 export const PRODUCT_FIELDS =
-  "id,category_id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,stock,size_type,gender,season,images,rating_avg,rating_count,sold_count,created_at,is_active,is_featured,description_ar,description_en,sku,updated_at,product_variants(id)";
+  "id,category_id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,stock,size_type,gender,season,images,rating_avg,rating_count,sold_count,created_at,is_active,is_featured,description_ar,description_en,sku,updated_at,thumbnails,product_variants(id)";
 
 export async function fetchCategories() {
   const { data, error } = await supabase.from("categories").select("*").order("sort_order");
