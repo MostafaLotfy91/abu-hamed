@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { BarChart3, Sparkles, Bike, FolderTree, Image, Package, ReceiptText, Settings, Store, Ticket, Undo2 } from "lucide-react";
+import { BarChart3, FileSpreadsheet, Sparkles, Bike, FolderTree, Image, Package, ReceiptText, Settings, Store, Ticket, Undo2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/store-settings";
@@ -20,6 +20,7 @@ const LINKS = [
   { to: "/admin/returns", icon: Undo2, ar: "الاسترجاع", en: "Returns" },
   { to: "/admin/drivers", icon: Bike, ar: "المندوبين", en: "Drivers" },
   { to: "/admin/products", icon: Package, ar: "المنتجات", en: "Products" },
+  { to: "/admin/import", icon: FileSpreadsheet, ar: "استيراد Excel", en: "Excel import", adminOnly: true },
   { to: "/admin/categories", icon: FolderTree, ar: "الأقسام", en: "Categories" },
   { to: "/admin/banners", icon: Image, ar: "البانرات", en: "Banners" },
   { to: "/admin/coupons", icon: Ticket, ar: "الكوبونات", en: "Coupons" },
@@ -43,7 +44,7 @@ function AdminLayout() {
       <aside className="no-print border-b bg-card md:sticky md:top-0 md:h-screen md:w-60 md:border-e md:border-b-0">
         <div className="flex items-center justify-between p-4"><StoreLogo /><Button size="sm" variant="ghost" onClick={toggle}>{t("language")}</Button></div>
         <nav className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-visible">
-          {LINKS.filter((l) => !("adminFlag" in l) || (isAdmin && features[l.adminFlag])).map((l) => (
+          {LINKS.filter((l) => ("adminOnly" in l ? isAdmin : true) && (!("adminFlag" in l) || (isAdmin && features[l.adminFlag]))).map((l) => (
             <Link key={l.to} to={l.to} activeOptions={{ exact: "exact" in l }} className="flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-accent" activeProps={{ className: "bg-primary text-primary-foreground hover:bg-primary" }}>
               <l.icon className="h-4 w-4" />{lang === "ar" ? l.ar : l.en}
             </Link>
