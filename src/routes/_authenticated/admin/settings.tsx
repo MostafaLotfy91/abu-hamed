@@ -74,7 +74,14 @@ function Page() {
       </Section>
       <Section title="المزايا / Feature flags">
         {FLAGS.map((f) => (
-          <div key={f} className="flex items-center justify-between rounded-xl border p-3"><span className="text-sm font-semibold">{f}</span><Switch checked={!!features[f]} onCheckedChange={(v) => set("features", { ...features, [f]: v })} /></div>
+          <div key={f} className="flex items-center justify-between rounded-xl border p-3"><span className="text-sm font-semibold">{f}</span><Switch checked={!!features[f]} onCheckedChange={async (v) => {
+            const next = { ...features, [f]: v };
+            set("features", next);
+            const { error } = await supabase.from("store_settings").update({ features: next }).eq("id", 1);
+            if (error) return toast.error(error.message);
+            toast.success("✓");
+            qc.invalidateQueries({ queryKey: settingsQuery.queryKey });
+          }} /></div>
         ))}
       </Section>
     </div>
