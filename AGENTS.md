@@ -25,3 +25,4 @@
 - Size scale comes from products.size_type, falling back to categories.size_type; scales live in src/lib/fashion.ts so storefront, admin and filters share one source.
 - Returns/exchanges go through the request_return RPC (validates delivered status + store_settings.return_window_days); customers only read their own return_requests, staff update them.
 - Seed/demo catalogue lives in migrations so each new client backend replays it.
+- AI analytics: /api/admin-insights server route (not Edge Functions, per stack rules) verifies the bearer token + has_role(admin) + ai_analytics flag; the model can only call the fixed admin_insight(name, params) DB function (aggregates only, re-checks admin); weekly summary cached in ai_insights_cache for 7 days; stock alerts/restock/returns tables query admin_insight directly without AI.
