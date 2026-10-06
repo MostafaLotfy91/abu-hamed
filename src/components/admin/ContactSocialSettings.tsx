@@ -87,7 +87,14 @@ function SocialManager() {
     refresh();
   };
   const update = async (id: string, patch: { platform?: string; url?: string; is_active?: boolean }) => {
-    if (patch.url !== undefined && !isSafeHttpsUrl(patch.url)) return toast.error("الرابط يجب أن يبدأ بـ https:// / URL must start with https://");
+    if (patch.url !== undefined) {
+      let u = patch.url.trim();
+      if (u && !/^[a-z]+:\/\//i.test(u)) u = `https://${u}`;
+      u = u.replace(/^http:\/\//i, "https://");
+      if (!isSafeHttpsUrl(u)) return toast.error("رابط غير صحيح / Invalid URL");
+      // Saving a real link turns it on so it shows on the store right away.
+      patch = { ...patch, url: u, is_active: true };
+    }
     if (fail((await supabase.from("social_links").update(patch).eq("id", id)).error)) return;
     toast.success("✓"); refresh();
   };
@@ -103,6 +110,7 @@ function SocialManager() {
   return (
     <div className="space-y-2 border-t pt-4">
       <div className="flex items-center justify-between"><h3 className="font-bold">روابط التواصل / Social links</h3><Button size="sm" variant="outline" onClick={add}><Plus className="h-4 w-4" />إضافة / Add</Button></div>
+      <p className="text-xs text-muted-foreground">اكتب الرابط واضغط Enter — يظهر في المتجر عند تفعيل المفتاح. / Type the link and press Enter; it shows on the store when the switch is on.</p>
       {data.map((l, i) => (
         <div key={l.id} draggable onDragStart={() => setDrag(i)} onDragOver={(e) => e.preventDefault()} onDrop={() => drop(i)}
           className="flex flex-wrap items-center gap-2 rounded-xl border p-2">
@@ -110,7 +118,9 @@ function SocialManager() {
           <select className="h-9 rounded-md border bg-background px-2 text-sm" value={l.platform} onChange={(e) => update(l.id, { platform: e.target.value as Platform })}>
             {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
-          <Input dir="ltr" className="min-w-[180px] flex-1" defaultValue={l.url} onBlur={(e) => e.target.value !== l.url && update(l.id, { url: e.target.value.trim() })} />
+          <Input key={l.url} dir="ltr" className="min-w-[180px] flex-1" defaultValue={l.url}
+            onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+            onBlur={(e) => e.target.value.trim() !== l.url && update(l.id, { url: e.target.value })} />
           <Switch checked={l.is_active} onCheckedChange={(v) => update(l.id, { is_active: v })} />
           <Button size="icon" variant="ghost" onClick={() => remove(l.id)} aria-label="delete"><Trash2 className="h-4 w-4" /></Button>
         </div>
