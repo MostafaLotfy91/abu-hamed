@@ -19,6 +19,7 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
+import { Route as ApiAdminInsightsRouteImport } from './routes/api/admin-insights'
 import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
 import { Route as CategoryIdRouteImport } from './routes/category.$id'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -83,6 +84,11 @@ const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   id: '/driver',
   path: '/driver',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiAdminInsightsRoute = ApiAdminInsightsRouteImport.update({
+  id: '/api/admin-insights',
+  path: '/api/admin-insights',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAssistantRoute = ApiAssistantRouteImport.update({
   id: '/api/assistant',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/api/admin-insights': typeof ApiAdminInsightsRoute
   '/api/assistant': typeof ApiAssistantRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/api/admin-insights': typeof ApiAdminInsightsRoute
   '/api/assistant': typeof ApiAssistantRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
+  '/api/admin-insights': typeof ApiAdminInsightsRoute
   '/api/assistant': typeof ApiAssistantRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/checkout'
     | '/driver'
+    | '/api/admin-insights'
     | '/api/assistant'
     | '/category/$id'
     | '/product/$id'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/checkout'
     | '/driver'
+    | '/api/admin-insights'
     | '/api/assistant'
     | '/category/$id'
     | '/product/$id'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/checkout'
     | '/_authenticated/driver'
+    | '/api/admin-insights'
     | '/api/assistant'
     | '/category/$id'
     | '/product/$id'
@@ -337,6 +349,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
   ProductsRoute: typeof ProductsRoute
+  ApiAdminInsightsRoute: typeof ApiAdminInsightsRoute
   ApiAssistantRoute: typeof ApiAssistantRoute
   CategoryIdRoute: typeof CategoryIdRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/driver'
       preLoaderRoute: typeof AuthenticatedDriverRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/admin-insights': {
+      id: '/api/admin-insights'
+      path: '/api/admin-insights'
+      fullPath: '/api/admin-insights'
+      preLoaderRoute: typeof ApiAdminInsightsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/assistant': {
       id: '/api/assistant'
@@ -582,6 +602,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
   ProductsRoute: ProductsRoute,
+  ApiAdminInsightsRoute: ApiAdminInsightsRoute,
   ApiAssistantRoute: ApiAssistantRoute,
   CategoryIdRoute: CategoryIdRoute,
   ProductIdRoute: ProductIdRoute,
