@@ -351,6 +351,54 @@ export type Database = {
         }
         Relationships: []
       }
+      import_jobs: {
+        Row: {
+          created_at: string
+          created_by: string
+          created_product_ids: string[]
+          error_rows: number
+          file_name: string
+          id: string
+          products_created: number
+          products_updated: number
+          status: string
+          total_rows: number
+          updated_at: string
+          variants_created: number
+          variants_updated: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          created_product_ids?: string[]
+          error_rows?: number
+          file_name: string
+          id?: string
+          products_created?: number
+          products_updated?: number
+          status?: string
+          total_rows?: number
+          updated_at?: string
+          variants_created?: number
+          variants_updated?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          created_product_ids?: string[]
+          error_rows?: number
+          file_name?: string
+          id?: string
+          products_created?: number
+          products_updated?: number
+          status?: string
+          total_rows?: number
+          updated_at?: string
+          variants_created?: number
+          variants_updated?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           color_ar: string | null
@@ -639,6 +687,7 @@ export type Database = {
           sku: string | null
           sold_count: number
           stock: number
+          thumbnails: string[]
           top_notes: string | null
           updated_at: string
           volume_ml: number | null
@@ -674,6 +723,7 @@ export type Database = {
           sku?: string | null
           sold_count?: number
           stock?: number
+          thumbnails?: string[]
           top_notes?: string | null
           updated_at?: string
           volume_ml?: number | null
@@ -709,6 +759,7 @@ export type Database = {
           sku?: string | null
           sold_count?: number
           stock?: number
+          thumbnails?: string[]
           top_notes?: string | null
           updated_at?: string
           volume_ml?: number | null
@@ -1039,9 +1090,18 @@ export type Database = {
     }
     Functions: {
       admin_add_driver: { Args: { _email: string }; Returns: string }
+      admin_finish_import: {
+        Args: { _extra_errors?: number; _job_id: string; _status: string }
+        Returns: undefined
+      }
+      admin_import_batch: {
+        Args: { _create_categories?: boolean; _job_id: string; _rows: Json }
+        Returns: Json
+      }
       admin_insight: { Args: { _name: string; _params?: Json }; Returns: Json }
       admin_remove_driver: { Args: { _user_id: string }; Returns: undefined }
       admin_stats: { Args: never; Returns: Json }
+      admin_undo_import: { Args: { _job_id: string }; Returns: number }
       ai_rate_check: {
         Args: { _client_hash: string; _message_count: number }
         Returns: boolean
