@@ -34,7 +34,7 @@ export function ShoppingAssistant() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [msgs, busy]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
   useEffect(() => { if (open && !busy) inputRef.current?.focus(); }, [open, busy]);
 
   if (!features.ai_assistant) return null;
