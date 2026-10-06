@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { WhatsAppOrderButton } from "@/components/store/WhatsAppButton";
+import { usePublishWaContext } from "@/lib/whatsapp";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -67,6 +68,7 @@ export function useOrder(id: string) {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [id, qc]);
+  usePublishWaContext(q.data ? { kind: "order", orderNumber: q.data.order_number } : null);
   return q;
 }
 

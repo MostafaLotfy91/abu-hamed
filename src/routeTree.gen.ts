@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CategoriesRouteImport } from './routes/categories'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
@@ -59,6 +60,11 @@ const CartRoute = CartRouteImport.update({
 const CategoriesRoute = CategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/contact': typeof ContactRoute
   '/products': typeof ProductsRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/contact': typeof ContactRoute
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/contact': typeof ContactRoute
   '/products': typeof ProductsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cart'
     | '/categories'
+    | '/contact'
     | '/products'
     | '/admin'
     | '/account'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cart'
     | '/categories'
+    | '/contact'
     | '/products'
     | '/account'
     | '/checkout'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cart'
     | '/categories'
+    | '/contact'
     | '/products'
     | '/_authenticated/admin'
     | '/_authenticated/account'
@@ -361,6 +373,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
+  ContactRoute: typeof ContactRoute
   ProductsRoute: typeof ProductsRoute
   ApiAdminInsightsRoute: typeof ApiAdminInsightsRoute
   ApiAssistantRoute: typeof ApiAssistantRoute
@@ -403,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/categories'
       fullPath: '/categories'
       preLoaderRoute: typeof CategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -623,6 +643,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
+  ContactRoute: ContactRoute,
   ProductsRoute: ProductsRoute,
   ApiAdminInsightsRoute: ApiAdminInsightsRoute,
   ApiAssistantRoute: ApiAssistantRoute,
