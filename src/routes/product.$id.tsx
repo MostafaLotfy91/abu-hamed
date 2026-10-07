@@ -9,6 +9,8 @@ import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { effectivePrice } from "@/lib/format";
 import { findVariant, GENDERS, LOW_STOCK, SEASONS, sizeLabel, sortSizes, type SizeType } from "@/lib/fashion";
+import { ProductGallery } from "@/components/store/ProductGallery";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SizeGuide } from "@/components/store/SizeGuide";
 import { PRODUCT_FIELDS, type Product } from "@/lib/queries";
 import { useMoney } from "@/components/store/use-money";
@@ -78,7 +80,7 @@ function ProductPage() {
   if (q.isLoading)
     return (
       <div className="grid gap-6 md:grid-cols-2">
-        <Skeleton className="aspect-square rounded-3xl" />
+        <Skeleton className="aspect-[4/5] rounded-md" />
         <div className="space-y-3"><Skeleton className="h-8 w-3/4" /><Skeleton className="h-6 w-1/3" /><Skeleton className="h-24" /><Skeleton className="h-12" /></div>
       </div>
     );
@@ -262,8 +264,8 @@ function ProductPage() {
       {!!related.data?.length && (
         <section>
           <SectionHeader title={t("related")} />
-          <div className="-mx-3 flex gap-3 overflow-x-auto px-3 pb-2 scrollbar-none">
-            {related.data.map((r) => <div key={r.id} className="w-40 shrink-0 md:w-48"><ProductCard p={r} /></div>)}
+          <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-2 scrollbar-none">
+            {related.data.map((r) => <div key={r.id} className="w-40 shrink-0 snap-start md:w-56"><ProductCard p={r} /></div>)}
           </div>
         </section>
       )}
@@ -300,7 +302,7 @@ function Reviews({ productId }: { productId: string }) {
     toast.success(t("saved"));
   };
   return (
-    <section className="rounded-3xl bg-card p-4 shadow-card md:p-6">
+    <section id="reviews" className="scroll-mt-20 border-t pt-8">
       <SectionHeader title={t("reviews")} />
       {user ? (
         <div className="mb-5 space-y-2 rounded-2xl bg-secondary p-3">
