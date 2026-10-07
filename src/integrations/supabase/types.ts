@@ -1107,7 +1107,6 @@ export type Database = {
         Returns: boolean
       }
       cancel_my_order: { Args: { _order_id: string }; Returns: undefined }
-      claim_first_admin: { Args: never; Returns: boolean }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_order_customers: {
         Args: never

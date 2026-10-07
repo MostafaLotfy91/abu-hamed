@@ -45,7 +45,7 @@ function Account() {
 
 function Profile() {
   const { t } = useI18n();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const q = useQuery({ queryKey: ["profile", user?.id], queryFn: async () => (await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle()).data });
@@ -54,20 +54,11 @@ function Profile() {
     const { error } = await supabase.from("profiles").upsert({ id: user!.id, full_name: name.slice(0, 100), phone: phone.slice(0, 30), email: user!.email });
     if (error) toast.error(error.message); else toast.success(t("saved"));
   };
-  const claim = async () => {
-    const { data } = await supabase.rpc("claim_first_admin");
-    if (data) { toast.success("✓"); window.location.href = "/admin"; } else toast.error("Admin already exists");
-  };
   return (
     <div className="space-y-3 rounded-3xl bg-card p-4 shadow-card">
       <div><Label>{t("full_name")}</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
       <div><Label>{t("phone")}</Label><Input dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
       <Button onClick={save}>{t("save")}</Button>
-      {!isAdmin && (
-        <p className="pt-4 text-xs text-muted-foreground">
-          Store owner setting up? <button className="font-semibold text-primary underline" onClick={claim}>Claim admin access</button> (works only once, while no admin exists).
-        </p>
-      )}
     </div>
   );
 }
