@@ -127,36 +127,26 @@ function ProductPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-3">
-          <div className="relative overflow-hidden rounded-3xl bg-card shadow-card">
-            <ProductImage src={images[img]} alt={name} className="aspect-square w-full" />
-            {pricing.pct > 0 && <span className="absolute start-3 top-3 rounded-full bg-deal px-3 py-1 text-sm font-bold text-deal-foreground">-{pricing.pct}%</span>}
-            <button onClick={toggleWish} aria-label={t("wishlist")} className="absolute end-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-card shadow-card">
-              <Heart className={cn("h-5 w-5", wish.data && "fill-deal text-deal")} />
-            </button>
-          </div>
-          {images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto">
-              {images.map((src, i) => (
-                <button key={i} onClick={() => setImg(i)} className={cn("h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2", i === img ? "border-primary" : "border-transparent")}>
-                  <ProductImage src={src} alt="" className="h-full w-full" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="space-y-10 pb-24 md:pb-0">
+      <div className="grid gap-6 md:grid-cols-[1.2fr_1fr] md:gap-10">
+        <ProductGallery images={images} alt={name} overlay={<>
+          {pricing.pct > 0 && <span className="absolute start-3 top-3 rounded-sm bg-deal px-2 py-0.5 text-xs font-bold text-deal-foreground">-{pricing.pct}%</span>}
+          <button onClick={toggleWish} aria-label={t("wishlist")} className="absolute end-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-background/90 shadow-sm">
+            <Heart className={cn("h-5 w-5", wish.data && "fill-deal text-deal")} />
+          </button>
+        </>} />
 
-        <div className="space-y-4">
-          {p.brand && <p className="text-sm font-semibold text-primary">{p.brand}</p>}
-          <h1 className="text-2xl font-extrabold leading-tight md:text-3xl">{name}</h1>
-          {Number(p.rating_count) > 0 && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground"><Star className="h-4 w-4 fill-brand-secondary text-brand-secondary" />{Number(p.rating_avg).toFixed(1)} · {p.rating_count} {t("reviews")}</div>
-          )}
+        <div className="space-y-5 md:sticky md:top-20 md:self-start">
+          <div className="space-y-1">
+            {p.brand && <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{p.brand}</p>}
+            <h1 className="text-xl font-semibold leading-snug md:text-2xl">{name}</h1>
+            {Number(p.rating_count) > 0 && (
+              <a href="#reviews" className="flex items-center gap-1 text-sm text-muted-foreground"><Star className="h-4 w-4 fill-foreground text-foreground" />{Number(p.rating_avg).toFixed(1)} · {p.rating_count} {t("reviews")}</a>
+            )}
+          </div>
           <div className="flex flex-wrap items-baseline gap-3">
-            <span className="text-3xl font-extrabold text-primary">{money(pricing.current)}</span>
-            {pricing.was && <span className="text-lg text-muted-foreground line-through">{money(pricing.was)}</span>}
+            <span className={cn("text-2xl font-bold", pricing.was && "text-deal")}>{money(pricing.current)}</span>
+            {pricing.was && <span className="text-base text-muted-foreground line-through">{money(pricing.was)}</span>}
           </div>
           {pricing.flashActive && p.flash_ends_at && (
             <div className="flex items-center gap-2 text-sm font-semibold text-deal">{t("flash_deals")} · {t("ends_in")} <Countdown to={p.flash_ends_at} /></div>
@@ -168,9 +158,9 @@ function ProductPage() {
                 {colors.map((c) => {
                   const out = colorStock(c.color_en!) <= 0;
                   return (
-                    <button key={c.color_en} type="button" title={tx(c, "color")} aria-label={tx(c, "color")} onClick={() => { setColor(c.color_en); setQty(1); }}
-                      className={cn("relative h-9 w-9 rounded-full border-2 p-0.5", c.color_en === pickedColor ? "border-primary" : "border-transparent", out && "opacity-40")}>
-                      <span className="block h-full w-full rounded-full border" style={{ background: c.color_hex ?? undefined }} />
+                    <button key={c.color_en} type="button" title={tx(c, "color")} aria-label={tx(c, "color")} aria-pressed={c.color_en === pickedColor} onClick={() => { setColor(c.color_en); setQty(1); }}
+                      className={cn("relative h-11 w-11 rounded-full border p-1", c.color_en === pickedColor ? "border-foreground" : "border-border", out && "opacity-40")}>
+                      <span className="block h-full w-full rounded-full border border-border" style={{ background: c.color_hex ?? undefined }} />
                     </button>
                   );
                 })}
@@ -184,13 +174,13 @@ function ProductPage() {
                 <p className="text-sm font-semibold">{t("size")}</p>
                 <SizeGuide type={sizeType} />
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                 {sizes.map((s) => {
                   const out = sizeStock(s) <= 0;
                   return (
-                    <button key={s} type="button" disabled={out} onClick={() => { setSize(s); setQty(1); }}
-                      className={cn("min-w-12 rounded-xl border px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:line-through",
-                        s === pickedSize ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-primary")}>
+                    <button key={s} type="button" disabled={out} aria-pressed={s === pickedSize} onClick={() => { setSize(s); setQty(1); }}
+                      className={cn("h-11 rounded-md border px-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:text-muted-foreground disabled:line-through",
+                        s === pickedSize ? "border-foreground bg-foreground text-background" : "border-border bg-card hover:border-foreground")}>
                       {sizeLabel(s, lang)}
                     </button>
                   );
@@ -199,51 +189,73 @@ function ProductPage() {
             </div>
           )}
 
-          <p className={cn("text-sm font-semibold", !ready ? "text-muted-foreground" : stock <= 0 ? "text-destructive" : stock <= LOW_STOCK ? "text-deal" : "text-success")}>
+          <p className={cn("text-sm font-medium", !ready ? "text-muted-foreground" : stock <= 0 ? "text-destructive" : stock <= LOW_STOCK ? "text-deal" : "text-success")}>
             {!ready && needSize && !pickedSize ? t("select_size_color") : stock <= 0 ? t("out_of_stock") : stock <= LOW_STOCK ? t("only_left").replace("{n}", String(stock)) : t("in_stock")}
           </p>
 
           {stock > 0 && (
-            <div className="flex gap-3">
+            <div className="hidden gap-3 md:flex">
               <div className="w-36"><QtyStepper qty={curQty} max={stock} allowRemove={false} onChange={(n) => setQty(Math.max(1, n))} /></div>
-              <Button size="lg" className="h-11 flex-1 font-bold" onClick={add} disabled={!ready}>{t("add_to_cart")} · {money(pricing.current * curQty)}</Button>
+              <Button size="lg" className="h-12 flex-1 font-semibold" onClick={add} disabled={!ready}>{t("add_to_cart")} · {money(pricing.current * curQty)}</Button>
             </div>
           )}
 
-          {(g || se || p.material_ar || p.sku || tx(p, "care")) && (
-            <div className="rounded-2xl bg-secondary p-3 text-sm">
-              <h2 className="mb-2 font-bold">{t("details")}</h2>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-                {p.brand && <><dt className="text-muted-foreground">{t("brand")}</dt><dd>{p.brand}</dd></>}
-                {tx(p, "material") && <><dt className="text-muted-foreground">{t("material")}</dt><dd>{tx(p, "material")}</dd></>}
-                {g && <><dt className="text-muted-foreground">{t("gender")}</dt><dd>{g[lang]}</dd></>}
-                {se && <><dt className="text-muted-foreground">{t("season")}</dt><dd>{se[lang]}</dd></>}
-                {tx(p, "care") && <><dt className="text-muted-foreground">{t("care")}</dt><dd>{tx(p, "care")}</dd></>}
-                {(variant?.sku ?? p.sku) && <><dt className="text-muted-foreground">SKU</dt><dd dir="ltr" className="text-start">{variant?.sku ?? p.sku}</dd></>}
-              </dl>
-            </div>
-          )}
-
-          {isPerfume && (
-            <div className="rounded-2xl border border-brand-secondary/50 p-3 text-sm">
-              <h2 className="mb-2 font-bold">{t("fragrance")}</h2>
-              <div className="mb-3 flex flex-wrap gap-2">
-                {p.volume_ml && <span className="rounded-full bg-secondary px-3 py-1 font-semibold">{t("volume")}: {p.volume_ml} {lang === "ar" ? "مل" : "ml"}</span>}
-                {p.concentration && <span className="rounded-full bg-secondary px-3 py-1 font-semibold">{t("concentration")}: {p.concentration}</span>}
-              </div>
-              <dl className="space-y-1">
-                {p.top_notes && <div><dt className="inline font-semibold">{t("top_notes")}: </dt><dd className="inline text-muted-foreground">{p.top_notes}</dd></div>}
-                {p.middle_notes && <div><dt className="inline font-semibold">{t("middle_notes")}: </dt><dd className="inline text-muted-foreground">{p.middle_notes}</dd></div>}
-                {p.base_notes && <div><dt className="inline font-semibold">{t("base_notes")}: </dt><dd className="inline text-muted-foreground">{p.base_notes}</dd></div>}
-              </dl>
-            </div>
-          )}
-
-          {tx(p, "description") && (
-            <div><h2 className="mb-1 font-bold">{t("description")}</h2><p className="text-sm leading-7 text-muted-foreground">{tx(p, "description")}</p></div>
-          )}
+          <Accordion type="multiple" defaultValue={["description"]} className="border-t">
+            {tx(p, "description") && (
+              <AccordionItem value="description">
+                <AccordionTrigger className="text-sm font-semibold">{t("description")}</AccordionTrigger>
+                <AccordionContent><p className="text-sm leading-7 text-muted-foreground">{tx(p, "description")}</p></AccordionContent>
+              </AccordionItem>
+            )}
+            {(g || se || p.material_ar || p.sku || tx(p, "care") || p.brand) && (
+              <AccordionItem value="details">
+                <AccordionTrigger className="text-sm font-semibold">{t("details")}</AccordionTrigger>
+                <AccordionContent>
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+                    {p.brand && <><dt className="text-muted-foreground">{t("brand")}</dt><dd>{p.brand}</dd></>}
+                    {tx(p, "material") && <><dt className="text-muted-foreground">{t("material")}</dt><dd>{tx(p, "material")}</dd></>}
+                    {g && <><dt className="text-muted-foreground">{t("gender")}</dt><dd>{g[lang]}</dd></>}
+                    {se && <><dt className="text-muted-foreground">{t("season")}</dt><dd>{se[lang]}</dd></>}
+                    {(variant?.sku ?? p.sku) && <><dt className="text-muted-foreground">SKU</dt><dd dir="ltr" className="text-start">{variant?.sku ?? p.sku}</dd></>}
+                  </dl>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+            {tx(p, "care") && (
+              <AccordionItem value="care">
+                <AccordionTrigger className="text-sm font-semibold">{t("care")}</AccordionTrigger>
+                <AccordionContent><p className="text-sm leading-7 text-muted-foreground">{tx(p, "care")}</p></AccordionContent>
+              </AccordionItem>
+            )}
+            {isPerfume && (
+              <AccordionItem value="fragrance">
+                <AccordionTrigger className="text-sm font-semibold">{t("fragrance")}</AccordionTrigger>
+                <AccordionContent className="space-y-3 text-sm">
+                  <div className="flex flex-wrap gap-2">
+                    {p.volume_ml && <span className="rounded-full border px-3 py-1">{t("volume")}: {p.volume_ml} {lang === "ar" ? "مل" : "ml"}</span>}
+                    {p.concentration && <span className="rounded-full border px-3 py-1">{t("concentration")}: {p.concentration}</span>}
+                  </div>
+                  <dl className="space-y-1">
+                    {p.top_notes && <div><dt className="inline font-semibold">{t("top_notes")}: </dt><dd className="inline text-muted-foreground">{p.top_notes}</dd></div>}
+                    {p.middle_notes && <div><dt className="inline font-semibold">{t("middle_notes")}: </dt><dd className="inline text-muted-foreground">{p.middle_notes}</dd></div>}
+                    {p.base_notes && <div><dt className="inline font-semibold">{t("base_notes")}: </dt><dd className="inline text-muted-foreground">{p.base_notes}</dd></div>}
+                  </dl>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+          </Accordion>
         </div>
       </div>
+
+      {stock > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+          <div className="min-w-0">
+            <p className="truncate text-xs text-muted-foreground">{[pickedSize && sizeLabel(pickedSize, lang), needColor && tx(colors.find((c) => c.color_en === pickedColor) ?? null, "color")].filter(Boolean).join(" · ") || name}</p>
+            <p className="font-bold">{money(pricing.current)}</p>
+          </div>
+          <Button size="lg" className="h-12 flex-1 font-semibold" onClick={add} disabled={!ready}>{ready ? t("add_to_cart") : t("select_size_color")}</Button>
+        </div>
+      )}
 
       <Reviews productId={p.id} />
 
