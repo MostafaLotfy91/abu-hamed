@@ -28,7 +28,7 @@ function Page() {
   if (!s) return <RowSkeleton n={6} />;
   const set = <K extends keyof StoreSettings>(k: K, v: StoreSettings[K]) => setS({ ...s, [k]: v });
   const txt = (k: keyof StoreSettings, label: string, type = "text") => (
-    <div><Label>{label}</Label><Input type={type} step="any" value={(s[k] as string | number | null) ?? ""} onChange={(e) => set(k, (type === "number" ? (e.target.value === "" ? null : Number(e.target.value)) : e.target.value) as never)} /></div>
+    <div><Label htmlFor={`settings-${String(k)}`}>{label}</Label><Input id={`settings-${String(k)}`} type={type} step="any" value={(s[k] as string | number | null) ?? ""} onChange={(e) => set(k, (type === "number" ? (e.target.value === "" ? null : Number(e.target.value)) : e.target.value) as never)} /></div>
   );
   const features = (s.features ?? {}) as Record<string, boolean>;
   const hours = (s.working_hours ?? {}) as Record<string, string>;
@@ -49,13 +49,13 @@ function Page() {
       <Section title="الهوية / Branding">
         {txt("name_ar", "اسم المتجر")}{txt("name_en", "Store name (EN)")}
         {txt("tagline_ar", "الشعار النصي")}{txt("tagline_en", "Tagline (EN)")}
-        <div><Label>Logo</Label><ImageInput value={s.logo_url} onChange={(v) => set("logo_url", v)} folder="branding" /></div>
+        <div><Label>Logo</Label><ImageInput value={s.logo_url} onChange={(v) => set("logo_url", v)} folder="branding" label="Logo" /></div>
         <div className="flex gap-4">
-          <div><Label>Primary</Label><Input type="color" className="h-10 w-20" value={s.primary_color} onChange={(e) => set("primary_color", e.target.value)} /></div>
-          <div><Label>Secondary</Label><Input type="color" className="h-10 w-20" value={s.secondary_color} onChange={(e) => set("secondary_color", e.target.value)} /></div>
+          <div><Label htmlFor="settings-primary_color">Primary</Label><Input id="settings-primary_color" type="color" className="h-10 w-20" value={s.primary_color} onChange={(e) => set("primary_color", e.target.value)} /></div>
+          <div><Label htmlFor="settings-secondary_color">Secondary</Label><Input id="settings-secondary_color" type="color" className="h-10 w-20" value={s.secondary_color} onChange={(e) => set("secondary_color", e.target.value)} /></div>
         </div>
-        <div><Label>Default language</Label>
-          <select className="h-9 w-full rounded-md border bg-background px-2" value={s.default_language} onChange={(e) => set("default_language", e.target.value)}><option value="ar">العربية</option><option value="en">English</option></select>
+        <div><Label htmlFor="settings-default_language">Default language</Label>
+          <select id="settings-default_language" className="h-9 w-full rounded-md border bg-background px-2" value={s.default_language} onChange={(e) => set("default_language", e.target.value)}><option value="ar">العربية</option><option value="en">English</option></select>
         </div>
       </Section>
       <Section title="العملة / Currency">
@@ -63,9 +63,9 @@ function Page() {
       </Section>
       <Section title="التوصيل / Delivery">
         {txt("delivery_fee", "Delivery fee", "number")}{txt("free_delivery_threshold", "Free delivery over", "number")}{txt("min_order_amount", "Minimum order", "number")}{txt("return_window_days", "مدة الاسترجاع (أيام) / Return window (days)", "number")}
-        <div><Label>Delivery slots (comma separated)</Label><Input dir="ltr" defaultValue={slots} onBlur={(e) => set("delivery_slots", e.target.value.split(",").map((x) => x.trim()).filter(Boolean))} /></div>
-        <div><Label>Opens</Label><Input type="time" value={hours.open ?? ""} onChange={(e) => set("working_hours", { ...hours, open: e.target.value })} /></div>
-        <div><Label>Closes</Label><Input type="time" value={hours.close ?? ""} onChange={(e) => set("working_hours", { ...hours, close: e.target.value })} /></div>
+        <div><Label htmlFor="settings-delivery_slots">Delivery slots (comma separated)</Label><Input id="settings-delivery_slots" dir="ltr" defaultValue={slots} onBlur={(e) => set("delivery_slots", e.target.value.split(",").map((x) => x.trim()).filter(Boolean))} /></div>
+        <div><Label htmlFor="settings-opens">Opens</Label><Input id="settings-opens" type="time" value={hours.open ?? ""} onChange={(e) => set("working_hours", { ...hours, open: e.target.value })} /></div>
+        <div><Label htmlFor="settings-closes">Closes</Label><Input id="settings-closes" type="time" value={hours.close ?? ""} onChange={(e) => set("working_hours", { ...hours, close: e.target.value })} /></div>
       </Section>
       <Section title="التواصل / Contact">
         {txt("contact_phone", "Phone")}{txt("email", "Email")}

@@ -1,16 +1,16 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures/test";
 import { ACCOUNTS, E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { T, acceptNextDialog, fieldAfterLabel, login, parseWa, pngFile, toast, xlsxFile } from "./fixtures/helpers";
+import { T, acceptNextDialog, login, parseWa, pngFile, toast, xlsxFile } from "./fixtures/helpers";
 import {
   WA, createPendingOrder, findBanner, findCoupon, findProductBySku, getOrder, lastImportJob, readSettings, updateSettings, variantsOf,
 } from "./fixtures/seed";
 
 test.skip(!E2E_READY, SKIP_REASON);
 
-/** CrudPage table row containing text. Its last cell holds [rowActions…, Edit (pencil), Delete (trash)] icon buttons. */
+/** CrudPage table row containing text; its icon buttons are named "تعديل / Edit" and "حذف / Delete". */
 const row = (page: Page, text: string) => page.locator("tbody tr").filter({ hasText: text });
-const rowButtons = (page: Page, text: string) => row(page, text).locator("td").last().getByRole("button");
+const rowButton = (page: Page, text: string, name: "تعديل / Edit" | "حذف / Delete") => row(page, text).getByRole("button", { name });
 
 test.describe("admin", () => {
   test.use({ lang: "ar" });
@@ -31,11 +31,11 @@ test.describe("admin", () => {
     // Create
     await page.getByRole("button", { name: "Add / إضافة" }).click();
     const dialog = page.getByRole("dialog");
-    await fieldAfterLabel(dialog, "الاسم (عربي) *").fill(name);
-    await fieldAfterLabel(dialog, "Name (EN) *").fill(`E2E Admin ${catalog.tag}`);
-    await fieldAfterLabel(dialog, "Category / القسم").selectOption({ label: catalog.category.ar });
-    await fieldAfterLabel(dialog, "SKU").fill(sku);
-    await fieldAfterLabel(dialog, "Price / السعر *").fill("250");
+    await dialog.getByLabel("الاسم (عربي) *", { exact: true }).fill(name);
+    await dialog.getByLabel("Name (EN) *", { exact: true }).fill(`E2E Admin ${catalog.tag}`);
+    await dialog.getByLabel("Category / القسم", { exact: true }).selectOption({ label: catalog.category.ar });
+    await dialog.getByLabel("SKU", { exact: true }).fill(sku);
+    await dialog.getByLabel("Price / السعر *", { exact: true }).fill("250");
     // Image upload: generated PNG -> compressed to WebP in the browser -> store-media bucket.
     await dialog.locator('input[type="file"]').first().setInputFiles(pngFile());
     await expect(dialog.locator('img[src*="store-media"]')).toHaveCount(1, { timeout: 30_000 });
@@ -52,8 +52,8 @@ test.describe("admin", () => {
     // Read + update
     await page.getByPlaceholder("Search / بحث").fill(sku);
     await expect(row(page, name)).toHaveCount(1);
-    await rowButtons(page, name).nth(1).click(); // [variants, edit, delete]
-    await fieldAfterLabel(dialog, "Price / السعر *").fill("275");
+    await rowButton(page, name, "تعديل / Edit").click();
+    await dialog.getByLabel("Price / السعر *", { exact: true }).fill("275");
     await dialog.getByRole("button", { name: "Save / حفظ" }).click();
     await expect(dialog).toBeHidden();
     await expect.poll(async () => Number((await findProductBySku(sku))?.price)).toBe(275);
@@ -64,13 +64,13 @@ test.describe("admin", () => {
     await variants.getByRole("button", { name: "S", exact: true }).click();
     await variants.getByRole("button", { name: "M", exact: true }).click();
     await variants.getByRole("button", { name: "أسود / Black" }).click();
-    await fieldAfterLabel(variants, "Stock / المخزون لكل اختيار").fill("7");
+    await variants.getByLabel("Stock / المخزون لكل اختيار", { exact: true }).fill("7");
     await variants.getByRole("button", { name: "Generate / توليد" }).click();
     await expect(toast(page, "+2")).toBeVisible();
     await expect(variants.locator("tbody tr")).toHaveCount(2);
-    const sRow = variants.locator("tbody tr").filter({ has: page.locator("td:first-child", { hasText: /^S$/ }) });
-    await sRow.locator('input[type="number"]').first().fill("0");
-    await sRow.locator('input[type="number"]').first().press("Tab");
+    const sStock = variants.getByRole("spinbutton", { name: "المخزون / Stock S / Black", exact: true });
+    await sStock.fill("0");
+    await sStock.press("Tab");
     await expect
       .poll(async () => (await variantsOf(created!.id)).map((v) => `${v.size}:${v.color_en}:${v.stock}`).sort().join(","))
       .toBe("M:Black:7,S:Black:0");
@@ -86,7 +86,7 @@ test.describe("admin", () => {
     await page.goto("/admin/products");
     await page.getByPlaceholder("Search / بحث").fill(sku);
     acceptNextDialog(page);
-    await rowButtons(page, name).nth(2).click();
+    await rowButton(page, name, "حذف / Delete").click();
     await expect(row(page, name)).toHaveCount(0);
     await expect.poll(() => findProductBySku(sku)).toBeNull();
   });
@@ -182,16 +182,16 @@ test.describe("admin", () => {
     await login(page, "admin", "/admin/coupons");
     await page.getByRole("button", { name: "Add / إضافة" }).click();
     const dialog = page.getByRole("dialog");
-    await fieldAfterLabel(dialog, "Code *").fill(code);
-    await expect(fieldAfterLabel(dialog, "Type *")).toHaveValue("percent");
-    await fieldAfterLabel(dialog, "Value *").fill("15");
+    await dialog.getByLabel("Code *", { exact: true }).fill(code);
+    await expect(dialog.getByLabel("Type *", { exact: true })).toHaveValue("percent");
+    await dialog.getByLabel("Value *", { exact: true }).fill("15");
     await dialog.getByRole("button", { name: "Save / حفظ" }).click();
     await expect(dialog).toBeHidden();
     await expect(row(page, code)).toHaveCount(1);
     expect(await findCoupon(code)).toMatchObject({ code, discount_type: "percent" });
 
     acceptNextDialog(page);
-    await rowButtons(page, code).nth(1).click(); // [edit, delete]
+    await rowButton(page, code, "حذف / Delete").click();
     await expect(row(page, code)).toHaveCount(0);
     await expect.poll(() => findCoupon(code)).toBeNull();
   });
@@ -204,9 +204,9 @@ test.describe("admin", () => {
     const dialog = page.getByRole("dialog");
     await dialog.locator('input[type="file"]').setInputFiles(pngFile("banner.png"));
     await expect(dialog.locator('img[src*="store-media"]')).toHaveCount(1, { timeout: 30_000 });
-    await fieldAfterLabel(dialog, "العنوان").fill(titleAr);
-    await fieldAfterLabel(dialog, "Title (EN)").fill(titleEn);
-    const link = fieldAfterLabel(dialog, "Link (e.g. /products)");
+    await dialog.getByLabel("العنوان", { exact: true }).fill(titleAr);
+    await dialog.getByLabel("Title (EN)", { exact: true }).fill(titleEn);
+    const link = dialog.getByLabel("Link (e.g. /products)", { exact: true });
 
     await link.fill("javascript:alert(1)");
     await dialog.getByRole("button", { name: "Save / حفظ" }).click();
@@ -230,8 +230,8 @@ test.describe("admin", () => {
     try {
       await login(page, "admin", "/admin/settings");
       await expect(page.getByRole("heading", { name: "إعدادات المتجر / Store settings" })).toBeVisible();
-      await fieldAfterLabel(page, "اسم المتجر").fill(newName);
-      await fieldAfterLabel(page, "Primary").fill("#123456");
+      await page.getByLabel("اسم المتجر", { exact: true }).fill(newName);
+      await page.getByLabel("Primary", { exact: true }).fill("#123456");
       await page.getByRole("button", { name: "Save / حفظ" }).click();
       await expect(toast(page, "✓")).toBeVisible();
 
@@ -247,7 +247,7 @@ test.describe("admin", () => {
     const url = `https://social.example.com/e2e-${catalog.tag}`;
     try {
       await login(page, "admin", "/admin/settings");
-      const wa = fieldAfterLabel(page, "رقم واتساب / WhatsApp number");
+      const wa = page.getByLabel("رقم واتساب / WhatsApp number", { exact: true });
       await wa.fill("123");
       await expect(page.getByText("رقم مصري غير صحيح / Invalid Egyptian number")).toBeVisible();
       await wa.fill("01098765432");
@@ -259,13 +259,13 @@ test.describe("admin", () => {
       // Social links are saved per row.
       await page.getByRole("button", { name: "إضافة / Add" }).click();
       const social = page.locator('div[draggable="true"]').last();
-      const input = social.locator('input[dir="ltr"]');
+      const input = social.getByRole("textbox", { name: /^الرابط \/ Link/ });
       await input.fill("javascript:alert(1)");
       await input.press("Enter");
       await expect(toast(page, "رابط غير صحيح / Invalid URL")).toBeVisible();
       await input.fill(url);
       await input.press("Enter");
-      await expect(social.getByRole("switch")).toBeChecked();
+      await expect(social.getByRole("switch", { name: /^إظهار \/ Visible/ })).toBeChecked();
 
       await page.goto("/");
       await expect(page.locator(`footer a[href="${url}"]`)).toBeVisible();

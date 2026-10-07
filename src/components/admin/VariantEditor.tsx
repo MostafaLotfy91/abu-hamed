@@ -64,24 +64,24 @@ export function VariantEditor({ productId, sku, sizeType }: { productId: string;
       <div className="space-y-3 rounded-2xl bg-secondary p-3">
         <p className="text-sm font-bold">إضافة مجمعة / Bulk add</p>
         {!!sizeSet.length && (
-          <div><Label>المقاسات / Sizes</Label>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {sizeSet.map((s) => <button key={s} type="button" onClick={() => setSizes(toggle(sizes, s))} className={`rounded-lg border px-2 py-1 text-xs font-semibold ${sizes.includes(s) ? "border-primary bg-primary text-primary-foreground" : "bg-card"}`}>{s}</button>)}
+          <div><Label id="variant-sizes-label">المقاسات / Sizes</Label>
+            <div role="group" aria-labelledby="variant-sizes-label" className="mt-1 flex flex-wrap gap-1.5">
+              {sizeSet.map((s) => <button key={s} type="button" aria-pressed={sizes.includes(s)} onClick={() => setSizes(toggle(sizes, s))} className={`rounded-lg border px-2 py-1 text-xs font-semibold ${sizes.includes(s) ? "border-primary bg-primary text-primary-foreground" : "bg-card"}`}>{s}</button>)}
               <button type="button" className="text-xs text-primary underline" onClick={() => setSizes(sizes.length === sizeSet.length ? [] : sizeSet)}>All</button>
             </div>
           </div>
         )}
-        <div><Label>الألوان / Colors</Label>
-          <div className="mt-1 flex flex-wrap gap-1.5">
+        <div><Label id="variant-colors-label">الألوان / Colors</Label>
+          <div role="group" aria-labelledby="variant-colors-label" className="mt-1 flex flex-wrap gap-1.5">
             {COLORS.map((c) => (
-              <button key={c.en} type="button" title={`${c.ar} / ${c.en}`} onClick={() => setColors(toggle(colors, c.en))} className={`h-7 w-7 rounded-full border-2 p-0.5 ${colors.includes(c.en) ? "border-primary" : "border-transparent"}`}>
+              <button key={c.en} type="button" title={`${c.ar} / ${c.en}`} aria-label={`${c.ar} / ${c.en}`} aria-pressed={colors.includes(c.en)} onClick={() => setColors(toggle(colors, c.en))} className={`h-7 w-7 rounded-full border-2 p-0.5 ${colors.includes(c.en) ? "border-primary" : "border-transparent"}`}>
                 <span className="block h-full w-full rounded-full border" style={{ background: c.hex }} />
               </button>
             ))}
           </div>
         </div>
         <div className="flex items-end gap-2">
-          <div><Label>Stock / المخزون لكل اختيار</Label><Input type="number" min={0} className="h-9 w-28" value={stock} onChange={(e) => setStock(Math.max(0, Math.round(Number(e.target.value))))} /></div>
+          <div><Label htmlFor="variant-bulk-stock">Stock / المخزون لكل اختيار</Label><Input id="variant-bulk-stock" type="number" min={0} className="h-9 w-28" value={stock} onChange={(e) => setStock(Math.max(0, Math.round(Number(e.target.value))))} /></div>
           <Button size="sm" onClick={generate} disabled={busy}>Generate / توليد</Button>
         </div>
       </div>
@@ -94,11 +94,11 @@ export function VariantEditor({ productId, sku, sizeType }: { productId: string;
               <tr key={v.id}>
                 <td className="p-2 font-semibold">{v.size ?? "—"}</td>
                 <td><span className="flex items-center gap-1">{v.color_hex && <span className="h-3 w-3 rounded-full border" style={{ background: v.color_hex }} />}{v.color_ar ?? "—"}</span></td>
-                <td><Input dir="ltr" className="h-8 w-36" defaultValue={v.sku ?? ""} onBlur={(e) => e.target.value !== (v.sku ?? "") && update(v.id, { sku: e.target.value || null })} /></td>
-                <td><Input type="number" min={0} className="h-8 w-20" defaultValue={v.stock} onBlur={(e) => Number(e.target.value) !== v.stock && update(v.id, { stock: Math.max(0, Math.round(Number(e.target.value))) })} /></td>
-                <td><Input type="number" step="any" placeholder="—" className="h-8 w-24" defaultValue={v.price ?? ""} onBlur={(e) => update(v.id, { price: e.target.value === "" ? null : Number(e.target.value) })} /></td>
-                <td className="text-center"><Switch checked={v.is_active} onCheckedChange={(c) => update(v.id, { is_active: c })} /></td>
-                <td><Button size="icon" variant="ghost" onClick={() => del(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
+                <td><Input aria-label={`SKU ${[v.size, v.color_en].filter(Boolean).join(" / ")}`} dir="ltr" className="h-8 w-36" defaultValue={v.sku ?? ""} onBlur={(e) => e.target.value !== (v.sku ?? "") && update(v.id, { sku: e.target.value || null })} /></td>
+                <td><Input aria-label={`المخزون / Stock ${[v.size, v.color_en].filter(Boolean).join(" / ")}`} type="number" min={0} className="h-8 w-20" defaultValue={v.stock} onBlur={(e) => Number(e.target.value) !== v.stock && update(v.id, { stock: Math.max(0, Math.round(Number(e.target.value))) })} /></td>
+                <td><Input aria-label={`سعر خاص / Price override ${[v.size, v.color_en].filter(Boolean).join(" / ")}`} type="number" step="any" placeholder="—" className="h-8 w-24" defaultValue={v.price ?? ""} onBlur={(e) => update(v.id, { price: e.target.value === "" ? null : Number(e.target.value) })} /></td>
+                <td className="text-center"><Switch aria-label={`نشط / Active ${[v.size, v.color_en].filter(Boolean).join(" / ")}`} checked={v.is_active} onCheckedChange={(c) => update(v.id, { is_active: c })} /></td>
+                <td><Button size="icon" variant="ghost" aria-label={`حذف / Delete ${[v.size, v.color_en].filter(Boolean).join(" / ")}`} title="حذف / Delete" onClick={() => del(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
               </tr>
             ))}
             {!q.data?.length && <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">لا توجد اختيارات — المنتج يباع بمخزونه العام / No variants</td></tr>}

@@ -26,21 +26,21 @@ export type Field = {
 
 type AnyTable = "categories" | "products" | "banners" | "coupons" | "product_variants" | "branches";
 
-export function ImageInput({ value, onChange, folder }: { value: string | null; onChange: (v: string | null) => void; folder: string }) {
+export function ImageInput({ value, onChange, folder, label }: { value: string | null; onChange: (v: string | null) => void; folder: string; label?: string }) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="flex items-center gap-3">
       {value ? <img src={value} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <div className="h-16 w-16 rounded-lg bg-muted" />}
       <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-3 py-2 text-sm">
         <Upload className="h-4 w-4" />{busy ? "..." : "Upload"}
-        <input type="file" accept={ALLOWED_IMAGE_TYPES.join(",")} hidden onChange={async (e) => {
+        <input type="file" accept={ALLOWED_IMAGE_TYPES.join(",")} hidden aria-label={label ? `${label} — Upload / رفع` : "Upload / رفع"} onChange={async (e) => {
           const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
           setBusy(true);
           try { onChange(await uploadMedia(f, folder)); } catch (err) { toast.error((err as Error).message); }
           setBusy(false);
         }} />
       </label>
-      {value && <Button type="button" size="icon" variant="ghost" onClick={() => onChange(null)}><X className="h-4 w-4" /></Button>}
+      {value && <Button type="button" size="icon" variant="ghost" aria-label="إزالة الصورة / Remove image" title="إزالة الصورة / Remove image" onClick={() => onChange(null)}><X className="h-4 w-4" /></Button>}
     </div>
   );
 }
@@ -150,8 +150,8 @@ export function CrudPage({
                   ))}
                   <td className="whitespace-nowrap p-2 text-end">
                     {rowActions?.(r)}
-                    <Button size="icon" variant="ghost" onClick={() => setEditing({ ...r })}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => del(r.id as string)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button size="icon" variant="ghost" aria-label="تعديل / Edit" title="تعديل / Edit" onClick={() => setEditing({ ...r })}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" aria-label="حذف / Delete" title="حذف / Delete" onClick={() => del(r.id as string)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
@@ -169,27 +169,29 @@ export function CrudPage({
                 const v = editing[f.key];
                 const set = (nv: unknown) => setEditing({ ...editing, [f.key]: nv });
                 const wide = f.type === "textarea" || f.type === "images";
+                const id = `crud-${table}-${f.key}`;
+                const isImage = f.type === "image" || f.type === "images";
                 return (
                   <div key={f.key} className={wide ? "sm:col-span-2" : ""}>
-                    <Label className="mb-1 block">{f.label}{f.required && " *"}</Label>
-                    {f.type === "bool" ? <Switch checked={!!v} onCheckedChange={set} />
-                      : f.type === "textarea" ? <Textarea value={(v as string) ?? ""} onChange={(e) => set(e.target.value)} />
+                    <Label className="mb-1 block" htmlFor={isImage ? undefined : id}>{f.label}{f.required && " *"}</Label>
+                    {f.type === "bool" ? <Switch id={id} checked={!!v} onCheckedChange={set} />
+                      : f.type === "textarea" ? <Textarea id={id} value={(v as string) ?? ""} onChange={(e) => set(e.target.value)} />
                       : f.type === "select" ? (
-                        <select className="h-9 w-full rounded-md border bg-background px-2" value={(v as string) ?? ""} onChange={(e) => set(e.target.value || null)}>
+                        <select id={id} className="h-9 w-full rounded-md border bg-background px-2" value={(v as string) ?? ""} onChange={(e) => set(e.target.value || null)}>
                           <option value="">—</option>{f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>)
-                      : f.type === "image" ? <ImageInput value={(v as string) ?? null} onChange={set} folder={table} />
+                      : f.type === "image" ? <ImageInput value={(v as string) ?? null} onChange={set} folder={table} label={f.label} />
                       : f.type === "images" ? (
                         <div className="flex flex-wrap gap-2">
                           {((v as string[]) ?? []).map((src, i) => (
                             <div key={i} className="relative"><img src={src} alt="" className="h-16 w-16 rounded-lg object-cover" />
-                              <button type="button" className="absolute -end-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground" onClick={() => set((v as string[]).filter((_, j) => j !== i))}><X className="h-3 w-3" /></button></div>
+                              <button type="button" aria-label={`إزالة الصورة ${i + 1} / Remove image ${i + 1}`} className="absolute -end-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground" onClick={() => set((v as string[]).filter((_, j) => j !== i))}><X className="h-3 w-3" /></button></div>
                           ))}
-                          <ImageInput value={null} onChange={(u) => u && set([...((v as string[]) ?? []), u])} folder={table} />
+                          <ImageInput value={null} onChange={(u) => u && set([...((v as string[]) ?? []), u])} folder={table} label={f.label} />
                         </div>)
-                      : f.type === "datetime" ? <Input type="datetime-local" value={toInputDate(v)} onChange={(e) => set(e.target.value)} />
-                      : f.type === "color" ? <Input type="color" value={(v as string) || "#000000"} onChange={(e) => set(e.target.value)} />
-                      : <Input type={f.type === "number" ? "number" : "text"} step="any" value={(v as string | number) ?? ""} onChange={(e) => set(e.target.value)} />}
+                      : f.type === "datetime" ? <Input id={id} type="datetime-local" value={toInputDate(v)} onChange={(e) => set(e.target.value)} />
+                      : f.type === "color" ? <Input id={id} type="color" value={(v as string) || "#000000"} onChange={(e) => set(e.target.value)} />
+                      : <Input id={id} type={f.type === "number" ? "number" : "text"} step="any" value={(v as string | number) ?? ""} onChange={(e) => set(e.target.value)} />}
                   </div>
                 );
               })}

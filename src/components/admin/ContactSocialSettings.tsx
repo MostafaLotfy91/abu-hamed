@@ -34,12 +34,12 @@ export function ContactSocialSettings({ s, set }: Props) {
     <section className="space-y-4 rounded-2xl bg-card p-4 shadow-card">
       <div className="flex items-center justify-between">
         <h2 className="font-bold">التواصل وواتساب / Contact & WhatsApp</h2>
-        <div className="flex items-center gap-2 text-sm"><span>تفعيل / Enabled</span><Switch checked={s.whatsapp_enabled} onCheckedChange={(v) => set("whatsapp_enabled", v)} /></div>
+        <div className="flex items-center gap-2 text-sm"><span id="wa-enabled-label">تفعيل / Enabled</span><Switch aria-labelledby="wa-enabled-label" checked={s.whatsapp_enabled} onCheckedChange={(v) => set("whatsapp_enabled", v)} /></div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <Label>رقم واتساب / WhatsApp number</Label>
-          <Input dir="ltr" placeholder="01xxxxxxxxx" value={phone} onChange={(e) => {
+          <Label htmlFor="settings-whatsapp_number">رقم واتساب / WhatsApp number</Label>
+          <Input id="settings-whatsapp_number" dir="ltr" placeholder="01xxxxxxxxx" value={phone} onChange={(e) => {
             setPhone(e.target.value);
             const n = normalizeEgyptPhone(e.target.value);
             set("whatsapp_number", e.target.value.trim() === "" ? null : n ?? s.whatsapp_number);
@@ -60,8 +60,8 @@ export function ContactSocialSettings({ s, set }: Props) {
             const v = (s[key] as string | null) ?? "";
             return (
               <div key={l}>
-                <Label>{label} ({l.toUpperCase()})</Label>
-                <Textarea dir={l === "ar" ? "rtl" : "ltr"} rows={2} value={v} onChange={(e) => set(key, e.target.value as never)} />
+                <Label htmlFor={`settings-${String(key)}`}>{label} ({l.toUpperCase()})</Label>
+                <Textarea id={`settings-${String(key)}`} dir={l === "ar" ? "rtl" : "ltr"} rows={2} value={v} onChange={(e) => set(key, e.target.value as never)} />
                 <p className="mt-1 rounded-lg bg-muted p-2 text-xs" dir={l === "ar" ? "rtl" : "ltr"}>{fillTemplate(v, { ...sample, store_name: l === "ar" ? s.name_ar : s.name_en })}</p>
               </div>
             );
@@ -116,14 +116,14 @@ function SocialManager() {
         <div key={l.id} draggable onDragStart={() => setDrag(i)} onDragOver={(e) => e.preventDefault()} onDrop={() => drop(i)}
           className="flex flex-wrap items-center gap-2 rounded-xl border p-2">
           <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" />
-          <select className="h-9 rounded-md border bg-background px-2 text-sm" value={l.platform} onChange={(e) => update(l.id, { platform: e.target.value as Platform })}>
+          <select aria-label={`المنصة / Platform ${i + 1}`} className="h-9 rounded-md border bg-background px-2 text-sm" value={l.platform} onChange={(e) => update(l.id, { platform: e.target.value as Platform })}>
             {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
-          <Input key={l.url} dir="ltr" className="min-w-[180px] flex-1" defaultValue={l.url}
+          <Input key={l.url} aria-label={`الرابط / Link ${i + 1}`} dir="ltr" className="min-w-[180px] flex-1" defaultValue={l.url}
             onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             onBlur={(e) => e.target.value.trim() !== l.url && update(l.id, { url: e.target.value })} />
-          <Switch checked={l.is_active} onCheckedChange={(v) => update(l.id, { is_active: v })} />
-          <Button size="icon" variant="ghost" onClick={() => remove(l.id)} aria-label="delete"><Trash2 className="h-4 w-4" /></Button>
+          <Switch aria-label={`إظهار / Visible ${i + 1}`} checked={l.is_active} onCheckedChange={(v) => update(l.id, { is_active: v })} />
+          <Button size="icon" variant="ghost" onClick={() => remove(l.id)} aria-label={`حذف / Delete ${i + 1}`} title="حذف / Delete"><Trash2 className="h-4 w-4" /></Button>
         </div>
       ))}
     </div>
