@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadMedia } from "@/lib/queries";
+import { ALLOWED_IMAGE_TYPES } from "@/lib/image-compress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,8 +33,8 @@ export function ImageInput({ value, onChange, folder }: { value: string | null; 
       {value ? <img src={value} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <div className="h-16 w-16 rounded-lg bg-muted" />}
       <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-3 py-2 text-sm">
         <Upload className="h-4 w-4" />{busy ? "..." : "Upload"}
-        <input type="file" accept="image/*" hidden onChange={async (e) => {
-          const f = e.target.files?.[0]; if (!f) return;
+        <input type="file" accept={ALLOWED_IMAGE_TYPES.join(",")} hidden onChange={async (e) => {
+          const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
           setBusy(true);
           try { onChange(await uploadMedia(f, folder)); } catch (err) { toast.error((err as Error).message); }
           setBusy(false);

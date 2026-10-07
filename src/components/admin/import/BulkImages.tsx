@@ -26,9 +26,7 @@ async function upload(blob: Blob, path: string) {
   const s = supabase.storage.from("store-media");
   const { error } = await s.upload(path, blob, { contentType: "image/webp", upsert: true });
   if (error) throw error;
-  const { data, error: e2 } = await s.createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-  if (e2) throw e2;
-  return data.signedUrl;
+  return s.getPublicUrl(path).data.publicUrl;
 }
 
 export function BulkImages() {

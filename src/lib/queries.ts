@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { assertImageFile, toWebp } from "@/lib/image-compress";
 
 export type Product = Tables<"products"> & { product_variants?: { id: string; size?: string | null; color_hex?: string | null; color_ar?: string | null; color_en?: string | null; stock?: number; is_active?: boolean; price?: number | null }[] };
 export type Category = Tables<"categories">;
@@ -106,15 +107,15 @@ export async function fetchBrands() {
   return Array.from(new Set((data ?? []).map((r) => r.brand as string))).sort();
 }
 
-/** Uploads to the store-media bucket and returns a long-lived URL. */
+/** Validates, resizes to WebP and uploads to the public store-media bucket; returns its public URL. */
 export async function uploadMedia(file: File, folder: string) {
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `${folder}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("store-media").upload(path, file, { upsert: false, contentType: file.type });
+  assertImageFile(file);
+  const webp = await toWebp(file, folder === "banners" ? 2400 : 1600);
+  const path = `${folder}/${crypto.randomUUID()}.webp`;
+  const bucket = supabase.storage.from("store-media");
+  const { error } = await bucket.upload(path, webp, { upsert: false, contentType: "image/webp" });
   if (error) throw error;
-  const { data, error: e2 } = await supabase.storage.from("store-media").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-  if (e2) throw e2;
-  return data.signedUrl;
+  return bucket.getPublicUrl(path).data.publicUrl;
 }
 
 export function rpcErrorMessage(msg: string, lang: "ar" | "en") {
