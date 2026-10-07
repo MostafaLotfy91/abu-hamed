@@ -11,4 +11,4 @@
 - [x] B. Listing filters (sheet/sidebar, chips, count, sort) + product page (gallery swipe/zoom, sticky add bar, accordions, related)
 - [x] C. Cart drawer + one-page checkout polish
 - [x] D. Admin (collapsible sidebar, tables with search/filters/pagination/bulk, stat cards)
-- [ ] E. Polish + performance (empty states, image placeholders, WebP)
+- [x] E. Polish + performance (empty states, image placeholders, WebP)
