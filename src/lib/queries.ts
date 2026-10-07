@@ -60,9 +60,10 @@ export type ListFilters = {
 
 export const PAGE_SIZE = 20;
 
-export async function fetchProductPage(f: ListFilters, page: number) {
+/** Builds the filtered products query; `head` returns only the exact count. */
+function filteredProducts(f: ListFilters, head = false) {
   const variantJoin = f.size || f.color ? ",vf:product_variants!inner(size,color_en,stock)" : "";
-  let q = supabase.from("products").select(PRODUCT_FIELDS + variantJoin).eq("is_active", true);
+  let q = supabase.from("products").select(PRODUCT_FIELDS + variantJoin, head ? { count: "exact", head: true } : undefined).eq("is_active", true);
   if (f.size) q = q.eq("vf.size", f.size);
   if (f.color) q = q.eq("vf.color_en", f.color);
   if (variantJoin && f.inStock) q = q.gt("vf.stock", 0);
@@ -77,6 +78,11 @@ export async function fetchProductPage(f: ListFilters, page: number) {
   if (f.brand) q = q.eq("brand", f.brand);
   if (f.discounted) q = q.or(`old_price.not.is.null,flash_ends_at.gt.${new Date().toISOString()}`);
   if (f.inStock) q = q.gt("stock", 0);
+  return q;
+}
+
+export async function fetchProductPage(f: ListFilters, page: number) {
+  let q = filteredProducts(f);
   switch (f.sort) {
     case "price_asc": q = q.order("price", { ascending: true }); break;
     case "price_desc": q = q.order("price", { ascending: false }); break;
@@ -87,6 +93,12 @@ export async function fetchProductPage(f: ListFilters, page: number) {
   const { data, error } = await q.range(from, from + PAGE_SIZE - 1);
   if (error) throw error;
   return data as unknown as Product[];
+}
+
+export async function fetchProductCount(f: ListFilters) {
+  const { count, error } = await filteredProducts(f, true);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function fetchBrands() {
