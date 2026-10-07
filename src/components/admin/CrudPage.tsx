@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RowSkeleton, EmptyState, ErrorState } from "@/components/store/states";
+import { BulkBar, Check, Pager, paginate, Segmented } from "./TableKit";
 
 export type Field = {
   key: string;
@@ -69,8 +70,24 @@ export function CrudPage({
       return data as Record<string, unknown>[];
     },
   });
-  const rows = (q.data ?? []).filter((r) => !search || JSON.stringify(r).toLowerCase().includes(search.toLowerCase()));
+  const hasActive = fields.some((f) => f.key === "is_active");
+  const [activeF, setActiveF] = useState<"all" | "on" | "off">("all");
+  const [page, setPage] = useState(0);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const rows = (q.data ?? [])
+    .filter((r) => !search || JSON.stringify(r).toLowerCase().includes(search.toLowerCase()))
+    .filter((r) => activeF === "all" || !!r.is_active === (activeF === "on"));
+  const { pageRows, pages, page: cur } = paginate(rows, page);
   const listFields = fields.filter((f) => f.list);
+  const allOnPage = pageRows.length > 0 && pageRows.every((r) => sel.has(r.id as string));
+  const toggle = (id: string, on: boolean) => setSel((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n; });
+  const bulk = async (kind: "on" | "off" | "delete") => {
+    const ids = [...sel];
+    if (kind === "delete" && !confirm(`Delete ${ids.length}? / حذف ${ids.length}؟`)) return;
+    const res = kind === "delete" ? await supabase.from(table).delete().in("id", ids) : await supabase.from(table).update({ is_active: kind === "on" } as never).in("id", ids);
+    if (res.error) return toast.error(res.error.message);
+    toast.success(`✓ ${ids.length}`); setSel(new Set()); q.refetch();
+  };
 
   const save = async () => {
     if (!editing) return;
@@ -101,20 +118,26 @@ export function CrudPage({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-extrabold">{title}</h1>
-        <div className="flex flex-wrap gap-2">
-          <Input placeholder="Search / بحث" value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 w-48" />
+        <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          {hasActive && <Segmented value={activeF} onChange={(v) => { setActiveF(v); setPage(0); }} options={[{ value: "all", label: "الكل" }, { value: "on", label: "نشط" }, { value: "off", label: "مخفي" }]} />}
+          <Input placeholder="Search / بحث" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="h-9 w-48" />
           {headerExtra}
           <Button size="sm" onClick={() => setEditing(blank())}><Plus className="h-4 w-4" />Add / إضافة</Button>
         </div>
       </div>
+      <BulkBar count={sel.size} onClear={() => setSel(new Set())}>
+        {hasActive && <><Button size="sm" variant="outline" onClick={() => bulk("on")}>إظهار / Activate</Button><Button size="sm" variant="outline" onClick={() => bulk("off")}>إخفاء / Hide</Button></>}
+        <Button size="sm" variant="outline" className="text-destructive" onClick={() => bulk("delete")}><Trash2 className="h-4 w-4" />حذف</Button>
+      </BulkBar>
       {q.isLoading ? <RowSkeleton n={5} /> : q.error ? <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} /> : !rows.length ? <EmptyState title="—" /> : (
-        <div className="overflow-x-auto rounded-2xl bg-card shadow-card">
+        <div className="space-y-2"><div className="overflow-x-auto rounded-md border bg-card">
           <table className="w-full text-sm">
-            <thead className="bg-secondary text-start text-xs text-muted-foreground"><tr>{listFields.map((f) => <th key={f.key} className="p-3 text-start font-semibold">{f.label}</th>)}<th /></tr></thead>
+            <thead className="sticky top-0 bg-muted/60 text-start text-xs text-muted-foreground"><tr><th className="w-10 p-3"><Check label="select all" checked={allOnPage} onChange={(v) => setSel((s) => { const n = new Set(s); pageRows.forEach((r) => (v ? n.add(r.id as string) : n.delete(r.id as string))); return n; })} /></th>{listFields.map((f) => <th key={f.key} className="p-3 text-start font-semibold">{f.label}</th>)}<th /></tr></thead>
             <tbody className="divide-y">
-              {rows.map((r) => (
-                <tr key={r.id as string}>
+              {pageRows.map((r) => (
+                <tr key={r.id as string} className={sel.has(r.id as string) ? "bg-muted/40" : "hover:bg-muted/30"}>
+                  <td className="p-3"><Check label="select" checked={sel.has(r.id as string)} onChange={(v) => toggle(r.id as string, v)} /></td>
                   {listFields.map((f) => (
                     <td key={f.key} className="p-3">
                       {renderCell?.(f, r) ?? (f.type === "image" ? (r[f.key] ? <img src={r[f.key] as string} alt="" className="h-10 w-10 rounded object-cover" /> : null)
@@ -133,7 +156,7 @@ export function CrudPage({
               ))}
             </tbody>
           </table>
-        </div>
+        </div><Pager page={cur} pages={pages} total={rows.length} onPage={setPage} /></div>
       )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
