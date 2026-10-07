@@ -24,8 +24,8 @@ const LINKS = [
   { to: "/admin/products", icon: Package, ar: "المنتجات", en: "Products" },
   { to: "/admin/import", icon: FileSpreadsheet, ar: "استيراد Excel", en: "Excel import", adminOnly: true },
   { to: "/admin/categories", icon: FolderTree, ar: "الأقسام", en: "Categories" },
-  { to: "/admin/banners", icon: Image, ar: "البانرات", en: "Banners" },
-  { to: "/admin/coupons", icon: Ticket, ar: "الكوبونات", en: "Coupons" },
+  { to: "/admin/banners", icon: Image, ar: "البانرات", en: "Banners", adminOnly: true },
+  { to: "/admin/coupons", icon: Ticket, ar: "الكوبونات", en: "Coupons", adminOnly: true },
   { to: "/admin/settings", icon: Settings, ar: "إعدادات المتجر", en: "Store settings" },
 ] as const;
 
