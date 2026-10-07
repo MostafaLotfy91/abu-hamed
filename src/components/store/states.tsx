@@ -37,18 +37,17 @@ export function ErrorState({ onRetry, message }: { onRetry?: () => void; message
 
 export function ProductCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl bg-card p-2 shadow-card">
-      <Skeleton className="aspect-square w-full rounded-xl" />
-      <Skeleton className="mt-3 h-4 w-3/4" />
-      <Skeleton className="mt-2 h-4 w-1/2" />
-      <Skeleton className="mt-3 h-9 w-full rounded-xl" />
+    <div>
+      <Skeleton className="aspect-[4/5] w-full rounded-md" />
+      <Skeleton className="mt-2 h-4 w-3/4" />
+      <Skeleton className="mt-2 h-4 w-1/3" />
     </div>
   );
 }
 
 export function ProductGridSkeleton({ n = 8 }: { n?: number }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
       {Array.from({ length: n }).map((_, i) => (
         <ProductCardSkeleton key={i} />
       ))}

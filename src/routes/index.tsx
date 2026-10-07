@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Sparkles, Zap } from "lucide-react";
+import { RotateCcw, Truck, Wallet, Zap } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { useI18n } from "@/lib/i18n";
 import { fetchBanners, fetchCategories, fetchProductsHome, type Product } from "@/lib/queries";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
 });
 
 function BannerSlider() {
-  const { tx, dir } = useI18n();
+  const { t, tx, dir } = useI18n();
   const { data, isLoading } = useQuery({ queryKey: ["banners"], queryFn: fetchBanners });
   const [ref, api] = useEmblaCarousel({ loop: true, direction: dir });
   const [idx, setIdx] = useState(0);
@@ -36,25 +36,26 @@ function BannerSlider() {
     const i = setInterval(() => api.scrollNext(), 5000);
     return () => clearInterval(i);
   }, [api]);
-  if (isLoading) return <Skeleton className="aspect-[5/2] w-full rounded-2xl md:aspect-[4/1]" />;
+  if (isLoading) return <Skeleton className="-mx-3 -mt-4 aspect-[4/5] rounded-none sm:aspect-[16/9] md:-mx-6 md:aspect-[21/9]" />;
   if (!data?.length) return null;
   return (
-    <div className="relative">
-      <div ref={ref} className="overflow-hidden rounded-2xl">
+    <div className="relative -mx-3 -mt-4 md:-mx-6">
+      <div ref={ref} className="overflow-hidden">
         <div className="flex">
           {data.map((b, i) => (
             <a key={b.id} href={b.link ?? "#"} className="relative min-w-0 flex-[0_0_100%]">
-              <img src={b.image_url} alt={tx(b, "title")} loading={i === 0 ? "eager" : "lazy"} className="aspect-[5/2] w-full object-cover md:aspect-[4/1]" />
-              <div className="absolute inset-0 flex flex-col justify-center gap-1 bg-gradient-to-l from-transparent via-transparent to-foreground/60 p-5 text-primary-foreground rtl:bg-gradient-to-r md:p-10">
-                <h2 className="max-w-[60%] text-xl font-extrabold md:text-4xl">{tx(b, "title")}</h2>
-                <p className="max-w-[60%] text-sm md:text-lg">{tx(b, "subtitle")}</p>
+              <img src={b.image_url} alt={tx(b, "title")} loading={i === 0 ? "eager" : "lazy"} className="aspect-[4/5] w-full bg-muted object-cover sm:aspect-[16/9] md:aspect-[21/9]" />
+              <div className="absolute inset-0 flex flex-col justify-end gap-2 bg-gradient-to-t from-foreground/60 via-transparent to-transparent p-6 pb-10 text-background md:p-12 md:pb-14">
+                <h2 className="max-w-xl text-3xl font-extrabold leading-tight md:text-5xl">{tx(b, "title")}</h2>
+                <p className="max-w-md text-sm md:text-lg">{tx(b, "subtitle")}</p>
+                <span className="mt-2 inline-flex h-11 w-fit items-center rounded-sm bg-background px-6 text-sm font-bold text-foreground">{t("shop_now")}</span>
               </div>
             </a>
           ))}
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1.5">
-        {data.map((b, i) => <span key={b.id} className={`h-1.5 rounded-full bg-card transition-all ${i === idx ? "w-5" : "w-1.5 opacity-60"}`} />)}
+      <div className="absolute inset-x-0 bottom-4 flex justify-center gap-1.5">
+        {data.map((b, i) => <span key={b.id} className={`h-1 rounded-full bg-background transition-all ${i === idx ? "w-5" : "w-1.5 opacity-60"}`} />)}
       </div>
     </div>
   );
@@ -66,15 +67,13 @@ function CategoryGrid() {
   if (error) return <ErrorState onRetry={() => refetch()} />;
   const roots = (data ?? []).filter((c) => !c.parent_id && c.is_active);
   return (
-    <div className="grid grid-cols-4 gap-3 sm:grid-cols-6 lg:grid-cols-8">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {isLoading
-        ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-2xl" />)
+        ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4] rounded-md" />)
         : roots.map((c) => (
-            <Link key={c.id} to="/category/$id" params={{ id: c.id }} className="group flex flex-col items-center gap-1.5 text-center">
-              <div className="aspect-square w-full overflow-hidden rounded-2xl bg-primary-soft">
-                {c.image_url && <img src={c.image_url} alt="" loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />}
-              </div>
-              <span className="line-clamp-2 text-xs font-semibold md:text-sm">{tx(c, "name")}</span>
+            <Link key={c.id} to="/category/$id" params={{ id: c.id }} className="group relative block aspect-[3/4] overflow-hidden rounded-md bg-muted">
+              {c.image_url && <img src={c.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/70 to-transparent p-3 pt-10 text-sm font-bold text-background md:text-base">{tx(c, "name")}</span>
             </Link>
           ))}
     </div>
@@ -86,12 +85,31 @@ function Rail({ title, products, loading, extra }: { title: React.ReactNode; pro
   if (!loading && !products?.length) return null;
   return (
     <section>
-      <SectionHeader title={<span className="flex items-center gap-2">{title}{extra}</span>} action={<Link to="/products" className="text-sm font-semibold text-primary">{t("see_all")}</Link>} />
+      <SectionHeader title={<span className="flex items-center gap-2">{title}{extra}</span>} action={<Link to="/products" className="text-sm font-semibold underline underline-offset-4">{t("see_all")}</Link>} />
       <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-2 scrollbar-none md:mx-0 md:px-0">
         {loading
-          ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="w-40 shrink-0 md:w-48"><ProductCardSkeleton /></div>)
-          : products!.map((p) => <div key={p.id} className="w-40 shrink-0 snap-start md:w-48"><ProductCard p={p} /></div>)}
+          ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="w-[44%] shrink-0 sm:w-[30%] lg:w-[23%]"><ProductCardSkeleton /></div>)
+          : products!.map((p) => <div key={p.id} className="w-[44%] shrink-0 snap-start sm:w-[30%] lg:w-[23%]"><ProductCard p={p} /></div>)}
       </div>
+    </section>
+  );
+}
+
+function TrustStrip() {
+  const { t } = useI18n();
+  const items = [
+    { icon: Truck, label: t("trust_delivery") },
+    { icon: Wallet, label: t("trust_cod") },
+    { icon: RotateCcw, label: t("trust_returns") },
+  ];
+  return (
+    <section className="grid grid-cols-3 divide-x divide-border border-y py-4 rtl:divide-x-reverse">
+      {items.map((i) => (
+        <div key={i.label} className="flex flex-col items-center gap-1.5 px-2 text-center sm:flex-row sm:justify-center sm:gap-2">
+          <i.icon className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+          <span className="text-[11px] font-semibold sm:text-sm">{i.label}</span>
+        </div>
+      ))}
     </section>
   );
 }
@@ -105,20 +123,21 @@ function Home() {
   const soonest = flash.data?.[0]?.flash_ends_at;
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-10 md:space-y-14">
       <BannerSlider />
-      <Rail title={<><Sparkles className="h-5 w-5 text-brand-secondary" />{t("new_arrivals")}</>} products={fresh.data} loading={fresh.isLoading} />
-      <Rail title={t("best_sellers")} products={best.data} loading={best.isLoading} />
+      <TrustStrip />
+      <section>
+        <SectionHeader title={t("shop_by_department")} action={<Link to="/categories" className="text-sm font-semibold underline underline-offset-4">{t("see_all")}</Link>} />
+        <CategoryGrid />
+      </section>
       <Rail
         title={<><Zap className="h-5 w-5 fill-deal text-deal" />{t("flash_deals")}</>}
         extra={soonest ? <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">{t("ends_in")} <Countdown to={soonest} /></span> : null}
         products={flash.data}
         loading={flash.isLoading}
       />
-      <section>
-        <SectionHeader title={t("shop_by_department")} action={<Link to="/categories" className="text-sm font-semibold text-primary">{t("see_all")}</Link>} />
-        <CategoryGrid />
-      </section>
+      <Rail title={t("new_arrivals")} products={fresh.data} loading={fresh.isLoading} />
+      <Rail title={t("best_sellers")} products={best.data} loading={best.isLoading} />
       <Rail title={t("seasonal_collection")} products={season.data} loading={season.isLoading} />
       {(flash.error || best.error) && <ErrorState onRetry={() => { flash.refetch(); best.refetch(); fresh.refetch(); }} />}
     </div>
