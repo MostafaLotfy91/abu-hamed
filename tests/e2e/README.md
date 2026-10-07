@@ -4,21 +4,31 @@ Browser tests for the storefront, admin, driver app, live tracking, AI stylist (
 access control and accessibility. They run against a **local Supabase** (recommended) or a **staging** project.
 They create users, orders, products and temporarily change `store_settings`, so they must **never** run against production.
 
+## Quick start (local Supabase)
+
+```bash
+npx supabase start                    # needs Docker; a fresh stack applies every file in supabase/migrations
+node scripts/make-env-test.mjs        # writes .env.test from `supabase status` (localhost only, keys not printed)
+npx playwright install chromium       # once
+npx playwright test                   # E2E_WEB_SERVER=1 in .env.test starts `vite dev --mode test` for you
+npx supabase stop                     # when done
+```
+
 ## Prerequisites
 
-1. Docker and the Supabase CLI.
-2. Start a local Supabase stack and apply all migrations from `supabase/migrations`:
+1. Docker and the Supabase CLI (`npx supabase` works without a global install).
+2. Start a local Supabase stack. On first start it applies all migrations from `supabase/migrations`:
    ```bash
-   supabase start
-   supabase db reset          # local only: rebuilds the local DB from supabase/migrations
-   supabase status            # prints the local API URL, anon key and service_role key
+   npx supabase start
+   npx supabase status        # prints the local API URL, anon key and service_role key
    ```
+   To rebuild the local database from the migrations later, `npx supabase stop --no-backup` then `start` again.
 3. Install the Playwright browser once:
    ```bash
    npx playwright install chromium
    ```
-4. Create `.env.test` in the repo root (it is git-ignored by the `.env.*` rule). The E2E config reads **only**
-   this file plus real environment variables; it never reads `.env`.
+4. Create `.env.test` in the repo root (it is git-ignored by the `.env.*` rule): run `node scripts/make-env-test.mjs`,
+   or write it by hand. The E2E config reads **only** this file plus real environment variables; it never reads `.env`.
 
    ```dotenv
    # App under test (vite dev uses port 8080 by default)
