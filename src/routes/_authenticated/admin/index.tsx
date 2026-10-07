@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useMoney } from "@/components/store/use-money";
 import { ErrorState, RowSkeleton } from "@/components/store/states";
+import { CalendarDays, Clock, ShoppingBag, TrendingUp, Wallet, ReceiptText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({ component: Dashboard });
 
@@ -22,21 +23,26 @@ function Dashboard() {
   const s = q.data;
   const L = (ar: string, en: string) => (lang === "ar" ? ar : en);
   const cards = [
-    [L("مبيعات اليوم", "Sales today"), money(s.today)],
-    [L("مبيعات الأسبوع", "Sales this week"), money(s.week)],
-    [L("مبيعات الشهر", "Sales this month"), money(s.month)],
-    [L("طلبات اليوم", "Orders today"), String(s.orders_today)],
-    [L("قيد الانتظار", "Pending"), String(s.pending)],
-    [L("إجمالي الطلبات", "Total orders"), String(s.orders_total)],
-  ];
+    [L("مبيعات اليوم", "Sales today"), money(s.today), Wallet],
+    [L("مبيعات الأسبوع", "Sales this week"), money(s.week), TrendingUp],
+    [L("مبيعات الشهر", "Sales this month"), money(s.month), CalendarDays],
+    [L("طلبات اليوم", "Orders today"), String(s.orders_today), ShoppingBag],
+    [L("قيد الانتظار", "Pending"), String(s.pending), Clock],
+    [L("إجمالي الطلبات", "Total orders"), String(s.orders_total), ReceiptText],
+  ] as const;
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-extrabold">{L("الإحصائيات", "Dashboard")}</h1>
+      <h1 className="text-xl font-bold tracking-tight">{L("الإحصائيات", "Dashboard")}</h1>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-        {cards.map(([k, v]) => <div key={k} className="rounded-2xl bg-card p-4 shadow-card"><p className="text-xs text-muted-foreground">{k}</p><p className="mt-1 text-xl font-extrabold">{v}</p></div>)}
+        {cards.map(([k, v, Icon], i) => (
+          <div key={k} className={`rounded-md border bg-card p-4 ${i === 4 && s.pending > 0 ? "border-foreground" : ""}`}>
+            <div className="flex items-center justify-between text-muted-foreground"><p className="text-xs font-medium">{k}</p><Icon className="h-4 w-4" /></div>
+            <p className="mt-2 text-2xl font-bold tracking-tight">{v}</p>
+          </div>
+        ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="rounded-2xl bg-card p-4 shadow-card">
+        <div className="rounded-md border bg-card p-4">
           <p className="mb-3 font-bold">{L("المبيعات آخر ١٤ يوم", "Sales — last 14 days")}</p>
           <div className="h-64" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
@@ -44,7 +50,7 @@ function Dashboard() {
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="rounded-2xl bg-card p-4 shadow-card">
+        <div className="rounded-md border bg-card p-4">
           <p className="mb-3 font-bold">{L("الأكثر مبيعاً", "Top products")}</p>
           {s.top_products.length === 0 ? <p className="text-sm text-muted-foreground">—</p> : (
             <ol className="space-y-2 text-sm">{s.top_products.map((p, i) => <li key={i} className="flex justify-between gap-2"><span>{i + 1}. {tx(p, "name")}</span><span className="font-bold">{money(p.revenue)}</span></li>)}</ol>

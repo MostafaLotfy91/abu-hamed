@@ -8,6 +8,9 @@ import { ALL_STATUSES, StatusBadge, statusKey } from "@/components/store/OrderTi
 import { EmptyState, ErrorState, RowSkeleton } from "@/components/store/states";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { BulkBar, Check, Pager, paginate } from "@/components/admin/TableKit";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/")({ component: Page });
 
@@ -31,26 +34,44 @@ function Page() {
     const ch = supabase.channel("admin-orders").on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => qc.invalidateQueries({ queryKey: ["admin", "orders"] })).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
+  const [page, setPage] = useState(0);
+  const [sel, setSel] = useState<Set<string>>(new Set());
   const rows = (q.data ?? []).filter((o) => !search || String(o.order_number).includes(search) || JSON.stringify(o.address).includes(search));
+  const { pageRows, pages, page: cur } = paginate(rows, page);
+  const allOnPage = pageRows.length > 0 && pageRows.every((o) => sel.has(o.id));
+  const bulkStatus = async (st: string) => {
+    const ids = [...sel];
+    const { error } = await supabase.from("orders").update({ status: st }).in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`✓ ${ids.length}`); setSel(new Set()); qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+  };
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-extrabold">{lang === "ar" ? "الطلبات" : "Orders"}</h1>
-        <Input className="h-9 w-56" placeholder="# / phone" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <h1 className="text-xl font-bold tracking-tight">{lang === "ar" ? "الطلبات" : "Orders"}</h1>
+        <Input className="h-9 w-56" placeholder="# / phone" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
       </div>
       <div className="flex flex-wrap gap-2">
         {["all", ...ALL_STATUSES].map((s) => (
-          <button key={s} onClick={() => setStatus(s)} className={cn("rounded-full border px-3 py-1 text-sm", status === s && "border-primary bg-primary text-primary-foreground")}>{s === "all" ? (lang === "ar" ? "الكل" : "All") : t(statusKey(s))}</button>
+          <button key={s} onClick={() => { setStatus(s); setPage(0); setSel(new Set()); }} className={cn("rounded-full border px-3 py-1 text-sm", status === s ? "border-foreground bg-foreground text-background" : "hover:border-foreground")}>{s === "all" ? (lang === "ar" ? "الكل" : "All") : t(statusKey(s))}</button>
         ))}
       </div>
+      <BulkBar count={sel.size} onClear={() => setSel(new Set())}>
+        {(["confirmed", "preparing", "cancelled"] as const).map((st) => <Button key={st} size="sm" variant="outline" className={st === "cancelled" ? "text-destructive" : ""} onClick={() => bulkStatus(st)}>{t(statusKey(st))}</Button>)}
+      </BulkBar>
       {q.isLoading ? <RowSkeleton n={6} /> : q.error ? <ErrorState onRetry={() => q.refetch()} /> : !rows.length ? <EmptyState title={t("no_orders")} /> : (
-        <div className="overflow-x-auto rounded-2xl bg-card shadow-card">
+        <div className="space-y-2"><div className="overflow-x-auto rounded-md border bg-card">
           <table className="w-full text-sm">
+            <thead className="bg-muted/60 text-xs text-muted-foreground"><tr>
+              <th className="w-10 p-3"><Check label="select all" checked={allOnPage} onChange={(v) => setSel((s) => { const n = new Set(s); pageRows.forEach((o) => (v ? n.add(o.id) : n.delete(o.id))); return n; })} /></th>
+              {[lang === "ar" ? "رقم" : "#", lang === "ar" ? "العميل" : "Customer", lang === "ar" ? "التاريخ" : "Date", lang === "ar" ? "الحالة" : "Status", t("total"), ""].map((h, i) => <th key={i} className="p-3 text-start font-semibold">{h}</th>)}
+            </tr></thead>
             <tbody className="divide-y">
-              {rows.map((o) => {
+              {pageRows.map((o) => {
                 const a = o.address as Record<string, string>;
                 return (
-                  <tr key={o.id} className="hover:bg-accent/50">
+                  <tr key={o.id} className={sel.has(o.id) ? "bg-muted/40" : "hover:bg-muted/30"}>
+                    <td className="p-3"><Check label="select" checked={sel.has(o.id)} onChange={(v) => setSel((s) => { const n = new Set(s); if (v) n.add(o.id); else n.delete(o.id); return n; })} /></td>
                     <td className="p-3 font-bold"><Link to="/admin/orders/$id" params={{ id: o.id }}>#{o.order_number}</Link></td>
                     <td className="p-3">{a?.recipient_name ?? a?.label} <span className="text-xs text-muted-foreground" dir="ltr">{a?.phone}</span></td>
                     <td className="p-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US")}</td>
@@ -62,7 +83,7 @@ function Page() {
               })}
             </tbody>
           </table>
-        </div>
+        </div><Pager page={cur} pages={pages} total={rows.length} onPage={setPage} /></div>
       )}
     </div>
   );
