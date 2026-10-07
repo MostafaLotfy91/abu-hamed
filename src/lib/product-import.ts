@@ -114,7 +114,8 @@ export type ImportRow = {
 export type RowStatus = "valid" | "warning" | "error";
 export type CheckedRow = { data: ImportRow; status: RowStatus; messages: string[] };
 
-const num = (s: string) => (s === "" ? null : Number(s.replace(/,/g, "")));
+// Thousands separators: ASCII comma and the Arabic separator ٬ (U+066C), e.g. "١٬٢٥٠" -> 1250.
+const num = (s: string) => (s === "" ? null : Number(s.replace(/[,٬]/g, "")));
 const bool = (s: string) => !/^(0|false|no|لا|غير نشط)$/i.test(s);
 
 /** Turns raw sheet rows (header row first) into typed rows. */
