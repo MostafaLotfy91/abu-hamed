@@ -72,11 +72,13 @@ export function normalizeSize(s: string): string {
 
 export function normalizeColor(s: string, hex?: string) {
   const v = clean(s);
-  if (!v) return { color_ar: "", color_en: "", color_hex: clean(hex) };
+  const h = clean(hex);
+  // Only real hex colours reach the database (the value ends up in a style attribute on the storefront).
+  const validHex = /^#[0-9a-f]{3,8}$/i.test(h) ? h : "";
+  if (!v) return { color_ar: "", color_en: "", color_hex: validHex };
   const alias = EXTRA_COLORS[v];
   const c = COLORS.find((x) => x.ar === v || x.en.toLowerCase() === (alias ?? v).toLowerCase());
-  const h = clean(hex);
-  return { color_ar: c?.ar ?? v, color_en: c?.en ?? v, color_hex: /^#[0-9a-f]{3,8}$/i.test(h) ? h : c?.hex ?? "" };
+  return { color_ar: c?.ar ?? v, color_en: c?.en ?? v, color_hex: validHex || (c?.hex ?? "") };
 }
 
 export type CategoryInfo = { id: string; name_ar: string; name_en: string; parent_id: string | null; size_type: string };
