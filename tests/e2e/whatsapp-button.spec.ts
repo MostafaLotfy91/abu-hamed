@@ -26,10 +26,10 @@ for (const lang of ["ar", "en"] as const) {
       await page.goto(`/product/${catalog.productId}`);
       const link = page.getByRole("link", { name: s.waFloat });
       const text = async () => parseWa(await link.getAttribute("href")).text;
-      // Nothing explicitly chosen yet: size and colour render as "-" (fillTemplate). The product page only
-      // publishes the colour the shopper clicked, not the auto-selected single colour.
-      await expect.poll(text).toBe(fill(WA.product[lang], { product_name: catalog.product[lang], size: "", color: "" }));
-      await page.getByRole("button", { name: catalog.color[lang], exact: true }).click();
+      // Before any click the page auto-selects the only colour, and the message already names it.
+      // Several sizes exist, so no size is selected yet ("-").
+      await expect(page.getByRole("button", { name: catalog.color[lang], exact: true })).toHaveAttribute("aria-pressed", "true");
+      await expect.poll(text).toBe(fill(WA.product[lang], { product_name: catalog.product[lang], size: "", color: catalog.color[lang] }));
       await page.getByRole("button", { name: "M", exact: true }).click();
       await expect.poll(text).toBe(fill(WA.product[lang], { product_name: catalog.product[lang], size: "M", color: catalog.color[lang] }));
     });

@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { effectivePrice } from "@/lib/format";
-import { findVariant, GENDERS, LOW_STOCK, SEASONS, sizeLabel, sortSizes, type SizeType } from "@/lib/fashion";
+import { defaultSelection, findVariant, GENDERS, LOW_STOCK, SEASONS, sizeLabel, type SizeType } from "@/lib/fashion";
 import { ProductGallery } from "@/components/store/ProductGallery";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SizeGuide } from "@/components/store/SizeGuide";
@@ -58,8 +58,10 @@ function ProductPage() {
     },
   });
   const p = q.data;
-  const waColor = (() => { const v = p?.product_variants?.find((x) => x.color_en === color); return v ? tx(v, "color") : color; })();
-  usePublishWaContext(p ? { kind: "product", name: tx(p, "name"), size, color: waColor } : null);
+  // What the page shows as selected (including the auto-picked colour) is what the WhatsApp message describes.
+  const picked = defaultSelection(p?.product_variants ?? [], { size, color });
+  const waColor = (() => { const v = p?.product_variants?.find((x) => x.color_en === picked.color); return v ? tx(v, "color") : picked.color; })();
+  usePublishWaContext(p ? { kind: "product", name: tx(p, "name"), size: picked.size, color: waColor } : null);
   const related = useQuery({
     queryKey: ["related", p?.category_id, id],
     enabled: !!p?.category_id,
@@ -89,10 +91,7 @@ function ProductPage() {
 
   const variants = (p.product_variants ?? []).filter((v) => v.is_active).sort((a, b) => a.sort_order - b.sort_order);
   const sizeType = (p.size_type ?? (p.categories as { size_type?: string } | null)?.size_type ?? "none") as SizeType;
-  const sizes = sortSizes(Array.from(new Set(variants.map((v) => v.size).filter(Boolean) as string[])));
-  const colors = Array.from(new Map(variants.filter((v) => v.color_en).map((v) => [v.color_en!, v])).values());
-  const pickedColor = color ?? (colors.length === 1 ? colors[0].color_en : colors.find((c) => variants.some((v) => v.color_en === c.color_en && v.stock > 0))?.color_en ?? null);
-  const pickedSize = size ?? (sizes.length === 0 ? null : sizes.length === 1 ? sizes[0] : null);
+  const { sizes, colors, color: pickedColor, size: pickedSize } = picked;
   const needSize = sizes.length > 0, needColor = colors.length > 0;
   const variant = variants.length ? findVariant(variants, needSize ? pickedSize : null, needColor ? pickedColor : null) : null;
   const sizeStock = (s: string) => variants.filter((v) => v.size === s && (!needColor || v.color_en === pickedColor)).reduce((n, v) => n + v.stock, 0);
