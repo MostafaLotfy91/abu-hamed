@@ -250,7 +250,7 @@ function ProductPage() {
       </div>
 
       {stock > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t bg-background/95 p-3 backdrop-blur md:hidden">
           <div className="min-w-0">
             <p className="truncate text-xs text-muted-foreground">{[pickedSize && sizeLabel(pickedSize, lang), needColor && tx(colors.find((c) => c.color_en === pickedColor) ?? null, "color")].filter(Boolean).join(" · ") || name}</p>
             <p className="font-bold">{money(pricing.current)}</p>
