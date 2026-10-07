@@ -30,7 +30,7 @@ export function ProductGallery({ images, alt, overlay }: { images: (string | nul
         <div ref={track} onScroll={onScroll} className="flex snap-x snap-mandatory overflow-x-auto rounded-md bg-muted scrollbar-none">
           {images.map((src, i) => (
             <button key={i} type="button" onClick={() => { setIdx(i); setZoom(true); }} aria-label={t("zoom")} className="w-full shrink-0 snap-start cursor-zoom-in">
-              <ProductImage src={src} alt={i === 0 ? alt : ""} className="aspect-[4/5] w-full" />
+              <ProductImage src={src} alt={i === 0 ? alt : ""} priority={i === 0} className="aspect-[4/5] w-full" />
             </button>
           ))}
         </div>

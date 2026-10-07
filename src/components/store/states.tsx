@@ -7,10 +7,10 @@ import { useI18n } from "@/lib/i18n";
 export function EmptyState({ icon, title, hint, action }: { icon?: ReactNode; title: string; hint?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-soft text-primary">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full border text-muted-foreground">
         {icon ?? <PackageOpen className="h-8 w-8" />}
       </div>
-      <h3 className="text-lg font-bold">{title}</h3>
+      <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
       {hint && <p className="max-w-xs text-sm text-muted-foreground">{hint}</p>}
       {action}
     </div>
@@ -59,7 +59,7 @@ export function RowSkeleton({ n = 3 }: { n?: number }) {
   return (
     <div className="space-y-3">
       {Array.from({ length: n }).map((_, i) => (
-        <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+        <Skeleton key={i} className="h-16 w-full rounded-md" />
       ))}
     </div>
   );

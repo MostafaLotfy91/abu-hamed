@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, ImageOff, Plus } from "lucide-react";
@@ -15,17 +15,21 @@ import { QuickAddSheet } from "./QuickAddSheet";
 
 const NEW_DAYS = 21;
 
-export function ProductImage({ src, alt, className }: { src?: string | null; alt: string; className?: string }) {
+export function ProductImage({ src, alt, className, priority }: { src?: string | null; alt: string; className?: string; priority?: boolean }) {
   const [loaded, setLoaded] = useState(false);
-  if (!src)
+  const [failed, setFailed] = useState(false);
+  // Images already in the browser cache can finish before React attaches onLoad.
+  const ref = useCallback((el: HTMLImageElement | null) => { if (el?.complete && el.naturalWidth) setLoaded(true); }, []);
+  if (!src || failed)
     return (
-      <div className={`flex items-center justify-center bg-muted text-muted-foreground ${className ?? ""}`}>
-        <ImageOff className="h-8 w-8" />
+      <div className={cn("flex items-center justify-center bg-muted text-muted-foreground/60", className)}>
+        <ImageOff className="h-7 w-7" aria-hidden />
       </div>
     );
   return (
-    <img src={src} alt={alt} loading="lazy" decoding="async" onLoad={() => setLoaded(true)}
-      className={cn("bg-muted object-cover transition-opacity duration-500", loaded ? "opacity-100" : "opacity-0", className)} />
+    <img ref={ref} src={src} alt={alt} loading={priority ? "eager" : "lazy"} decoding="async" {...(priority ? { fetchPriority: "high" as const } : {})}
+      onLoad={() => setLoaded(true)} onError={() => setFailed(true)}
+      className={cn("object-cover transition-opacity duration-500", loaded ? "opacity-100" : "animate-pulse bg-muted opacity-60", className)} />
   );
 }
 
