@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { formatQty } from "@/lib/format";
 import { VariantLine } from "@/components/store/CartContents";
@@ -78,11 +79,14 @@ function OrderDetail() {
   const money = useMoney();
   const q = useOrder(id);
   const { features } = useSettings();
+  const { user } = useAuth();
   if (q.isLoading) return <RowSkeleton n={4} />;
   if (q.error) return <ErrorState onRetry={() => q.refetch()} />;
   const o = q.data;
   if (!o) return <EmptyState title={t("no_orders")} />;
   const addr = o.address as Record<string, string>;
+  // Staff and drivers can open other customers' orders here; customer actions are for the owner only.
+  const isOwner = o.user_id === user?.id;
   const cancel = async () => {
     const { error } = await supabase.rpc("cancel_my_order", { _order_id: id });
     if (error) toast.error(rpcErrorMessage(error.message, lang)); else q.refetch();
@@ -115,8 +119,8 @@ function OrderDetail() {
             ))}
           </ul>
         </section>
-        <ReturnSection orderId={o.id} status={o.status} items={o.order_items}
-          deliveredAt={o.order_status_history.filter((h) => h.status === "delivered").map((h) => h.created_at).sort().at(-1) ?? null} />
+        {isOwner && <ReturnSection orderId={o.id} status={o.status} items={o.order_items}
+          deliveredAt={o.order_status_history.filter((h) => h.status === "delivered").map((h) => h.created_at).sort().at(-1) ?? null} />}
       </div>
       <aside className="h-fit space-y-3 rounded-3xl bg-card p-4 text-sm shadow-card">
         <p><span className="text-muted-foreground">{t("delivery_address")}: </span>{addressLine(addr)}</p>
@@ -128,7 +132,7 @@ function OrderDetail() {
           {Number(o.discount) > 0 && <div className="flex justify-between text-success"><span>{t("discount")}</span><span>- {money(o.discount)}</span></div>}
           <div className="flex justify-between text-base font-extrabold"><span>{t("total")}</span><span>{money(o.total)}</span></div>
         </div>
-        {o.status === "pending" && <Button variant="outline" className="w-full text-destructive" onClick={cancel}>{t("cancel_order")}</Button>}
+        {isOwner && o.status === "pending" && <Button variant="outline" className="w-full text-destructive" onClick={cancel}>{t("cancel_order")}</Button>}
       </aside>
     </div>
   );
