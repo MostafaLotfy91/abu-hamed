@@ -166,7 +166,6 @@ const dict = {
   required_sign_in: { ar: "سجل دخولك للمتابعة", en: "Sign in to continue" },
   badge_new: { ar: "جديد", en: "New" },
   quick_add: { ar: "إضافة سريعة", en: "Quick add" },
-  select_size_color: { ar: "اختار اللون والمقاس", en: "Select color & size" },
   view_details: { ar: "عرض التفاصيل", en: "View details" },
   trust_delivery: { ar: "توصيل سريع لكل المحافظات", en: "Fast delivery nationwide" },
   trust_cod: { ar: "الدفع عند الاستلام", en: "Cash on delivery" },
