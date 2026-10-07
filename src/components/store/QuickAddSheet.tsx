@@ -44,7 +44,7 @@ export function QuickAddSheet({ p, price, open, onOpenChange }: { p: Product; pr
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side={mobile ? "bottom" : lang === "ar" ? "left" : "right"} className={cn("flex flex-col gap-5", mobile ? "max-h-[85vh] rounded-t-lg" : "w-full sm:max-w-sm")}>
-        <SheetHeader className="text-start">
+        <SheetHeader className="pe-10 text-start">
           <SheetTitle className="text-base font-bold">{t("select_size_color")}</SheetTitle>
         </SheetHeader>
         <div className="flex gap-3 px-4">

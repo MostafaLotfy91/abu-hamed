@@ -5,3 +5,10 @@
 - [ ] 4. SEO
 - [ ] 5. Hardening
 - [ ] 6. Performance
+
+# Redesign (Zara/H&M style) — brief uploaded
+- [x] A. Design system (neutral tokens, small radius, light shadows, focus, reduced motion), product card + quick-add sheet, home page, header
+- [ ] B. Listing filters (sheet/sidebar, chips, count, sort) + product page (gallery swipe/zoom, sticky add bar, accordions, related)
+- [ ] C. Cart drawer + one-page checkout polish
+- [ ] D. Admin (collapsible sidebar, tables with search/filters/pagination/bulk, stat cards)
+- [ ] E. Polish + performance (empty states, image placeholders, WebP)
