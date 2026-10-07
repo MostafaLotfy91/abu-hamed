@@ -1,0 +1,4 @@
+# Playwright run artifacts and the settings snapshot written by global-setup
+.state/
+.results/
+.report/

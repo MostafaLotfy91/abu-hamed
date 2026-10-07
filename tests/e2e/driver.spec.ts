@@ -1,0 +1,58 @@
+import { test, expect } from "./fixtures/test";
+import { E2E_READY, SKIP_REASON } from "./fixtures/env";
+import { T, login } from "./fixtures/helpers";
+import { createAssignedOrder, driverLocations, driverProfile, getOrder } from "./fixtures/seed";
+
+test.skip(!E2E_READY, SKIP_REASON);
+
+const CAIRO = { latitude: 30.0444, longitude: 31.2357 };
+
+test.describe("driver app", () => {
+  test.use({ lang: "ar", permissions: ["geolocation"], geolocation: CAIRO });
+  const s = T.ar;
+
+  test("sees the assigned order, accepts, starts delivery (location saved) and marks it delivered", async ({ page, catalog, accounts }) => {
+    const order = await createAssignedOrder(catalog);
+    await login(page, "driver", "/driver");
+    await expect(page.getByText("تطبيق المندوب").first()).toBeVisible();
+    await expect(page.getByText("حالتي")).toBeVisible();
+
+    const card = page.locator("article").filter({ hasText: `#${order.order_number}` });
+    await page.getByRole("tab", { name: new RegExp(s.driverNew) }).click();
+    await expect(card).toBeVisible();
+    await expect(card).toContainText("شارع الاختبار");
+    await expect(card).toContainText("المطلوب تحصيله"); // cash on delivery
+
+    await card.getByRole("button", { name: s.accept }).click();
+    await expect.poll(async () => (await getOrder(order.id)).driver_accepted_at).not.toBeNull();
+
+    await page.getByRole("tab", { name: new RegExp(s.driverActive) }).click();
+    await card.getByRole("button", { name: s.start }).click();
+    await expect.poll(async () => (await getOrder(order.id)).status).toBe("out_for_delivery");
+    await expect(page.getByText(/يتم مشاركة موقعك مع العميل/)).toBeVisible();
+
+    // The tracker sends the first position ~1.5s after the delivery starts, then every 10s.
+    await expect.poll(async () => (await driverLocations(order.id)).length, { timeout: 30_000 }).toBeGreaterThan(0);
+    const [loc] = await driverLocations(order.id);
+    expect(loc.driver_id).toBe(accounts.driver);
+    expect(loc.lat).toBeCloseTo(CAIRO.latitude, 3);
+    expect(loc.lng).toBeCloseTo(CAIRO.longitude, 3);
+
+    await card.getByRole("button", { name: s.delivered }).click();
+    await expect.poll(async () => (await getOrder(order.id)).status).toBe("delivered");
+    await page.getByRole("tab", { name: new RegExp(s.driverDone) }).click();
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("button")).toHaveCount(0);
+  });
+
+  test("availability status buttons update the driver profile", async ({ page, accounts }) => {
+    await login(page, "driver", "/driver");
+    try {
+      await page.getByRole("button", { name: "مشغول", exact: true }).click();
+      await expect.poll(async () => (await driverProfile(accounts.driver)).status).toBe("busy");
+    } finally {
+      await page.getByRole("button", { name: "متاح", exact: true }).click();
+      await expect.poll(async () => (await driverProfile(accounts.driver)).status).toBe("available");
+    }
+  });
+});
