@@ -3,6 +3,7 @@ import { streamText, tool, isStepCount, type ModelMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { effectivePrice } from "./format";
+import { checkRateLimit, rateLimitResponse, visitorKey } from "./rate-limit.server";
 import type { AssistantEvent, AssistantProduct } from "./assistant-types";
 
 export type { AssistantProduct };
@@ -37,13 +38,6 @@ function toProduct(r: any): AssistantProduct {
 const json = (status: number, data: unknown) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
 
-async function clientHash(request: Request) {
-  const ip = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const salt = process.env["SUPABASE_URL"] ?? "";
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}|${ip}`));
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 const clean = (s: string) => s.replace(/[%,()*]/g, " ").trim().slice(0, 60);
 
 const SIZE_GUIDE = `دليل المقاسات (سم): ملابس كبار حسب محيط الصدر: S 88–94، M 95–101، L 102–108، XL 109–115، XXL 116–122، XXXL 123–129. تقريب بالوزن (للمعلومة فقط): أقل من 60كجم S، 60–70 M، 70–80 L، 80–90 XL، 90–100 XXL، أكثر من 100 XXXL. الأحذية 36–46 (طول القدم تقريباً 22.5سم للمقاس 36 ويزيد 0.65سم لكل مقاس). الأطفال بالسن/الطول: 3-4y 98–104، 4-5y 104–110، 5-6y 110–116، 6-7y 116–122، 7-8y 122–128، 8-10y 128–140، 10-12y 140–152، 12-14y 152–164.`;
@@ -72,18 +66,9 @@ export async function handleAssistant(request: Request): Promise<Response> {
   const s = settings as any;
   if (!s?.features?.ai_assistant) return json(403, { error: "disabled" });
 
-  // Rate limit + anonymous usage log (server-only function).
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: allowed, error } = await (supabaseAdmin as any).rpc("ai_rate_check", {
-      _client_hash: await clientHash(request),
-      _message_count: messages.length,
-    });
-    if (error) console.error("ai_rate_check", error.message);
-    else if (allowed === false) return json(429, { error: "rate_limited" });
-  } catch (e: any) {
-    console.error("rate check unavailable", e?.message);
-  }
+  // Rate limit + anonymous usage log; refuses the request if the check can't run.
+  const limited = rateLimitResponse(await checkRateLimit(visitorKey(request), messages.length));
+  if (limited) return limited;
 
   const seen = new Map<string, AssistantProduct>();
   const suggested = new Map<string, AssistantProduct>();

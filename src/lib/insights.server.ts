@@ -3,6 +3,7 @@ import { streamText, tool, isStepCount, type ModelMessage } from "ai";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { INSIGHT_QUERIES, type InsightEvent, type InsightName, type InsightRow } from "./insights-types";
+import { checkRateLimit, rateLimitResponse } from "./rate-limit.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 const MODEL = "openai/gpt-6-astra";
@@ -72,7 +73,7 @@ async function authorize(request: Request) {
   if (!isAdmin) return { error: json(403, { error: "forbidden" }) };
   const { data: s } = await db.from("store_settings").select("features").eq("id", 1).maybeSingle();
   if (!(s as any)?.features?.ai_analytics) return { error: json(403, { error: "disabled" }) };
-  return { db };
+  return { db, userId: u.user.id };
 }
 
 function runModel(db: SupabaseClient, messages: ModelMessage[], signal: AbortSignal, onData: (name: InsightName, rows: InsightRow[]) => void) {
@@ -125,6 +126,8 @@ export async function handleInsights(request: Request): Promise<Response> {
   const auth = await authorize(request);
   if (auth.error) return auth.error;
   const db = auth.db!;
+  const limited = rateLimitResponse(await checkRateLimit(`admin:${auth.userId}`));
+  if (limited) return limited;
 
   let body: z.infer<typeof bodySchema>;
   try {
