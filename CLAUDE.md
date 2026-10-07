@@ -1,5 +1,3 @@
-Create a CLAUDE.md file in the project root with these contents, then show me the file:
-
 # Abu Hamed - Fashion Mall E-commerce (white-label)
 
 ## Project
