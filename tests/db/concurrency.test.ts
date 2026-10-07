@@ -21,7 +21,13 @@ describe.skipIf(!url)("concurrency on a real Supabase database", () => {
   const couponCodes: string[] = [];
 
   beforeAll(async () => {
-    sql = postgres(url, { max: 25, ssl: isLocalUrl(url) ? false : "require" });
+    // Supabase's session pooler (port 5432) caps clients at the pool size (15), below the 20 parallel orders, so
+    // use its transaction mode (6543) instead. All per-request state here is transaction-scoped (set local /
+    // set_config(..., true)), which is exactly what transaction mode supports; it needs prepare: false.
+    const target = new URL(url);
+    const txPooler = /\.pooler\.supabase\.com$/.test(target.hostname) && target.port === "5432";
+    if (txPooler) target.port = "6543";
+    sql = postgres(target.toString(), { max: 25, prepare: !txPooler, ssl: isLocalUrl(url) ? false : "require" });
     const [s] = await sql`select min_order_amount from public.store_settings where id = 1`;
     originalMinOrder = s.min_order_amount;
     await sql`update public.store_settings set min_order_amount = 0 where id = 1`;
@@ -55,13 +61,15 @@ describe.skipIf(!url)("concurrency on a real Supabase database", () => {
     sql.begin(async (tx) => {
       await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: users[i], role: "authenticated" })}, true)`;
       await tx`set local role authenticated`;
-      const items = JSON.stringify([{ product_id: productId, variant_id: variantId, quantity: 1 }]);
-      await tx`select public.place_order(${items}::jsonb, ${addresses[i]}, 'asap', 'cod', ${coupon}, null)`;
+      // Pass the array itself: postgres.js serializes json params, so a pre-stringified value would arrive as a JSON string.
+      const items = tx.json([{ product_id: productId, variant_id: variantId, quantity: 1 }]);
+      await tx`select public.place_order(${items}, ${addresses[i]}, 'asap', 'cod', ${coupon}, null)`;
     }).then(() => "ok", (e: Error) => e.message);
 
   it("20 parallel orders on stock 5 -> exactly 5 succeed and stock ends at 0", async () => {
     const results = await Promise.all(users.map((_, i) => place(i)));
-    expect(results.filter((r) => r === "ok")).toHaveLength(5);
+    const why = [...new Set(results.filter((r) => r !== "ok"))].join(" | ");
+    expect(results.filter((r) => r === "ok"), why).toHaveLength(5);
     const [v] = await sql`select stock from public.product_variants where id = ${variantId}`;
     expect(v.stock).toBe(0);
   });
@@ -72,7 +80,8 @@ describe.skipIf(!url)("concurrency on a real Supabase database", () => {
     couponCodes.push(code);
     await sql`insert into public.coupons(code, discount_type, value, max_uses) values (${code}, 'fixed', 10, 3)`;
     const results = await Promise.all(users.map((_, i) => place(i, code)));
-    expect(results.filter((r) => r === "ok")).toHaveLength(3);
+    const why = [...new Set(results.filter((r) => r !== "ok"))].join(" | ");
+    expect(results.filter((r) => r === "ok"), why).toHaveLength(3);
     const [c] = await sql`select used_count from public.coupons where code = ${code}`;
     expect(c.used_count).toBe(3);
   });
