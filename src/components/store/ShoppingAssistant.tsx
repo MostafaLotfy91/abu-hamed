@@ -101,7 +101,7 @@ export function ShoppingAssistant() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className={`fixed ${onProduct ? "bottom-36" : "bottom-20"} end-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6`}
+          className={`fixed ${onProduct ? "bottom-44" : "bottom-20"} end-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6`}
           aria-label={ar ? "الستايلست" : "Stylist"}
         >
           <Shirt className="h-6 w-6" />

@@ -43,7 +43,7 @@ export function WhatsAppButton() {
   return (
     <a href={link.href} target="_blank" rel="noopener noreferrer"
       aria-label={lang === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
-      className={cn("group fixed start-4 z-40 md:bottom-6", onProduct ? "bottom-36" : "bottom-20")}>
+      className={cn("group fixed start-4 z-40 md:bottom-6", onProduct ? "bottom-44" : "bottom-20")}>
       <span className="absolute inset-0 animate-ping rounded-full bg-whatsapp opacity-30" />
       <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg">
         <WhatsAppIcon />
