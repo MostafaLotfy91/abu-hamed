@@ -24,12 +24,14 @@ export function CartLines({ editableNotes = true, onNavigate }: { editableNotes?
   return (
     <ul className="divide-y">
       {cart.items.map((i) => (
-        <li key={i.key} className="flex gap-3 py-3">
-          <ProductImage src={i.image} alt="" className="h-20 w-20 shrink-0 rounded-xl" />
+        <li key={i.key} className="flex gap-3 py-4">
+          <Link to="/product/$id" params={{ id: i.productId }} onClick={onNavigate} className="shrink-0">
+            <ProductImage src={i.image} alt="" className="aspect-[4/5] w-20 rounded-md bg-muted" />
+          </Link>
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="line-clamp-2 text-sm font-semibold">{tx(i, "name")}</p>
+                <Link to="/product/$id" params={{ id: i.productId }} onClick={onNavigate} className="line-clamp-2 text-sm font-medium hover:underline">{tx(i, "name")}</Link>
                 <VariantLine size={i.size} colorName={tx(i, "color")} hex={i.color_hex} fallback={tx(i, "variant")} />
               </div>
               <button aria-label={t("remove")} onClick={() => cart.remove(i.key)} className="text-muted-foreground hover:text-destructive">
@@ -38,7 +40,7 @@ export function CartLines({ editableNotes = true, onNavigate }: { editableNotes?
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="w-36"><QtyStepper size="sm" qty={i.quantity} max={i.maxQty} onChange={(q) => cart.setQty(i.key, q)} /></div>
-              <span className="font-bold">{money(i.price * i.quantity)}</span>
+              <span className="font-semibold">{money(i.price * i.quantity)}</span>
             </div>
             {editableNotes && (
               <Input value={i.notes ?? ""} maxLength={300} onChange={(e) => cart.setNotes(i.key, e.target.value)} placeholder={t("item_note")} className="h-8 text-xs" />
@@ -62,14 +64,14 @@ export function CartTotals({ discount = 0 }: { discount?: number }) {
       <Row label={t("subtotal")} value={money(cart.subtotal)} />
       <Row label={t("delivery_fee")} value={fee === 0 ? t("free") : money(fee)} />
       {discount > 0 && <Row label={t("discount")} value={`- ${money(discount)}`} className="text-success" />}
-      <div className="flex justify-between border-t pt-2 text-base font-extrabold">
+      <div className="flex justify-between border-t pt-3 text-base font-bold">
         <span>{t("total")}</span><span>{money(cart.subtotal + fee - discount)}</span>
       </div>
       {cart.subtotal < min && (
-        <p className="rounded-lg bg-brand-secondary/20 px-3 py-2 text-xs">{t("min_order_note")}: {money(min)}</p>
+        <p className="rounded-md border px-3 py-2 text-xs">{t("min_order_note")}: {money(min)}</p>
       )}
-      {settings?.free_delivery_threshold != null && fee > 0 && (
-        <p className="text-xs text-muted-foreground">{t("free_delivery_over")} {money(settings.free_delivery_threshold)}</p>
+      {settings?.free_delivery_threshold != null && Number(settings.free_delivery_threshold) > 0 && (
+        <FreeDeliveryBar subtotal={cart.subtotal} threshold={Number(settings.free_delivery_threshold)} />
       )}
     </div>
   );
@@ -88,5 +90,18 @@ export function VariantLine({ size, colorName, hex, fallback }: { size?: string 
       {size && <span>{t("size")}: <b className="text-foreground">{sizeLabel(size, lang)}</b></span>}
       {colorName && <span className="flex items-center gap-1">{hex && <span className="inline-block h-3 w-3 rounded-full border" style={{ background: hex }} />}{colorName}</span>}
     </p>
+  );
+}
+
+/** Progress toward the store's free-delivery threshold. */
+export function FreeDeliveryBar({ subtotal, threshold }: { subtotal: number; threshold: number }) {
+  const { t } = useI18n();
+  const money = useMoney();
+  const pct = Math.min(100, (subtotal / threshold) * 100);
+  return (
+    <div className="space-y-1.5 pt-1">
+      <p className="text-xs">{pct >= 100 ? t("free_delivery_unlocked") : t("free_delivery_left").replace("{n}", money(threshold - subtotal))}</p>
+      <div className="h-1 overflow-hidden rounded-full bg-muted"><div className="h-full bg-success transition-all" style={{ width: `${pct}%` }} /></div>
+    </div>
   );
 }

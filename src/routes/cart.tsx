@@ -21,14 +21,14 @@ function CartPage() {
   const cart = useCart();
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-      <section className="rounded-3xl bg-card p-4 shadow-card">
-        <h1 className="mb-2 text-xl font-extrabold">{t("cart")}</h1>
+      <section>
+        <h1 className="mb-2 border-b pb-3 text-xl font-bold tracking-tight md:text-2xl">{t("cart")} {cart.count > 0 && <span className="text-base font-normal text-muted-foreground">{t("items_in_cart").replace("{n}", String(cart.count))}</span>}</h1>
         <CartLines />
       </section>
       {cart.items.length > 0 && (
-        <aside className="h-fit space-y-4 rounded-3xl bg-card p-4 shadow-card lg:sticky lg:top-20">
+        <aside className="h-fit space-y-4 rounded-md border p-5 lg:sticky lg:top-20">
           <CartTotals />
-          <Button asChild size="lg" className="w-full font-bold"><Link to="/checkout">{t("checkout")}</Link></Button>
+          <Button asChild size="lg" className="h-12 w-full font-semibold"><Link to="/checkout">{t("checkout")}</Link></Button>
         </aside>
       )}
     </div>

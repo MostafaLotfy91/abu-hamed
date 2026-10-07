@@ -101,16 +101,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
       </nav>
 
       <Sheet open={cart.drawerOpen} onOpenChange={cart.setDrawerOpen}>
-        <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
-          <SheetHeader><SheetTitle>{t("cart")}</SheetTitle></SheetHeader>
+        <SheetContent side={lang === "ar" ? "left" : "right"} className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+          <SheetHeader className="border-b p-4 text-start"><SheetTitle className="text-base font-semibold">{t("cart")} {cart.count > 0 && <span className="font-normal text-muted-foreground">{t("items_in_cart").replace("{n}", String(cart.count))}</span>}</SheetTitle></SheetHeader>
           <div className="flex-1 overflow-y-auto px-4"><CartLines onNavigate={() => cart.setDrawerOpen(false)} /></div>
           {cart.items.length > 0 && (
             <div className="space-y-3 border-t p-4">
               <CartTotals />
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" onClick={() => { cart.setDrawerOpen(false); nav({ to: "/cart" }); }}>{t("view_cart")}</Button>
-                <Button onClick={() => { cart.setDrawerOpen(false); nav({ to: "/checkout" }); }}>{t("checkout")}</Button>
-              </div>
+              <Button size="lg" className="h-12 w-full font-semibold" onClick={() => { cart.setDrawerOpen(false); nav({ to: "/checkout" }); }}>{t("checkout")}</Button>
+              <button className="w-full text-center text-sm font-medium underline underline-offset-4" onClick={() => { cart.setDrawerOpen(false); nav({ to: "/cart" }); }}>{t("view_cart")}</button>
             </div>
           )}
         </SheetContent>
