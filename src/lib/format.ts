@@ -1,5 +1,12 @@
 import type { Lang } from "./i18n";
 
+/** Arabic-Indic (٠-٩) and Persian (۰-۹) digits -> ASCII 0-9, so Arabic keyboard input parses like Latin digits. */
+export function toAsciiDigits(s: string) {
+  return s
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+}
+
 export function formatMoney(value: number | string | null | undefined, lang: Lang, symbol: { ar?: string | null; en?: string | null }) {
   const n = Number(value ?? 0);
   const num = new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", {

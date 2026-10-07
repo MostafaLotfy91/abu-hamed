@@ -105,3 +105,12 @@ describe("deliveryFeeFor", () => {
     expect(deliveryFeeFor(0, 50, 0)).toBe(0);
   });
 });
+
+describe("toAsciiDigits", () => {
+  it("converts Arabic-Indic and Persian digits and leaves everything else", async () => {
+    const { toAsciiDigits } = await import("../format");
+    expect(toAsciiDigits("٠١٢٣٤٥٦٧٨٩")).toBe("0123456789");
+    expect(toAsciiDigits("۰۱۲۳۴۵۶۷۸۹")).toBe("0123456789");
+    expect(toAsciiDigits("+٢٠ 10-abc")).toBe("+20 10-abc");
+  });
+});

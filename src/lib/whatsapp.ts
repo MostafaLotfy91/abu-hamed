@@ -1,8 +1,9 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { toAsciiDigits } from "./format";
 
 /** Normalize Egyptian numbers (01xxxxxxxxx, +201..., 00201..., 201...) to 20xxxxxxxxxx. Returns null if invalid. */
 export function normalizeEgyptPhone(input: string): string | null {
-  let d = (input ?? "").replace(/[^\d]/g, "");
+  let d = toAsciiDigits(input ?? "").replace(/[^\d]/g, "");
   if (d.startsWith("0020")) d = d.slice(2);
   if (d.startsWith("01") && d.length === 11) d = "2" + d;
   if (/^201[0125]\d{8}$/.test(d)) return d;
