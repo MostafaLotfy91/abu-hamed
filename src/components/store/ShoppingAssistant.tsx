@@ -27,6 +27,7 @@ export function ShoppingAssistant() {
   const { features, settings } = useSettings();
   const { lang } = useI18n();
   const ar = lang === "ar";
+  const onProduct = useRouterState({ select: (s) => s.location.pathname.startsWith("/product/") });
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
