@@ -1,5 +1,6 @@
 /** Pure parsing/normalizing/validation for the Excel product import (no I/O, unit-tested). */
 import { COLORS, SIZE_SETS, type SizeType } from "@/lib/fashion";
+import { toAsciiDigits } from "@/lib/format";
 
 export const IMPORT_MAX_ROWS = 2000;
 export const IMPORT_MAX_BYTES = 5 * 1024 * 1024;
@@ -46,12 +47,10 @@ export function mapHeader(h: string): Column | null {
 /** Trim, convert Arabic-Indic digits; values are always kept as literal text (never formulas). */
 export function clean(v: unknown): string {
   if (v === null || v === undefined) return "";
-  return String(v)
-    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
-    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
-    .replace(/٫/g, ".").replace(/\s+/g, " ").trim()
-    // Undo the apostrophe our exports put in front of formula-like text (see neutralizeFormula).
-    .replace(/^'(?=[=+\-@])/, "");
+  // Undo the apostrophe our exports put in front of formula-like text (see neutralizeFormula). This must run
+  // on the raw value: whitespace normalization below would turn a leading tab/CR into a space and hide it.
+  const raw = String(v).replace(/^'(?=[=+\-@\t\r])/, "");
+  return toAsciiDigits(raw).replace(/٫/g, ".").replace(/\s+/g, " ").trim();
 }
 
 /** A cell beginning with = + - @ (or tab/CR) that isn't a plain number is text — strip nothing, just never evaluate. */
