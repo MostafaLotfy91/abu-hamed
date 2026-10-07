@@ -1,7 +1,7 @@
 /** Excel I/O for product import/export (browser only — SheetJS loaded on demand). */
 import { supabase } from "@/integrations/supabase/client";
 import { GENDERS, SEASONS, SIZE_SETS, CONCENTRATIONS, COLORS } from "@/lib/fashion";
-import { AR_HEADERS, COLUMNS, categoryPath, type CategoryInfo } from "@/lib/product-import";
+import { AR_HEADERS, COLUMNS, categoryPath, neutralizeFormula, type CategoryInfo } from "@/lib/product-import";
 
 const loadXlsx = () => import("xlsx");
 
@@ -74,8 +74,8 @@ export async function exportProducts(cats: CategoryInfo[]) {
       p.material_ar ?? "", p.description_ar ?? "", p.description_en ?? "", p.care_ar ?? "", v?.price ?? p.price, p.old_price ?? "",
       v?.color_ar ?? "", v?.color_hex ?? "", v?.size ?? "", v?.sku ?? "", v ? v.stock : p.stock, ...imgs, (v ? v.is_active && p.is_active : p.is_active) ? 1 : 0,
       p.top_notes ?? "", p.middle_notes ?? "", p.base_notes ?? "", p.volume_ml ?? "", p.concentration ?? ""];
-    if (p.product_variants?.length) p.product_variants.forEach((v) => rows.push(base(v)));
-    else rows.push(base(null));
+    if (p.product_variants?.length) p.product_variants.forEach((v) => rows.push(base(v).map(neutralizeFormula)));
+    else rows.push(base(null).map(neutralizeFormula));
   }
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "Products");
@@ -85,6 +85,6 @@ export async function exportProducts(cats: CategoryInfo[]) {
 export async function downloadErrorReport(rows: { row: number; code: string; status: string; messages: string }[]) {
   const XLSX = await loadXlsx();
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["الصف", "كود المنتج", "الحالة", "الرسائل"], ...rows.map((r) => [r.row, r.code, r.status, r.messages])]), "Errors");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["الصف", "كود المنتج", "الحالة", "الرسائل"], ...rows.map((r) => [r.row, r.code, r.status, r.messages].map(neutralizeFormula))]), "Errors");
   download(XLSX, wb, "import-errors.xlsx");
 }

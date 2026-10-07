@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clean, matchImageFile, normalizeColor, normalizeSize, toRows, validateRows } from "@/lib/product-import";
+import { clean, matchImageFile, neutralizeFormula, normalizeColor, normalizeSize, toRows, validateRows } from "@/lib/product-import";
 
 const cats = [
   { id: "m", name_ar: "ملابس رجالي", name_en: "Men", parent_id: null, size_type: "clothes" },
@@ -29,6 +29,23 @@ describe("product import", () => {
   it("counts new products and variants for valid rows", () => {
     const { summary } = validateRows(rows([["A1", "قميص", "ملابس رجالي > قمصان", "100", "L", "A1-L", "3"], ["A1", "", "", "100", "M", "A1-M", "2"]]), cats, none, false);
     expect(summary).toEqual({ newProducts: 1, updatedProducts: 0, newVariants: 2, errors: 0 });
+  });
+  it("neutralizes formula-like text for export and undoes it on re-import", () => {
+    for (const v of ["=HYPERLINK(\"http://x\")", "+cmd", "-2+3", "@SUM(A1)", "\tx", "\rx"]) {
+      expect(neutralizeFormula(v)).toBe(`'${v}`);
+    }
+    expect(neutralizeFormula("-5")).toBe("-5");
+    expect(neutralizeFormula("قميص")).toBe("قميص");
+    expect(neutralizeFormula(42)).toBe(42);
+    expect(clean(neutralizeFormula("=1+1"))).toBe("=1+1");
+    expect(clean("'not a formula")).toBe("'not a formula");
+  });
+  it("warns on formula-like text in any text column", () => {
+    const { checked } = validateRows(
+      toRows([["product_code", "name_ar", "price", "description_en"], ["A1", "قميص", "10", "=cmd|' /C calc'!A0"]]).rows,
+      cats, none, false,
+    );
+    expect(checked[0].status).toBe("warning");
   });
   it("matches image file names to the longest product code", () => {
     expect(matchImageFile("AH001_أسود_2.jpg", ["AH00", "AH001"])).toEqual({ code: "AH001", color: "أسود", index: 2 });

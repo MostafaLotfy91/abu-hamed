@@ -49,11 +49,18 @@ export function clean(v: unknown): string {
   return String(v)
     .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
     .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
-    .replace(/٫/g, ".").replace(/\s+/g, " ").trim();
+    .replace(/٫/g, ".").replace(/\s+/g, " ").trim()
+    // Undo the apostrophe our exports put in front of formula-like text (see neutralizeFormula).
+    .replace(/^'(?=[=+\-@])/, "");
 }
 
-/** A cell beginning with = + - @ that isn't a plain number is text — strip nothing, just never evaluate. */
-export const looksLikeFormula = (s: string) => /^[=+\-@]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s);
+/** A cell beginning with = + - @ (or tab/CR) that isn't a plain number is text — strip nothing, just never evaluate. */
+export const looksLikeFormula = (s: string) => /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s);
+
+/** Prefixes formula-like text with an apostrophe so spreadsheet apps show it as text instead of running it. */
+export function neutralizeFormula<T>(v: T): T | string {
+  return typeof v === "string" && looksLikeFormula(v) ? `'${v}` : v;
+}
 
 export function normalizeSize(s: string): string {
   const v = clean(s);
@@ -165,7 +172,9 @@ export function validateRows(rows: ImportRow[], cats: CategoryInfo[], existing: 
     if (!r.sku && (r.size || r.color_ar)) w.push("بدون كود صنف — سيتم المطابقة بالمقاس واللون");
     const bad = r.images.filter((u) => !/^https:\/\//i.test(u));
     if (bad.length) w.push("صور بأسماء ملفات — ارفعها من شاشة رفع الصور");
-    for (const v of [r.name_ar, r.name_en, r.brand, r.description_ar]) if (looksLikeFormula(v)) w.push("خلية تبدأ بـ = أو + — ستُحفظ كنص");
+    const texts = [r.name_ar, r.name_en, r.brand, r.material, r.description_ar, r.description_en, r.care,
+      r.color_ar, r.color_en, r.top_notes, r.middle_notes, r.base_notes];
+    if (texts.some(looksLikeFormula)) w.push("خلية تبدأ بـ = أو + أو - أو @ — ستُحفظ كنص");
     return { data: r, status: e.length ? "error" : w.length ? "warning" : "valid", messages: [...e, ...w] } as CheckedRow;
   });
   const ok = checked.filter((c) => c.status !== "error").map((c) => c.data);
