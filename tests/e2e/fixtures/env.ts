@@ -2,53 +2,25 @@
  * E2E environment. Reads ONLY `.env.test` (repo root) and real environment variables.
  * Never falls back to `.env` (that file may point at production).
  *
- * Safety: refuses to run against a non-local app or Supabase unless E2E_ALLOW_REMOTE=staging.
+ * Safety (tests/safety.ts): the app under test must run on localhost. Supabase must be local, or — only with
+ * E2E_ALLOW_REMOTE=staging — the one staging project whose ref is in supabase/config.toml. Everything else throws.
  */
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-
-const ROOT = process.cwd();
-export const ENV_FILE = path.join(ROOT, ".env.test");
-
-/** Minimal KEY=VALUE parser (supports quotes and # comments). Existing env vars win. */
-function loadEnvTest() {
-  if (!existsSync(ENV_FILE)) return false;
-  for (const raw of readFileSync(ENV_FILE, "utf8").split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || line.startsWith("#")) continue;
-    const m = /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
-    if (!m) continue;
-    let v = m[2].trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
-    else v = v.replace(/\s+#.*$/, "");
-    if (process.env[m[1]] === undefined) process.env[m[1]] = v;
-  }
-  return true;
-}
+import { assertAllowed, isLocalUrl, loadEnvTest, remoteAllowed } from "../../safety";
 
 export const envFileLoaded = loadEnvTest();
 
-const e = (k: string) => (process.env[k] ?? "").trim();
+/** Env value, with unfilled `PASTE_…` placeholders from scripts/make-env-test.mjs treated as missing. */
+const e = (k: string) => {
+  const v = (process.env[k] ?? "").trim();
+  return v.includes("PASTE_") ? "" : v;
+};
 
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]", "0.0.0.0", "host.docker.internal"]);
-export const allowRemote = e("E2E_ALLOW_REMOTE") === "staging";
+export { isLocalUrl };
+export const allowRemote = remoteAllowed();
 
-export function isLocalUrl(url: string) {
-  try {
-    return LOCAL_HOSTS.has(new URL(url).hostname);
-  } catch {
-    return false;
-  }
-}
-
-/** Throws unless the URL is local, or remote use was explicitly allowed for a staging project. */
+/** Throws unless a Supabase URL is local or the allowed staging project. */
 export function assertSafeTarget(url: string, what: string) {
-  if (!url || isLocalUrl(url) || allowRemote) return;
-  throw new Error(
-    `[e2e safety] ${what} (${url}) is not localhost/127.0.0.1. ` +
-      `E2E tests create users, orders and change store settings, so they must never run against production. ` +
-      `If this is a STAGING project, set E2E_ALLOW_REMOTE=staging in .env.test.`,
-  );
+  assertAllowed(url, what, "supabase");
 }
 
 export const BASE_URL = e("E2E_BASE_URL") || "http://localhost:8080";
@@ -58,12 +30,15 @@ export const SUPABASE_ANON_KEY = e("E2E_SUPABASE_ANON_KEY") || e("SUPABASE_PUBLI
 export const SUPABASE_SERVICE_ROLE_KEY = e("SUPABASE_SERVICE_ROLE_KEY");
 
 // Supabase the app itself talks to. `vite --mode test` still loads `.env` as a fallback, so .env.test must set this
-// explicitly; otherwise the app under test would point at whatever `.env` holds (possibly production).
+// explicitly; otherwise the app under test would point at whatever `.env` holds.
 export const APP_SUPABASE_URL = e("VITE_SUPABASE_URL");
 
-assertSafeTarget(BASE_URL, "E2E_BASE_URL");
+assertAllowed(BASE_URL, "E2E_BASE_URL", "app");
 assertSafeTarget(SUPABASE_URL, "Supabase URL");
 assertSafeTarget(APP_SUPABASE_URL, "VITE_SUPABASE_URL");
+if (SUPABASE_URL && APP_SUPABASE_URL && new URL(SUPABASE_URL).host !== new URL(APP_SUPABASE_URL).host) {
+  throw new Error("[test safety] SUPABASE_URL and VITE_SUPABASE_URL must be the same project (seed and app must match).");
+}
 
 export type Role = "admin" | "customer" | "driver";
 export const ACCOUNTS: Record<Role, { email: string; password: string }> = {

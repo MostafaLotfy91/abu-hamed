@@ -1,20 +1,29 @@
 // True concurrency needs a real multi-connection Postgres (PGlite has a single connection).
-// Runs only when TEST_DATABASE_URL points at a LOCAL Supabase database (e.g. after `supabase start`:
-// postgresql://postgres:postgres@127.0.0.1:54322/postgres). Refuses anything that isn't localhost.
+// Runs only when TEST_DATABASE_URL (env or .env.test) points at a local Supabase database
+// (postgresql://postgres:postgres@127.0.0.1:54322/postgres after `supabase start`) or, with
+// E2E_ALLOW_REMOTE=staging, at the staging project from supabase/config.toml. Anything else is refused.
+// Everything it creates is deleted afterwards and store_settings.min_order_amount is restored.
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { assertAllowed, isLocalUrl, loadEnvTest } from "../safety";
 
-const url = process.env["TEST_DATABASE_URL"];
-const isLocal = !!url && /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
+loadEnvTest();
+const raw = (process.env["TEST_DATABASE_URL"] ?? "").trim();
+const url = raw.includes("PASTE_") ? "" : raw; // unfilled placeholder from scripts/make-env-test.mjs
+if (url) assertAllowed(url, "TEST_DATABASE_URL", "db");
 
-describe.skipIf(!isLocal)("concurrency on a local Supabase database", () => {
+describe.skipIf(!url)("concurrency on a real Supabase database", () => {
   let sql: postgres.Sql;
   const users: string[] = [];
   const addresses: string[] = [];
   let productId: string, variantId: string;
+  let originalMinOrder: string | null = null;
+  const couponCodes: string[] = [];
 
   beforeAll(async () => {
-    sql = postgres(url!, { max: 25 });
+    sql = postgres(url, { max: 25, ssl: isLocalUrl(url) ? false : "require" });
+    const [s] = await sql`select min_order_amount from public.store_settings where id = 1`;
+    originalMinOrder = s.min_order_amount;
     await sql`update public.store_settings set min_order_amount = 0 where id = 1`;
     for (let i = 0; i < 20; i++) {
       const [u] = await sql`insert into auth.users(id, email) values (gen_random_uuid(), ${`conc${i}-${Date.now()}@test.local`}) returning id`;
@@ -28,7 +37,18 @@ describe.skipIf(!isLocal)("concurrency on a local Supabase database", () => {
     variantId = v.id;
   });
 
-  afterAll(async () => sql?.end());
+  afterAll(async () => {
+    if (!sql) return;
+    try {
+      if (users.length) await sql`delete from public.orders where user_id = any(${users})`;
+      if (productId) await sql`delete from public.products where id = ${productId}`;
+      if (couponCodes.length) await sql`delete from public.coupons where code = any(${couponCodes})`;
+      if (users.length) await sql`delete from auth.users where id = any(${users})`;
+      if (originalMinOrder !== null) await sql`update public.store_settings set min_order_amount = ${originalMinOrder} where id = 1`;
+    } finally {
+      await sql.end();
+    }
+  });
 
   /** place_order as user i on its own connection, in parallel. */
   const place = (i: number, coupon = "") =>
@@ -49,6 +69,7 @@ describe.skipIf(!isLocal)("concurrency on a local Supabase database", () => {
   it("20 parallel orders with a max_uses = 3 coupon -> exactly 3 succeed", async () => {
     await sql`update public.product_variants set stock = 100 where id = ${variantId}`;
     const code = `PAR${Date.now()}`;
+    couponCodes.push(code);
     await sql`insert into public.coupons(code, discount_type, value, max_uses) values (${code}, 'fixed', 10, 3)`;
     const results = await Promise.all(users.map((_, i) => place(i, code)));
     expect(results.filter((r) => r === "ok")).toHaveLength(3);

@@ -14,6 +14,20 @@ npx playwright test                   # E2E_WEB_SERVER=1 in .env.test starts `vi
 npx supabase stop                     # when done
 ```
 
+## Staging project (cloud)
+
+Only the project whose ref is `project_id` in `supabase/config.toml` can be used, and only with
+`E2E_ALLOW_REMOTE=staging`. Any other Supabase host, database host or a non-localhost app URL is refused
+(rules in `tests/safety.ts`, checked by `tests/db/safety.test.ts`). The migrations in `supabase/migrations` must be
+applied to that project first.
+
+```bash
+node scripts/make-env-test.mjs --staging   # writes .env.test with the project URL; you paste 3 values into it
+npm run test:db                            # includes the concurrency tests (they clean up after themselves)
+npx playwright install chromium            # once
+npx playwright test
+```
+
 ## Prerequisites
 
 1. Docker and the Supabase CLI (`npx supabase` works without a global install).
