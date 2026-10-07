@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { RotateCcw, Truck, Wallet, Zap } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { useI18n } from "@/lib/i18n";
+import { isSafeLink } from "@/lib/whatsapp";
 import { fetchBanners, fetchCategories, fetchProductsHome, type Product } from "@/lib/queries";
 import { ProductCard } from "@/components/store/ProductCard";
 import { SectionHeader } from "@/components/store/SiteShell";
@@ -43,7 +44,7 @@ function BannerSlider() {
       <div ref={ref} className="overflow-hidden">
         <div className="flex">
           {data.map((b, i) => (
-            <a key={b.id} href={b.link ?? "#"} className="relative min-w-0 flex-[0_0_100%]">
+            <a key={b.id} href={b.link && isSafeLink(b.link) ? b.link : "#"} className="relative min-w-0 flex-[0_0_100%]">
               <img src={b.image_url} alt={tx(b, "title")} loading={i === 0 ? "eager" : "lazy"} decoding="async" {...(i === 0 ? { fetchPriority: "high" as const } : {})} className="aspect-[4/5] w-full bg-muted object-cover sm:aspect-[16/9] md:aspect-[21/9]" />
               <div className="absolute inset-0 flex flex-col justify-end gap-2 bg-gradient-to-t from-foreground/60 via-transparent to-transparent p-6 pb-10 text-background md:p-12 md:pb-14">
                 <h2 className="max-w-xl text-3xl font-extrabold leading-tight md:text-5xl">{tx(b, "title")}</h2>

@@ -29,6 +29,12 @@ export function isSafeHttpsUrl(url: string) {
   }
 }
 
+/** Same-site paths ("/products", not "//host") or https URLs; mirrors the banners.link DB check. */
+export function isSafeLink(url: string) {
+  const u = url.trim();
+  return /^\/(?![/\\])[^\s<>"]*$/.test(u) || isSafeHttpsUrl(u);
+}
+
 /* Page context: product/order pages publish details so the floating button picks the right message. */
 export type WaContext =
   | { kind: "product"; name: string; size?: string | null; color?: string | null; offset?: boolean }

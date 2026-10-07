@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fillTemplate, isSafeHttpsUrl, normalizeEgyptPhone, waLink } from "../whatsapp";
+import { fillTemplate, isSafeHttpsUrl, isSafeLink, normalizeEgyptPhone, waLink } from "../whatsapp";
 
 describe("whatsapp", () => {
   it("normalizes local Egyptian numbers to 20xxxxxxxxxx", () => {
@@ -21,5 +21,14 @@ describe("whatsapp", () => {
     expect(isSafeHttpsUrl("https://facebook.com/x")).toBe(true);
     expect(isSafeHttpsUrl("javascript:alert(1)")).toBe(false);
     expect(isSafeHttpsUrl("http://facebook.com")).toBe(false);
+  });
+  it("accepts only same-site paths or https links", () => {
+    expect(isSafeLink("/products")).toBe(true);
+    expect(isSafeLink("/")).toBe(true);
+    expect(isSafeLink("https://example.com/sale")).toBe(true);
+    expect(isSafeLink("javascript:alert(1)")).toBe(false);
+    expect(isSafeLink("//evil.com")).toBe(false);
+    expect(isSafeLink("/\\evil.com")).toBe(false);
+    expect(isSafeLink("http://example.com")).toBe(false);
   });
 });
