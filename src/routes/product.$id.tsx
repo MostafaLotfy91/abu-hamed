@@ -122,8 +122,10 @@ function ProductPage() {
 
   const toggleWish = async () => {
     if (!user) return toast(t("required_sign_in"));
-    if (wish.data) await supabase.from("wishlist").delete().eq("product_id", id).eq("user_id", user.id);
-    else await supabase.from("wishlist").insert({ product_id: id, user_id: user.id });
+    const { error } = wish.data
+      ? await supabase.from("wishlist").delete().eq("product_id", id).eq("user_id", user.id)
+      : await supabase.from("wishlist").insert({ product_id: id, user_id: user.id });
+    if (error) toast.error(t("error_title"));
     qc.invalidateQueries({ queryKey: ["wish"] });
     qc.invalidateQueries({ queryKey: ["wishlist"] });
   };

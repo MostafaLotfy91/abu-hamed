@@ -81,7 +81,10 @@ function Addresses() {
           <MapPin className="h-5 w-5 text-primary" />
           <div className="flex-1"><p className="font-semibold">{a.label}</p><p className="text-sm text-muted-foreground">{addressLine(a)}</p></div>
           <Button size="icon" variant="ghost" onClick={() => setEditing(a)} aria-label={t("edit")}><Pencil className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" aria-label={t("delete")} onClick={async () => { await supabase.from("addresses").delete().eq("id", a.id); q.refetch(); }}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" aria-label={t("delete")} onClick={async () => {
+            const { error } = await supabase.from("addresses").delete().eq("id", a.id);
+            if (error) toast.error(t("error_title")); else q.refetch();
+          }}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ))}
     </div>

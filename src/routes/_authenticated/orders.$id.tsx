@@ -27,7 +27,11 @@ function LiveTracking({ orderId }: { orderId: string }) {
   const loc = useLatestLocation(orderId, true);
   const driver = useQuery({
     queryKey: ["order_driver", orderId],
-    queryFn: async () => (await supabase.rpc("order_driver_info", { _order_id: orderId })).data as { name: string | null; phone: string | null } | null,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("order_driver_info", { _order_id: orderId });
+      if (error) throw error;
+      return data as { name: string | null; phone: string | null } | null;
+    },
   });
   return (
     <section className="space-y-3 rounded-3xl bg-card p-4 shadow-card">

@@ -103,7 +103,8 @@ function SocialManager() {
     if (drag === null || drag === to) return;
     const list = [...data]; const [m] = list.splice(drag, 1); list.splice(to, 0, m); setDrag(null);
     qc.setQueryData(socialLinksQuery.queryKey, list);
-    await Promise.all(list.map((l, i) => supabase.from("social_links").update({ sort_order: i + 1 }).eq("id", l.id)));
+    const results = await Promise.all(list.map((l, i) => supabase.from("social_links").update({ sort_order: i + 1 }).eq("id", l.id)));
+    fail(results.find((r) => r.error)?.error ?? null);
     refresh();
   };
 

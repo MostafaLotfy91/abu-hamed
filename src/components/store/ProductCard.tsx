@@ -69,8 +69,10 @@ export function ProductCard({ p }: { p: Product }) {
 
   const toggleWish = async () => {
     if (!user) { toast(t("sign_in_to_save")); return navigate({ to: "/auth" }); }
-    if (liked) await supabase.from("wishlist").delete().eq("product_id", p.id).eq("user_id", user.id);
-    else await supabase.from("wishlist").insert({ product_id: p.id, user_id: user.id });
+    const { error } = liked
+      ? await supabase.from("wishlist").delete().eq("product_id", p.id).eq("user_id", user.id)
+      : await supabase.from("wishlist").insert({ product_id: p.id, user_id: user.id });
+    if (error) toast.error(t("error_title"));
     qc.invalidateQueries({ queryKey: ["wishlist"] });
     qc.invalidateQueries({ queryKey: ["wish"] });
   };

@@ -17,11 +17,14 @@ const STATUS = { valid: ["سليم", "default"], warning: ["تحذير", "second
 async function existingKeys(codes: string[], skus: string[]) {
   const productCodes = new Set<string>(), variantSkus = new Set<string>();
   for (let i = 0; i < codes.length; i += 200) {
-    const { data } = await supabase.from("products").select("sku").in("sku", codes.slice(i, i + 200));
+    // A failed lookup must stop the preview, or existing products would be counted as new.
+    const { data, error } = await supabase.from("products").select("sku").in("sku", codes.slice(i, i + 200));
+    if (error) throw error;
     data?.forEach((d) => d.sku && productCodes.add(d.sku));
   }
   for (let i = 0; i < skus.length; i += 200) {
-    const { data } = await supabase.from("product_variants").select("sku").in("sku", skus.slice(i, i + 200));
+    const { data, error } = await supabase.from("product_variants").select("sku").in("sku", skus.slice(i, i + 200));
+    if (error) throw error;
     data?.forEach((d) => d.sku && variantSkus.add(d.sku));
   }
   return { productCodes, variantSkus };
@@ -72,7 +75,8 @@ export function ImportWizard() {
       else serverErrors += ((data as any)?.errors ?? []).length;
       setProgress(Math.round(((i + batch.length) / ok.length) * 100));
     }
-    await supabase.rpc("admin_finish_import" as any, { _job_id: jobId, _status: failed === ok.length ? "failed" : "completed", _extra_errors: failed } as any);
+    const { error: finishError } = await supabase.rpc("admin_finish_import" as any, { _job_id: jobId, _status: failed === ok.length ? "failed" : "completed", _extra_errors: failed } as any);
+    if (finishError) toast.error(`تعذر إنهاء سجل الاستيراد / Could not close the import job: ${finishError.message}`);
     const msg = `تم استيراد ${ok.length - failed - serverErrors} صف` + (failed + serverErrors ? ` — فشل ${failed + serverErrors}` : "");
     (failed ? toast.warning : toast.success)(msg);
     qc.invalidateQueries({ queryKey: ["admin"] });
