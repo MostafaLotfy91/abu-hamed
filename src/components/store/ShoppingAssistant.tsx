@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import { RotateCcw, Send, Shirt, X } from "lucide-react";
 import { useSettings } from "@/lib/store-settings";
@@ -99,7 +100,7 @@ export function ShoppingAssistant() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-20 end-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6"
+          className={`fixed ${onProduct ? "bottom-36" : "bottom-20"} end-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6`}
           aria-label={ar ? "الستايلست" : "Stylist"}
         >
           <Shirt className="h-6 w-6" />
