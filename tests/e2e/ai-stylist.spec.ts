@@ -121,7 +121,9 @@ test.describe("AI stylist (mocked, English)", () => {
     await page.getByRole("button", { name: T.en.stylist, exact: true }).click();
     await page.getByPlaceholder(T.en.stylistInput).fill("black shirt size L");
     await page.getByRole("button", { name: T.en.send, exact: true }).click();
-    await expect(page.getByText(catalog.product.en)).toBeVisible();
-    await expect(page.getByRole("link", { name: T.en.viewProduct })).toBeVisible();
+    // The storefront behind the chat can list the same product, so look inside the chat.
+    const chat = page.getByRole("dialog", { name: T.en.stylist });
+    await expect(chat.getByText(catalog.product.en)).toBeVisible();
+    await expect(chat.getByRole("link", { name: T.en.viewProduct })).toBeVisible();
   });
 });

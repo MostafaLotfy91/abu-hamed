@@ -155,7 +155,12 @@ export function ShoppingAssistant() {
         </button>
       )}
       {open && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background md:inset-y-0 md:end-0 md:start-auto md:w-[420px] md:border-s md:shadow-2xl">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={ar ? "الستايلست" : "Stylist"}
+          className="fixed inset-0 z-50 flex flex-col bg-background md:inset-y-0 md:end-0 md:start-auto md:w-[420px] md:border-s md:shadow-2xl"
+        >
           <div className="flex items-center gap-2 border-b px-4 py-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Shirt className="h-5 w-5" />
