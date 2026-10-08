@@ -305,3 +305,7 @@ export async function floatingWhatsApp(page: Page, lang: Lang = "ar") {
   }
   return page.getByRole("link", { name: T[lang].waFloat });
 }
+
+/** Admin list row on wide screens, the same row's card on phones; whichever is visible. */
+export const adminRow = (page: Page, text: string) =>
+  page.locator("tbody tr, [data-row-card]").filter({ hasText: text }).filter({ visible: true });

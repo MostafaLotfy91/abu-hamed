@@ -160,7 +160,9 @@ function AdminLayout() {
               {l.to === "/admin/orders" && pendingCount > 0 && (
                 <span
                   data-pending-badge
-                  aria-label={
+                  // Decorative: the link keeps its name ("الطلبات"); the count is a visual cue.
+                  aria-hidden
+                  title={
                     lang === "ar"
                       ? `قيد الانتظار: ${formatCount(pendingCount, "ar")}`
                       : `Pending: ${pendingCount}`

@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures/test";
 import { E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { login, pngFile, toast } from "./fixtures/helpers";
+import { adminRow, login, pngFile, toast } from "./fixtures/helpers";
 import { categoryImage, setCategoryImage, setProductImages, storedImages } from "./fixtures/seed";
 
 test.skip(!E2E_READY, SKIP_REASON);
@@ -59,7 +59,7 @@ test.describe("category images (admin)", () => {
     try {
       await login(page, "admin", "/admin/categories");
       await page.getByPlaceholder("بحث").fill(catalog.tag);
-      const row = page.locator("tbody tr").filter({ hasText: catalog.category.ar });
+      const row = adminRow(page, catalog.category.ar);
       await expect(row.locator("[data-missing-image]")).toBeVisible();
       await expect(page.getByRole("status").filter({ hasText: "بدون صورة" })).toBeVisible();
 

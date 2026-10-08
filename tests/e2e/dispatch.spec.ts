@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures/test";
 import { E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { login, toast } from "./fixtures/helpers";
+import { adminRow, login, toast } from "./fixtures/helpers";
 import {
   createOfferedOrder,
   createWaitingOrder,
@@ -195,7 +195,7 @@ test.describe("dispatch (admin)", () => {
 
     await page.goto("/admin/orders");
     await page.getByRole("button", { name: "بانتظار مندوب" }).click();
-    const row = page.getByRole("row").filter({ hasText: `#${order.order_number}` });
+    const row = adminRow(page, `#${order.order_number}`);
     await expect(row).toBeVisible();
     await expect(row.getByText("لا يوجد مندوب متاح")).toBeVisible();
   });

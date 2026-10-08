@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
@@ -242,6 +243,55 @@ export function CrudPage({
       ]),
     );
 
+  // One renderer for table cells (wide screens) and card lines (phones).
+  const cellOf = (f: Field, r: Record<string, unknown>): ReactNode =>
+    renderCell?.(f, r) ??
+    (f.type === "image" ? (
+      r[f.key] ? (
+        <img src={r[f.key] as string} alt="" className="h-10 w-10 rounded object-cover" />
+      ) : null
+    ) : f.type === "images" ? (
+      (r[f.key] as string[])?.[0] ? (
+        <img src={(r[f.key] as string[])[0]} alt="" className="h-10 w-10 rounded object-cover" />
+      ) : null
+    ) : f.type === "bool" ? (
+      r[f.key] ? (
+        "✓"
+      ) : (
+        "—"
+      )
+    ) : f.type === "select" ? (
+      (f.options?.find((o) => o.value === r[f.key])?.label ?? "—")
+    ) : (
+      String(r[f.key] ?? "—")
+    ));
+  const actionsOf = (r: Record<string, unknown>) => (
+    <>
+      {rowActions?.(r)}
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={bi("تعديل / Edit")}
+        title={bi("تعديل / Edit")}
+        onClick={() => setEditing({ ...r })}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={bi("حذف / Delete")}
+        title={bi("حذف / Delete")}
+        onClick={() => del(r.id as string)}
+      >
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </>
+  );
+  const imageField = listFields.find((f) => f.type === "image" || f.type === "images");
+  const titleField = listFields.find((f) => !f.type || f.type === "text") ?? listFields[0];
+  const lineFields = listFields.filter((f) => f !== imageField && f !== titleField);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -310,7 +360,41 @@ export function CrudPage({
         />
       ) : (
         <div className="space-y-2">
-          <div className="overflow-x-auto rounded-md border bg-card">
+          {/* Phones: one card per row. */}
+          <ul aria-label={bi(title)} className="space-y-2 md:hidden">
+            {pageRows.map((r) => (
+              <li
+                key={r.id as string}
+                data-row-card
+                className={cn(
+                  "rounded-md border bg-card p-3",
+                  sel.has(r.id as string) && "bg-muted/40",
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <Check
+                    label="select"
+                    checked={sel.has(r.id as string)}
+                    onChange={(v) => toggle(r.id as string, v)}
+                  />
+                  {imageField && <div className="shrink-0">{cellOf(imageField, r)}</div>}
+                  <div className="min-w-0 flex-1 space-y-1 text-sm">
+                    {titleField && <p className="font-semibold">{cellOf(titleField, r)}</p>}
+                    <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs">
+                      {lineFields.map((f) => (
+                        <Fragment key={f.key}>
+                          <dt className="text-muted-foreground">{bi(f.label)}</dt>
+                          <dd className="min-w-0 truncate">{cellOf(f, r)}</dd>
+                        </Fragment>
+                      ))}
+                    </dl>
+                  </div>
+                </div>
+                <div className="mt-2 flex justify-end gap-1 border-t pt-2">{actionsOf(r)}</div>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto rounded-md border bg-card md:block">
             <table className="w-full whitespace-nowrap text-sm">
               <thead className="sticky top-0 bg-muted/60 text-start text-xs text-muted-foreground">
                 <tr>
@@ -352,57 +436,10 @@ export function CrudPage({
                     </td>
                     {listFields.map((f) => (
                       <td key={f.key} className="p-3">
-                        {renderCell?.(f, r) ??
-                          (f.type === "image" ? (
-                            r[f.key] ? (
-                              <img
-                                src={r[f.key] as string}
-                                alt=""
-                                className="h-10 w-10 rounded object-cover"
-                              />
-                            ) : null
-                          ) : f.type === "images" ? (
-                            (r[f.key] as string[])?.[0] ? (
-                              <img
-                                src={(r[f.key] as string[])[0]}
-                                alt=""
-                                className="h-10 w-10 rounded object-cover"
-                              />
-                            ) : null
-                          ) : f.type === "bool" ? (
-                            r[f.key] ? (
-                              "✓"
-                            ) : (
-                              "—"
-                            )
-                          ) : f.type === "select" ? (
-                            (f.options?.find((o) => o.value === r[f.key])?.label ?? "—")
-                          ) : (
-                            String(r[f.key] ?? "—")
-                          ))}
+                        {cellOf(f, r)}
                       </td>
                     ))}
-                    <td className="whitespace-nowrap p-2 text-end">
-                      {rowActions?.(r)}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={bi("تعديل / Edit")}
-                        title={bi("تعديل / Edit")}
-                        onClick={() => setEditing({ ...r })}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={bi("حذف / Delete")}
-                        title={bi("حذف / Delete")}
-                        onClick={() => del(r.id as string)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td>
+                    <td className="whitespace-nowrap p-2 text-end">{actionsOf(r)}</td>
                   </tr>
                 ))}
               </tbody>

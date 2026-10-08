@@ -185,7 +185,70 @@ function Page() {
         <EmptyState title={t("no_orders")} />
       ) : (
         <div className="space-y-2">
-          <div className="overflow-x-auto rounded-md border bg-card">
+          {/* Phones: one card per order. */}
+          <ul aria-label={lang === "ar" ? "الطلبات" : "Orders"} className="space-y-2 md:hidden">
+            {pageRows.map((o) => {
+              const a = o.address as Record<string, string>;
+              return (
+                <li
+                  key={o.id}
+                  data-row-card
+                  className={cn("rounded-md border bg-card p-3", sel.has(o.id) && "bg-muted/40")}
+                >
+                  <div className="flex items-start gap-3">
+                    <Check
+                      label="select"
+                      checked={sel.has(o.id)}
+                      onChange={(v) =>
+                        setSel((s) => {
+                          const n = new Set(s);
+                          if (v) n.add(o.id);
+                          else n.delete(o.id);
+                          return n;
+                        })
+                      }
+                    />
+                    <div className="min-w-0 flex-1 space-y-1 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <Link className="font-bold" to="/admin/orders/$id" params={{ id: o.id }}>
+                          #{o.order_number}
+                        </Link>
+                        <span className="font-bold">{money(o.total)}</span>
+                      </div>
+                      <p className="truncate">
+                        {a?.recipient_name ?? a?.label}{" "}
+                        <span className="text-xs text-muted-foreground" dir="ltr">
+                          {a?.phone}
+                        </span>
+                      </p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <StatusBadge status={o.status} />
+                        {["confirmed", "preparing", "out_for_delivery"].includes(o.status) && (
+                          <DispatchBadge status={o.dispatch_status} ar={lang === "ar"} />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(o.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US")}
+                      </p>
+                    </div>
+                    <Link
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-primary hover:bg-accent"
+                      to="/admin/orders/$id"
+                      params={{ id: o.id }}
+                      aria-label={
+                        lang === "ar"
+                          ? `فتح الطلب #${o.order_number}`
+                          : `Open order #${o.order_number}`
+                      }
+                    >
+                      <Chevron className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden overflow-x-auto rounded-md border bg-card md:block">
             <table className="w-full whitespace-nowrap text-sm">
               <thead className="bg-muted/60 text-xs text-muted-foreground">
                 <tr>

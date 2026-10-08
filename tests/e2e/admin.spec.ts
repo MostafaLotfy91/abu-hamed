@@ -1,7 +1,16 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures/test";
 import { ACCOUNTS, E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { T, floatingWhatsApp, login, parseWa, pngFile, toast, xlsxFile } from "./fixtures/helpers";
+import {
+  T,
+  adminRow,
+  floatingWhatsApp,
+  login,
+  parseWa,
+  pngFile,
+  toast,
+  xlsxFile,
+} from "./fixtures/helpers";
 
 /** Confirms the in-app AlertDialog used for destructive admin actions. */
 const confirmDialog = (page: Page, label: string) =>
@@ -24,7 +33,8 @@ import {
 test.skip(!E2E_READY, SKIP_REASON);
 
 /** CrudPage table row containing text; its icon buttons are named "تعديل" and "حذف". */
-const row = (page: Page, text: string) => page.locator("tbody tr").filter({ hasText: text });
+// Table row on wide screens, card on phones (whichever is visible).
+const row = (page: Page, text: string) => adminRow(page, text);
 const rowButton = (page: Page, text: string, name: "تعديل" | "حذف") =>
   row(page, text).getByRole("button", { name });
 
@@ -241,7 +251,7 @@ test.describe("admin", () => {
   test("order status updates follow the allowed flow", async ({ page, catalog }) => {
     const order = await createPendingOrder(catalog);
     await login(page, "admin", "/admin/orders");
-    await page.getByRole("link", { name: `#${order.order_number}` }).click();
+    await page.getByRole("link", { name: `#${order.order_number}`, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/admin/orders/${order.id}$`));
     await expect(page.getByText(`طلب #${order.order_number}`)).toBeVisible();
 
@@ -364,15 +374,20 @@ test.describe("admin", () => {
       await expect.poll(async () => (await readSettings()).whatsapp_number).toBe("201098765432");
 
       // Social links are saved per row.
+      const rows = page.locator('div[draggable="true"]');
+      const before = await rows.count();
       await page.getByRole("button", { name: "إضافة" }).click();
-      const social = page.locator('div[draggable="true"]').last();
-      const input = social.getByRole("textbox", { name: /^الرابط/ });
+      // The new row is added after the highest sort order: wait for it, then use it.
+      await expect(rows).toHaveCount(before + 1);
+      const input = rows.last().getByRole("textbox", { name: /^الرابط/ });
       await input.fill("javascript:alert(1)");
       await input.press("Enter");
       await expect(toast(page, "رابط غير صحيح")).toBeVisible();
       await input.fill(url);
       await input.press("Enter");
-      await expect(social.getByRole("switch", { name: /^إظهار/ })).toBeChecked();
+      // Once saved, the row holding this URL is switched on.
+      const saved = rows.filter({ has: page.locator(`input[value="${url}"]`) });
+      await expect(saved.getByRole("switch", { name: /^إظهار/ })).toBeChecked();
       await expect.poll(() => socialLinkSaved(url)).toBe(true);
 
       await page.goto("/");

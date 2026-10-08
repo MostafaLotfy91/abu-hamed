@@ -41,15 +41,24 @@ function renderPage() {
 }
 
 describe("CrudPage accessibility", () => {
-  it("row edit and delete icon buttons have accessible names", async () => {
+  it("row edit and delete icon buttons have accessible names (phone card and table)", async () => {
     renderPage();
-    expect(await screen.findByRole("button", { name: "تعديل / Edit" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "حذف / Delete" })).toBeInTheDocument();
+    // Both layouts are in the DOM (CSS shows one); jsdom applies no CSS, so both are found.
+    expect(await screen.findAllByRole("button", { name: "تعديل / Edit" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "حذف / Delete" })).toHaveLength(2);
+  });
+
+  it("phone card shows the title and the other columns as label/value lines", async () => {
+    renderPage();
+    const card = (await screen.findAllByRole("listitem"))[0];
+    expect(card).toHaveTextContent("SALE");
+    expect(card).toHaveTextContent("Value");
+    expect(card).toHaveTextContent("10");
   });
 
   it("every form control in the edit dialog is reachable by its label", async () => {
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "تعديل / Edit" }));
+    fireEvent.click((await screen.findAllByRole("button", { name: "تعديل / Edit" }))[0]);
     expect(screen.getByLabelText("Code *")).toHaveValue("SALE");
     expect(screen.getByLabelText("Value")).toHaveValue(10);
     expect(screen.getByLabelText("Type").tagName).toBe("SELECT");
