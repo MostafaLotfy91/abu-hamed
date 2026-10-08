@@ -11,10 +11,12 @@ import {
   createPendingOrder,
   findBanner,
   findCoupon,
+  deleteProductsBySku,
   findProductBySku,
   getOrder,
   lastImportJob,
   readSettings,
+  socialLinkSaved,
   updateSettings,
   variantsOf,
 } from "./fixtures/seed";
@@ -236,6 +238,8 @@ test.describe("admin", () => {
     expect(await findProductBySku(`E2EOK${tag}`)).not.toBeNull();
     expect(await findProductBySku(`E2EBAD1${tag}`)).toBeNull();
     expect(await findProductBySku(`E2EBAD3${tag}`)).toBeNull();
+    // Leave the shared catalogue category with only its seeded product (later specs count it).
+    await deleteProductsBySku(`E2EOK${tag}`);
   });
 
   test("order status updates follow the allowed flow", async ({ page, catalog }) => {
@@ -370,6 +374,7 @@ test.describe("admin", () => {
       await input.fill(url);
       await input.press("Enter");
       await expect(social.getByRole("switch", { name: /^إظهار \/ Visible/ })).toBeChecked();
+      await expect.poll(() => socialLinkSaved(url)).toBe(true);
 
       await page.goto("/");
       await expect(page.locator(`footer a[href="${url}"]`)).toBeVisible();

@@ -690,6 +690,16 @@ export async function findProductBySku(sku: string) {
   ) as { id: string; is_active: boolean; images: string[]; name_ar: string; price: number } | null;
 }
 
+/** Removes products a test created, so tests sharing the worker's catalogue category see only the seeded product. */
+export async function deleteProductsBySku(...skus: string[]) {
+  await service().from("products").delete().in("sku", skus);
+}
+
+export async function socialLinkSaved(url: string) {
+  const { data } = await service().from("social_links").select("id").eq("url", url).maybeSingle();
+  return !!data;
+}
+
 export async function findProductByName(nameAr: string) {
   return must(
     await service()
