@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BellRing, Check, MapPin, Package, Timer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMoney } from "@/components/store/use-money";
-import { formatCount } from "@/lib/format";
+import { countLabel, formatCount } from "@/lib/format";
 import {
   formatCountdown,
   secondsLeft,
@@ -129,7 +129,9 @@ export function OfferAlert({
 
         {more > 0 && (
           <p className="text-xs text-muted-foreground">
-            {ar ? `+${more} عرض آخر في الانتظار` : `+${more} more waiting`}
+            {ar
+              ? `في الانتظار كمان: ${countLabel(more, "ar", "offer")}`
+              : `Also waiting: ${countLabel(more, "en", "offer")}`}
           </p>
         )}
 

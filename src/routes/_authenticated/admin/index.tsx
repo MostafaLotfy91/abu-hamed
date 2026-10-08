@@ -7,6 +7,7 @@ import { useMoney } from "@/components/store/use-money";
 import { ErrorState, RowSkeleton } from "@/components/store/states";
 import { DispatchAlerts } from "@/components/admin/DispatchAlerts";
 import { CalendarDays, Clock, ShoppingBag, TrendingUp, Wallet, ReceiptText } from "lucide-react";
+import { formatCount } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/")({ component: Dashboard });
 
@@ -40,9 +41,9 @@ function Dashboard() {
     [L("مبيعات اليوم", "Sales today"), money(s.today), Wallet],
     [L("مبيعات الأسبوع", "Sales this week"), money(s.week), TrendingUp],
     [L("مبيعات الشهر", "Sales this month"), money(s.month), CalendarDays],
-    [L("طلبات اليوم", "Orders today"), String(s.orders_today), ShoppingBag],
-    [L("قيد الانتظار", "Pending"), String(s.pending), Clock],
-    [L("إجمالي الطلبات", "Total orders"), String(s.orders_total), ReceiptText],
+    [L("طلبات اليوم", "Orders today"), formatCount(s.orders_today, lang), ShoppingBag],
+    [L("قيد الانتظار", "Pending"), formatCount(s.pending, lang), Clock],
+    [L("إجمالي الطلبات", "Total orders"), formatCount(s.orders_total, lang), ReceiptText],
   ] as const;
   return (
     <div className="space-y-5">

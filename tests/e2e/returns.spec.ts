@@ -19,7 +19,7 @@ test.describe("returns and exchanges (Arabic)", () => {
       page.getByRole("heading", { level: 1, name: `${s.order} #${order.order_number}` }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: s.returnExchange })).toBeVisible();
-    await expect(page.getByText("متاح خلال 14 يوم من التوصيل")).toBeVisible();
+    await expect(page.getByText("متاح خلال ١٤ يومًا من التوصيل")).toBeVisible();
 
     await page.getByRole("button", { name: s.requestReturn }).click();
     const dialog = page.getByRole("dialog", { name: s.requestReturn });

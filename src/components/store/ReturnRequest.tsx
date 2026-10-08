@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { countLabel } from "@/lib/format";
 
 type Item = {
   id: string;
@@ -105,7 +106,7 @@ export function ReturnSection({
         <div>
           <h2 className="font-extrabold">{t("return_exchange")}</h2>
           <p className="text-xs text-muted-foreground">
-            {t("return_window_note").replace("{n}", String(windowDays))}
+            {t("return_window_note").replace("{n}", countLabel(windowDays, lang, "day"))}
           </p>
         </div>
         {canRequest && (

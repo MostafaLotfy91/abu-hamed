@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deliveryFeeFor, effectivePrice, formatCount, formatMoney } from "@/lib/format";
+import { countLabel, deliveryFeeFor, effectivePrice, formatCount, formatMoney } from "@/lib/format";
 
 const EGP = { ar: "ج.م", en: "EGP" };
 
@@ -157,5 +157,27 @@ describe("toAsciiDigits", () => {
     expect(toAsciiDigits("٠١٢٣٤٥٦٧٨٩")).toBe("0123456789");
     expect(toAsciiDigits("۰۱۲۳۴۵۶۷۸۹")).toBe("0123456789");
     expect(toAsciiDigits("+٢٠ 10-abc")).toBe("+20 10-abc");
+  });
+});
+
+describe("countLabel (Arabic plural rules, locale digits)", () => {
+  it("uses all Arabic plural forms", () => {
+    expect(countLabel(0, "ar", "product")).toBe("لا منتجات");
+    expect(countLabel(1, "ar", "product")).toBe("منتج واحد");
+    expect(countLabel(2, "ar", "product")).toBe("منتجان");
+    expect(countLabel(3, "ar", "product")).toBe("٣ منتجات");
+    expect(countLabel(10, "ar", "product")).toBe("١٠ منتجات");
+    expect(countLabel(11, "ar", "product")).toBe("١١ منتجًا");
+    expect(countLabel(54, "ar", "product")).toBe("٥٤ منتجًا");
+    expect(countLabel(100, "ar", "product")).toBe("١٠٠ منتج");
+    expect(countLabel(5, "ar", "minute")).toBe("٥ دقائق");
+    expect(countLabel(14, "ar", "day")).toBe("١٤ يومًا");
+    expect(countLabel(2, "ar", "piece")).toBe("قطعتان");
+  });
+
+  it("English singular/plural", () => {
+    expect(countLabel(1, "en", "product")).toBe("1 item");
+    expect(countLabel(54, "en", "product")).toBe("54 items");
+    expect(countLabel(1200, "en", "order")).toBe("1,200 orders");
   });
 });

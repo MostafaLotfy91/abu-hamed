@@ -48,7 +48,7 @@ describe("OfferAlert", () => {
     expect(screen.getByText("مدينة نصر، القاهرة")).toBeInTheDocument();
     expect(screen.getAllByText("450 EGP")).toHaveLength(2); // total and cash to collect
     expect(screen.getByRole("timer")).toHaveTextContent("2:00");
-    expect(screen.getByText("+1 عرض آخر في الانتظار")).toBeInTheDocument();
+    expect(screen.getByText("في الانتظار كمان: عرض واحد")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(65_000));
     expect(screen.getByRole("timer")).toHaveTextContent("0:55");
   });

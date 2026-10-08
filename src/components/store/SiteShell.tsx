@@ -23,6 +23,7 @@ import { SearchBox } from "./SearchBox";
 import { CartLines, CartTotals } from "./CartContents";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/lib/theme";
+import { formatCount } from "@/lib/format";
 
 const NAV: {
   to: "/" | "/categories" | "/cart" | "/orders" | "/account";
@@ -191,7 +192,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               {t("cart")}{" "}
               {cart.count > 0 && (
                 <span className="font-normal text-muted-foreground">
-                  {t("items_in_cart").replace("{n}", String(cart.count))}
+                  {t("items_in_cart").replace("{n}", formatCount(cart.count, lang))}
                 </span>
               )}
             </SheetTitle>

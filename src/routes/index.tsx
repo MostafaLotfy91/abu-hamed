@@ -14,6 +14,7 @@ import { Countdown } from "@/components/store/Countdown";
 import { EmptyState, ErrorState, ProductCardSkeleton } from "@/components/store/states";
 import { pageHead } from "@/lib/seo";
 import { Skeleton } from "@/components/ui/skeleton";
+import { countLabel } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   head: ({ matches }) => pageHead(matches),
@@ -197,7 +198,12 @@ function TrustStrip() {
         : null,
     { icon: Wallet, label: t("trust_cod") },
     days > 0
-      ? { icon: RotateCcw, label: ar ? `استرجاع خلال ${days} يوم` : `Returns within ${days} days` }
+      ? {
+          icon: RotateCcw,
+          label: ar
+            ? `استرجاع خلال ${countLabel(days, "ar", "day")}`
+            : `Returns within ${countLabel(days, "en", "day")}`,
+        }
       : null,
   ].filter((i): i is { icon: typeof Truck; label: string } => !!i);
   return (

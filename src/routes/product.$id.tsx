@@ -40,6 +40,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { usePublishWaContext } from "@/lib/whatsapp";
+import { countLabel } from "@/lib/format";
 
 export const Route = createFileRoute("/product/$id")({
   // The product is loaded here so the server HTML has the page and its <head> (title, description, share
@@ -380,7 +381,7 @@ function ProductPage() {
               : stock <= 0
                 ? t("out_of_stock")
                 : stock <= LOW_STOCK
-                  ? t("only_left").replace("{n}", String(stock))
+                  ? t("only_left").replace("{n}", countLabel(stock, lang, "piece"))
                   : t("in_stock")}
           </p>
 

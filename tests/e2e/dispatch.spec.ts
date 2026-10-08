@@ -52,7 +52,7 @@ test.describe("dispatch offers (driver app)", () => {
     await expect(a.getByText("المطلوب تحصيله (كاش)")).toBeVisible();
     await expect(a.getByRole("timer")).toHaveText(/^[12]:\d\d$/);
     // Badge on the "New" tab.
-    await expect(page.getByLabel("1 عرض جديد")).toBeVisible();
+    await expect(page.getByLabel("عروض جديدة: ١")).toBeVisible();
     // No customer personal data before accepting.
     await expect(a).not.toContainText("01000000002");
 

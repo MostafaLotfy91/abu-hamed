@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
 import { useDrivers } from "@/lib/drivers";
 import { dispatchLabel, useDispatchAlerts } from "@/lib/dispatch";
+import { countLabel, formatCount } from "@/lib/format";
 
 /** Dashboard alert: orders with no available driver, or unassigned longer than the configured minutes. */
 export function DispatchAlerts({ ar }: { ar: boolean }) {
@@ -25,11 +26,13 @@ export function DispatchAlerts({ ar }: { ar: boolean }) {
         >
           <AlertTriangle className="h-5 w-5" />
           {ar
-            ? `${rows.length} طلب بانتظار مندوب`
-            : `${rows.length} order${rows.length > 1 ? "s" : ""} waiting for a driver`}
+            ? `${countLabel(rows.length, "ar", "order")} بانتظار مندوب`
+            : `${countLabel(rows.length, "en", "order")} waiting for a driver`}
         </h2>
         <span className="text-xs text-muted-foreground">
-          {ar ? `المناديب المتاحين الآن: ${available}` : `Drivers available now: ${available}`}
+          {ar
+            ? `المناديب المتاحين الآن: ${formatCount(available, "ar")}`
+            : `Drivers available now: ${available}`}
         </span>
       </div>
       {/* Oldest first; every waiting order is reachable (scrolls after a few rows). */}
@@ -47,8 +50,8 @@ export function DispatchAlerts({ ar }: { ar: boolean }) {
               {r.reason === "no_driver"
                 ? dispatchLabel("no_driver_available", ar)
                 : ar
-                  ? `بدون مندوب منذ ${r.waited_minutes} دقيقة`
-                  : `No driver for ${r.waited_minutes} min`}
+                  ? `بدون مندوب منذ ${countLabel(r.waited_minutes, "ar", "minute")}`
+                  : `No driver for ${countLabel(r.waited_minutes, "en", "minute")}`}
             </span>
           </li>
         ))}

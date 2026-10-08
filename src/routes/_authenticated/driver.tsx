@@ -50,6 +50,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/lib/theme";
+import { countLabel, formatCount } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/driver")({
   head: ({ matches }) => {
@@ -93,6 +94,7 @@ function DriverApp() {
   const { features, loading: settingsLoading } = useSettings();
   const { lang, toggle } = useI18n();
   const ar = lang === "ar";
+  const L = ar ? "ar" : "en";
   const qc = useQueryClient();
   const isDriver = roles.includes("driver");
   const enabled = isDriver && !!features.delivery_tracking;
@@ -367,20 +369,22 @@ function DriverApp() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="new" className="relative">
-              {ar ? "جديدة" : "New"} ({groups.new.length + offers.offers.length})
+              {ar ? "جديدة" : "New"} ({formatCount(groups.new.length + offers.offers.length, L)})
               {offers.offers.length > 0 && (
                 <span
                   aria-label={
-                    ar ? `${offers.offers.length} عرض جديد` : `${offers.offers.length} new offers`
+                    ar
+                      ? `عروض جديدة: ${formatCount(offers.offers.length, "ar")}`
+                      : `New offers: ${offers.offers.length}`
                   }
                   className="absolute -top-1 end-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-white"
                 >
-                  {offers.offers.length}
+                  {formatCount(offers.offers.length, L)}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="active">
-              {ar ? "نشطة" : "Active"} ({groups.active.length})
+              {ar ? "نشطة" : "Active"} ({formatCount(groups.active.length, L)})
             </TabsTrigger>
             <TabsTrigger value="completed">{ar ? "مكتملة" : "Completed"}</TabsTrigger>
           </TabsList>
@@ -502,7 +506,7 @@ function OrderCard({
         <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs">
           <span>
             <Package className="me-1 inline h-3.5 w-3.5" />
-            {items} {ar ? "قطعة" : "items"}
+            {countLabel(items, ar ? "ar" : "en", "piece")}
           </span>
           <span>
             {ar ? "الإجمالي: " : "Total: "}

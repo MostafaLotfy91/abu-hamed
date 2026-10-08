@@ -32,7 +32,7 @@ test.describe("customer shopping (Arabic, RTL)", () => {
       })
       .click();
     await expect(page).toHaveURL(new RegExp(`/category/${catalog.categoryId}$`));
-    await expect(page.getByText("1 منتج", { exact: true })).toBeVisible();
+    await expect(page.getByText("منتج واحد", { exact: true })).toBeVisible();
   });
 
   test("filters narrow the listing and chips clear them", async ({ page, catalog, isMobile }) => {
@@ -48,7 +48,7 @@ test.describe("customer shopping (Arabic, RTL)", () => {
       await sheet
         .getByRole("spinbutton", { name: s.min, exact: true })
         .fill(String(catalog.price + 1000));
-      await sheet.getByRole("button", { name: /^عرض .* منتج$/ }).click();
+      await sheet.getByRole("button", { name: /^عرض .*منتج/ }).click();
     } else {
       await visible(page.getByRole("spinbutton", { name: s.min, exact: true })).fill(
         String(catalog.price + 1000),
@@ -69,7 +69,7 @@ test.describe("customer shopping (Arabic, RTL)", () => {
         await visible(page.getByRole("button", { name: new RegExp(s.filters) })).click();
         const sheet = page.getByRole("dialog");
         await sheet.getByRole("button", { name: size, exact: true }).click();
-        await sheet.getByRole("button", { name: /^عرض .* منتج$/ }).click();
+        await sheet.getByRole("button", { name: /^عرض .*منتج/ }).click();
       } else {
         await visible(
           page.locator("aside").getByRole("button", { name: size, exact: true }),

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useDrivers } from "@/lib/drivers";
 import { DispatchBadge, eventLabel, offerStatusLabel, useOrderDispatch } from "@/lib/dispatch";
+import { formatCount } from "@/lib/format";
 
 /** Order details: dispatch status, the open offer with its countdown, who rejected/let it expire, and the log. */
 export function DispatchPanel({
@@ -90,7 +91,8 @@ export function DispatchPanel({
       {(q.data?.events.length ?? 0) > 0 && (
         <details className="text-xs">
           <summary className="cursor-pointer font-semibold text-muted-foreground">
-            {ar ? "سجل التوزيع" : "Dispatch log"} ({q.data!.events.length})
+            {ar ? "سجل التوزيع" : "Dispatch log"} (
+            {formatCount(q.data!.events.length, ar ? "ar" : "en")})
           </summary>
           <ol className="mt-2 space-y-1">
             {q.data!.events.map((e) => (

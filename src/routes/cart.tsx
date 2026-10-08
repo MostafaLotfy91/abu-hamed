@@ -4,6 +4,7 @@ import { useCart } from "@/lib/cart";
 import { CartLines, CartTotals } from "@/components/store/CartContents";
 import { pageHead } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
+import { formatCount } from "@/lib/format";
 
 export const Route = createFileRoute("/cart")({
   head: ({ matches }) =>
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/cart")({
 });
 
 function CartPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const cart = useCart();
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
@@ -21,7 +22,7 @@ function CartPage() {
           {t("cart")}{" "}
           {cart.count > 0 && (
             <span className="text-base font-normal text-muted-foreground">
-              {t("items_in_cart").replace("{n}", String(cart.count))}
+              {t("items_in_cart").replace("{n}", formatCount(cart.count, lang))}
             </span>
           )}
         </h1>

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { BulkBar, Check, PAGE, Pager } from "@/components/admin/TableKit";
 import { DispatchBadge, useOpenOffers } from "@/lib/dispatch";
 import { useDrivers } from "@/lib/drivers";
+import { countLabel } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/")({ component: Page });
 
@@ -98,7 +99,9 @@ function Page() {
       st === "cancelled" &&
       !(await confirm({
         title:
-          lang === "ar" ? `إلغاء ${eligible.length} طلب؟` : `Cancel ${eligible.length} orders?`,
+          lang === "ar"
+            ? `إلغاء ${countLabel(eligible.length, "ar", "order")}؟`
+            : `Cancel ${countLabel(eligible.length, "en", "order")}?`,
         description:
           lang === "ar"
             ? "يرجع المخزون والكوبونات تلقائياً."

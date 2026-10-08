@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { countLabel } from "@/lib/format";
 
 type Base = Pick<ListFilters, "q" | "categoryIds">;
 /** A subcategory offered by the "type" filter: its id, label and the ids of its whole subtree. */
@@ -225,13 +226,16 @@ export function ProductListing({
                     setOpen(false);
                   }}
                 >
-                  {t("show_results").replace("{n}", String(draftTotal.data ?? "…"))}
+                  {t("show_results").replace(
+                    "{n}",
+                    draftTotal.data != null ? countLabel(draftTotal.data, lang, "product") : "…",
+                  )}
                 </Button>
               </div>
             </SheetContent>
           </Sheet>
           <span className="text-sm text-muted-foreground">
-            {total.data != null && t("items_count").replace("{n}", String(total.data))}
+            {total.data != null && countLabel(total.data, lang, "product")}
           </span>
         </div>
         <Select
