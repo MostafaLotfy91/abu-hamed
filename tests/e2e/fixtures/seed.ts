@@ -915,3 +915,18 @@ export async function setProductImages(productId: string, images: string[]) {
     "set product images",
   );
 }
+
+/** Flash price on a product until `hoursFromNow` (null clears it). */
+export async function setFlash(productId: string, price: number | null, hoursFromNow = 3) {
+  must(
+    await service()
+      .from("products")
+      .update({
+        flash_price: price,
+        flash_ends_at:
+          price == null ? null : new Date(Date.now() + hoursFromNow * 3_600_000).toISOString(),
+      })
+      .eq("id", productId),
+    "set flash",
+  );
+}

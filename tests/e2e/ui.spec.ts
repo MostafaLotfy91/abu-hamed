@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures/test";
 import { E2E_READY, SKIP_REASON } from "./fixtures/env";
 import { T, toast, visible } from "./fixtures/helpers";
-import { readSettings, setProductImages, setVariantStock } from "./fixtures/seed";
+import { readSettings, setFlash, setProductImages, setVariantStock } from "./fixtures/seed";
 
 test.skip(!E2E_READY, SKIP_REASON);
 
@@ -169,5 +169,27 @@ test.describe("floating help", () => {
     );
     await page.getByRole("menuitem", { name: "الستايلست" }).click();
     await expect(page.getByRole("dialog", { name: "الستايلست" })).toBeVisible();
+  });
+});
+
+test.describe("flash deals", () => {
+  test.use({ lang: "ar" });
+
+  test("home shows the flash row with the product and an Arabic countdown", async ({
+    page,
+    catalog,
+  }) => {
+    await setFlash(catalog.productId, Math.round(catalog.price * 0.8), 30);
+    try {
+      await page.goto("/");
+      const row = page
+        .locator("section")
+        .filter({ has: page.getByRole("heading", { name: "عروض سريعة" }) })
+        .first();
+      await expect(row.getByRole("link", { name: catalog.product.ar }).first()).toBeVisible();
+      await expect(row.getByRole("timer")).toHaveText(/يوم.*[٠-٩]{2}/);
+    } finally {
+      await setFlash(catalog.productId, null);
+    }
   });
 });
