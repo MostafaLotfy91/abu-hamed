@@ -11,6 +11,7 @@ export type FeatureFlags = {
   online_payment?: boolean;
   loyalty?: boolean;
   whatsapp_button?: boolean;
+  auto_dispatch_enabled?: boolean;
 };
 
 export const settingsQuery = {

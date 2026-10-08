@@ -14,6 +14,18 @@ import { ContactSocialSettings } from "@/components/admin/ContactSocialSettings"
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({ component: Page });
 
+/** [column, min, max, label] — the same ranges as the database CHECK constraints. */
+const DISPATCH_LIMITS = [
+  ["driver_accept_timeout_seconds", 30, 1800, "مهلة رد المندوب (ثانية) / Driver answer time (s)"],
+  ["max_active_orders_per_driver", 1, 20, "أقصى طلبات نشطة للمندوب / Max active orders per driver"],
+  [
+    "dispatch_alert_after_minutes",
+    1,
+    1440,
+    "تنبيه بعد (دقيقة) بدون مندوب / Alert after (min) without a driver",
+  ],
+] as const;
+
 const FLAGS = [
   "delivery_tracking",
   "whatsapp_button",
@@ -70,6 +82,11 @@ function Page() {
   const slots = ((s.delivery_slots as string[]) ?? []).join(", ");
 
   const save = async () => {
+    const bad = DISPATCH_LIMITS.find(([k, min, max]) => {
+      const v = Number(s[k]);
+      return !Number.isInteger(v) || v < min || v > max;
+    });
+    if (bad) return toast.error(`${bad[3]}: ${bad[1]}–${bad[2]}`);
     const { id: _id, updated_at: _u, ...rest } = s;
     const { error } = await supabase.from("store_settings").update(rest).eq("id", 1);
     if (error) return toast.error(error.message);
@@ -177,6 +194,69 @@ function Page() {
             onChange={(e) => set("working_hours", { ...hours, close: e.target.value })}
           />
         </div>
+      </Section>
+      <Section title="التوزيع التلقائي / Auto dispatch">
+        <div className="flex items-center justify-between rounded-xl border p-3 sm:col-span-2">
+          <span>
+            <span id="feature-auto_dispatch_enabled" className="block text-sm font-semibold">
+              توزيع الطلبات تلقائياً على المناديب / Offer orders to drivers automatically
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {features.delivery_tracking
+                ? "عند الوصول لحالة البدء يُعرض الطلب على أنسب مندوب متاح / When an order reaches the start status it is offered to the best available driver"
+                : "يحتاج تفعيل delivery_tracking أولاً / Needs delivery_tracking turned on first"}
+            </span>
+          </span>
+          <Switch
+            aria-labelledby="feature-auto_dispatch_enabled"
+            checked={!!features.auto_dispatch_enabled}
+            disabled={!features.delivery_tracking}
+            onCheckedChange={async (v) => {
+              const next = { ...features, auto_dispatch_enabled: v };
+              set("features", next);
+              const { error } = await supabase
+                .from("store_settings")
+                .update({ features: next })
+                .eq("id", 1);
+              if (error) return toast.error(error.message);
+              toast.success("✓");
+              qc.invalidateQueries({ queryKey: settingsQuery.queryKey });
+            }}
+          />
+        </div>
+        <div>
+          <Label htmlFor="settings-dispatch_trigger_status">
+            يبدأ التوزيع عند / Start dispatching when the order is
+          </Label>
+          <select
+            id="settings-dispatch_trigger_status"
+            className="h-9 w-full rounded-md border bg-background px-2"
+            value={s.dispatch_trigger_status}
+            onChange={(e) => set("dispatch_trigger_status", e.target.value)}
+          >
+            <option value="confirmed">مؤكد / Confirmed</option>
+            <option value="preparing">قيد التجهيز / Preparing</option>
+          </select>
+        </div>
+        {DISPATCH_LIMITS.map(([k, min, max, label]) => (
+          <div key={k}>
+            <Label htmlFor={`settings-${k}`}>
+              {label} ({min}–{max})
+            </Label>
+            <Input
+              id={`settings-${k}`}
+              type="number"
+              inputMode="numeric"
+              min={min}
+              max={max}
+              step={1}
+              value={s[k] ?? ""}
+              onChange={(e) =>
+                set(k, (e.target.value === "" ? "" : Number(e.target.value)) as never)
+              }
+            />
+          </div>
+        ))}
       </Section>
       <Section title="التواصل / Contact">
         {txt("contact_phone", "Phone")}

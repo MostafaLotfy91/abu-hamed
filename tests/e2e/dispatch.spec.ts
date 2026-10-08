@@ -3,6 +3,10 @@ import { E2E_READY, SKIP_REASON } from "./fixtures/env";
 import { login, toast } from "./fixtures/helpers";
 import {
   createOfferedOrder,
+  createWaitingOrder,
+  readSettings,
+  rejectAsDriver,
+  updateSettings,
   ensureAccounts,
   expireOffersNow,
   getOrder,
@@ -121,5 +125,88 @@ test.describe("driver notification settings", () => {
         .getByRole("switch", { name: "إشعارات الطلبات" })
         .or(dialog.getByText("إشعارات الجهاز مش مفعّلة للمتجر لسه.")),
     ).toBeVisible();
+  });
+});
+
+test.describe("dispatch (admin)", () => {
+  test.use({ lang: "ar" });
+  test.describe.configure({ mode: "serial" });
+
+  let restore: (() => Promise<void>) | null = null;
+  test.beforeAll(async () => {
+    restore = await reserveDispatchForTestDriver();
+  });
+  test.afterAll(async () => {
+    await restore?.();
+  });
+
+  test("order page shows the open offer, who rejected, and can offer again", async ({
+    page,
+    catalog,
+  }) => {
+    const order = await createOfferedOrder(catalog);
+    await login(page, "admin", `/admin/orders/${order.id}`);
+    const panel = page.getByRole("region", { name: "التوزيع" });
+    await expect(panel.getByText("معروض على مندوب")).toBeVisible();
+    await expect(panel.locator("span", { hasText: "معروض على:" })).toContainText("مندوب اختبار");
+
+    // The driver rejects (auto dispatch is off, so the order goes back to unassigned).
+    const [offer] = await offersFor(order.id);
+    await rejectAsDriver(offer.id);
+    await expect(panel.getByText("مناديب لم يقبلوا")).toBeVisible();
+    await expect(panel.getByText("رفض", { exact: true })).toBeVisible();
+    await panel.locator("summary").click();
+    await expect(panel.getByText(/رفضه/)).toBeVisible();
+
+    // Nobody else is available and the test driver already declined: offering again finds no driver.
+    await panel.getByRole("button", { name: "اعرض على مندوب الآن" }).click();
+    await expect(toast(page, "لا يوجد مندوب متاح الآن")).toBeVisible();
+    // The badge (the open log repeats the same words further down).
+    await expect(panel.getByText("لا يوجد مندوب متاح", { exact: true }).first()).toBeVisible();
+  });
+
+  test("dashboard alerts and the orders filter list an order with no available driver", async ({
+    page,
+    catalog,
+  }) => {
+    const order = await createWaitingOrder(catalog);
+    await login(page, "admin", "/admin");
+    const alert = page.getByRole("alert").filter({ hasText: "بانتظار مندوب" });
+    await expect(alert.getByRole("link", { name: `#${order.order_number}` })).toBeVisible();
+
+    await page.goto("/admin/orders");
+    await page.getByRole("button", { name: "بانتظار مندوب" }).click();
+    const row = page.getByRole("row").filter({ hasText: `#${order.order_number}` });
+    await expect(row).toBeVisible();
+    await expect(row.getByText("لا يوجد مندوب متاح")).toBeVisible();
+  });
+
+  test("settings: dispatch options are validated and saved", async ({ page }) => {
+    const before = await readSettings();
+    try {
+      await login(page, "admin", "/admin/settings");
+      const timeout = page.getByLabel(/مهلة رد المندوب/);
+      await timeout.fill("5");
+      await page.getByRole("button", { name: "Save / حفظ" }).click();
+      await expect(
+        toast(page, "مهلة رد المندوب (ثانية) / Driver answer time (s): 30–1800"),
+      ).toBeVisible();
+      await timeout.fill("90");
+      await page.getByLabel(/يبدأ التوزيع عند/).selectOption("confirmed");
+      await page.getByRole("button", { name: "Save / حفظ" }).click();
+      await expect(toast(page, "✓")).toBeVisible();
+      await expect
+        .poll(async () => {
+          const s = await readSettings();
+          return [s.driver_accept_timeout_seconds, s.dispatch_trigger_status];
+        })
+        .toEqual([90, "confirmed"]);
+      await expect(page.getByRole("switch", { name: /توزيع الطلبات تلقائياً/ })).toBeVisible();
+    } finally {
+      await updateSettings({
+        driver_accept_timeout_seconds: before.driver_accept_timeout_seconds,
+        dispatch_trigger_status: before.dispatch_trigger_status,
+      });
+    }
   });
 });

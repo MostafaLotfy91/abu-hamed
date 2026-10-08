@@ -33,6 +33,8 @@ import {
   useLatestLocation,
 } from "@/lib/drivers";
 import { LiveMap } from "@/components/store/LiveMap";
+import { DispatchPanel } from "@/components/admin/DispatchPanel";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/$id")({ component: Page });
 
@@ -117,7 +119,13 @@ function Page() {
   const { settings } = useSettings();
   const money = useMoney();
   const q = useOrder(id);
+  const qc = useQueryClient();
   const [confirm, confirmDialog] = useConfirm();
+  // Manual assignment also closes open offers, so the dispatch panel refreshes with the order.
+  const refresh = () => {
+    q.refetch();
+    qc.invalidateQueries({ queryKey: ["order_dispatch", id] });
+  };
   if (q.isLoading) return <RowSkeleton n={4} />;
   if (q.error || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
   const o = q.data;
@@ -137,7 +145,7 @@ function Page() {
       return;
     const { error } = await supabase.from("orders").update({ status: s }).eq("id", id);
     if (error) toast.error(error.message);
-    else q.refetch();
+    else refresh();
   };
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -256,11 +264,14 @@ function Page() {
             </Button>
           ))}
         </div>
-        <DriverAssign
+        <DriverAssign orderId={o.id} driverId={o.driver_id} status={o.status} onDone={refresh} />
+        <DispatchPanel
           orderId={o.id}
-          driverId={o.driver_id}
           status={o.status}
-          onDone={() => q.refetch()}
+          dispatchStatus={o.dispatch_status}
+          driverId={o.driver_id}
+          ar={lang === "ar"}
+          onChanged={refresh}
         />
         <OrderTimeline status={o.status} history={o.order_status_history} />
       </aside>

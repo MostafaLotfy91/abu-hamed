@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { BulkBar, Check, PAGE, Pager } from "@/components/admin/TableKit";
+import { DispatchBadge, useOpenOffers } from "@/lib/dispatch";
+import { useDrivers } from "@/lib/drivers";
 
 export const Route = createFileRoute("/_authenticated/admin/orders/")({ component: Page });
 
@@ -20,6 +22,8 @@ function Page() {
   const money = useMoney();
   const qc = useQueryClient();
   const [status, setStatus] = useState<string>("all");
+  // "waiting" = no driver available (dispatch found nobody); a quick filter next to the status chips.
+  const WAITING = "waiting";
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
   useEffect(() => {
@@ -35,11 +39,16 @@ function Page() {
     queryFn: async () => {
       let qq = supabase
         .from("orders")
-        .select("id,order_number,status,total,created_at,address,payment_method,delivery_slot", {
-          count: "exact",
-        })
+        .select(
+          "id,order_number,status,total,created_at,address,payment_method,delivery_slot,dispatch_status,driver_id",
+          {
+            count: "exact",
+          },
+        )
         .order("created_at", { ascending: false });
-      if (status !== "all") qq = qq.eq("status", status);
+      if (status === WAITING)
+        qq = qq.eq("dispatch_status", "no_driver_available").is("driver_id", null);
+      else if (status !== "all") qq = qq.eq("status", status);
       const s = term.replace(/[%,()*]/g, " ").trim();
       if (/^#?\d+$/.test(s)) qq = qq.eq("order_number", Number(s.replace("#", "")));
       else if (s) qq = qq.or(`address->>phone.ilike.%${s}%,address->>recipient_name.ilike.%${s}%`);
@@ -61,6 +70,14 @@ function Page() {
   }, [qc]);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const pageRows = q.data?.rows ?? [];
+  const offers = useOpenOffers(
+    pageRows.filter((o) => o.dispatch_status === "offered").map((o) => o.id),
+  );
+  const drivers = useDrivers();
+  const driverName = (id: string | null | undefined) => {
+    const d = drivers.data?.find((x) => x.user_id === id);
+    return d?.full_name ?? d?.email ?? "";
+  };
   const total = q.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE));
   const cur = Math.min(page, pages - 1);
@@ -114,7 +131,7 @@ function Page() {
         />
       </div>
       <div className="flex flex-wrap gap-2">
-        {["all", ...ALL_STATUSES].map((s) => (
+        {["all", ...ALL_STATUSES, WAITING].map((s) => (
           <button
             key={s}
             onClick={() => {
@@ -129,7 +146,15 @@ function Page() {
                 : "hover:border-foreground",
             )}
           >
-            {s === "all" ? (lang === "ar" ? "الكل" : "All") : t(statusKey(s))}
+            {s === "all"
+              ? lang === "ar"
+                ? "الكل"
+                : "All"
+              : s === WAITING
+                ? lang === "ar"
+                  ? "بانتظار مندوب"
+                  : "Waiting for a driver"
+                : t(statusKey(s))}
           </button>
         ))}
       </div>
@@ -177,6 +202,7 @@ function Page() {
                     lang === "ar" ? "العميل" : "Customer",
                     lang === "ar" ? "التاريخ" : "Date",
                     lang === "ar" ? "الحالة" : "Status",
+                    lang === "ar" ? "التوزيع" : "Dispatch",
                     t("total"),
                     "",
                   ].map((h, i) => (
@@ -221,6 +247,20 @@ function Page() {
                       </td>
                       <td className="p-3">
                         <StatusBadge status={o.status} />
+                      </td>
+                      <td className="p-3">
+                        {["confirmed", "preparing", "out_for_delivery"].includes(o.status) ? (
+                          <div className="space-y-0.5">
+                            <DispatchBadge status={o.dispatch_status} ar={lang === "ar"} />
+                            {(o.dispatch_status === "offered" || o.driver_id) && (
+                              <div className="text-xs text-muted-foreground">
+                                {driverName(o.driver_id ?? offers.data?.get(o.id)?.driver_id)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="p-3 font-bold">{money(o.total)}</td>
                       <td className="p-3">

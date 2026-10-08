@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useMoney } from "@/components/store/use-money";
 import { ErrorState, RowSkeleton } from "@/components/store/states";
+import { DispatchAlerts } from "@/components/admin/DispatchAlerts";
 import { CalendarDays, Clock, ShoppingBag, TrendingUp, Wallet, ReceiptText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({ component: Dashboard });
@@ -46,6 +47,7 @@ function Dashboard() {
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold tracking-tight">{L("الإحصائيات", "Dashboard")}</h1>
+      <DispatchAlerts ar={lang === "ar"} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
         {cards.map(([k, v, Icon], i) => (
           <div

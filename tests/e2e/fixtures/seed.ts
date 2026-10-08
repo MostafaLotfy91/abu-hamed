@@ -873,3 +873,38 @@ export async function expireOffersNow(orderId: string) {
   );
   must(await db.rpc("expire_stale_offers"), "expire_stale_offers");
 }
+
+/** A confirmed order that dispatch could not place (test driver offline for the call, then restored). */
+export async function createWaitingOrder(cat: Catalog) {
+  const db = service();
+  const ids = await ensureAccounts();
+  const o = await placeOrderAs([
+    { product_id: cat.productId, variant_id: cat.variants.L, quantity: 1 },
+  ]);
+  await advanceOrder(o.id, "confirmed");
+  must(
+    await db.from("driver_profiles").update({ status: "offline" }).eq("user_id", ids.driver),
+    "driver offline",
+  );
+  try {
+    const r = must(await db.rpc("dispatch_order", { _order_id: o.id }), "dispatch_order");
+    if (r !== "no_driver_available") throw new Error(`dispatch_order returned ${String(r)}`);
+  } finally {
+    must(
+      await db.from("driver_profiles").update({ status: "available" }).eq("user_id", ids.driver),
+      "driver available",
+    );
+  }
+  return o;
+}
+
+/** The test driver answers "reject" (through the same RPC the app uses). */
+export async function rejectAsDriver(offerId: string) {
+  const c = await signedIn("driver");
+  const r = must(
+    await c.rpc("driver_respond_to_offer", { _offer_id: offerId, _accept: false }),
+    "reject",
+  );
+  await c.auth.signOut();
+  return r;
+}

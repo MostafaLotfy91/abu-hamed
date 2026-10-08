@@ -1212,6 +1212,18 @@ export type Database = {
         Returns: Database["public"]["Tables"]["products"]["Row"][];
       };
       category_profile: { Args: { _category_id: string }; Returns: string };
+      admin_dispatch_alerts: {
+        Args: never;
+        Returns: {
+          order_id: string;
+          order_number: number;
+          status: string;
+          dispatch_status: string;
+          waiting_since: string;
+          waited_minutes: number;
+          reason: string;
+        }[];
+      };
       dispatch_order: { Args: { _order_id: string }; Returns: string };
       driver_my_offers: {
         Args: never;
