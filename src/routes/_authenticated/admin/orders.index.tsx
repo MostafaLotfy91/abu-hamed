@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useMoney } from "@/components/store/use-money";
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/orders/")({ componen
 
 function Page() {
   const { t, lang } = useI18n();
+  const Chevron = lang === "ar" ? ChevronLeft : ChevronRight;
   const money = useMoney();
   const qc = useQueryClient();
   const [status, setStatus] = useState<string>("all");
@@ -267,8 +269,18 @@ function Page() {
                       </td>
                       <td className="p-3 font-bold">{money(o.total)}</td>
                       <td className="p-3">
-                        <Link className="text-primary" to="/admin/orders/$id" params={{ id: o.id }}>
-                          →
+                        <Link
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-primary hover:bg-accent"
+                          to="/admin/orders/$id"
+                          params={{ id: o.id }}
+                          aria-label={
+                            lang === "ar"
+                              ? `فتح الطلب #${o.order_number}`
+                              : `Open order #${o.order_number}`
+                          }
+                        >
+                          {/* Points the reading direction: left in Arabic, right in English. */}
+                          <Chevron className="h-4 w-4" />
                         </Link>
                       </td>
                     </tr>
