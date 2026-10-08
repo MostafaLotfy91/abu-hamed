@@ -103,6 +103,8 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     ).toBeVisible();
     await expect(page.getByRole("link", { name: catalog.product.ar }).first()).toBeVisible();
 
+    // The box still holds the term after searching; a user taps it to see suggestions again.
+    await box.click();
     await box.fill(catalog.tag);
     await page.getByRole("button", { name: catalog.product.ar }).click();
     await expect(page).toHaveURL(new RegExp(`/product/${catalog.productId}$`));

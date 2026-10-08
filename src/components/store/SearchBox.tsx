@@ -75,6 +75,7 @@ export function SearchBox() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
           placeholder={t("search_placeholder")}
           className="h-full w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
