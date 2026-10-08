@@ -97,6 +97,7 @@ export const test = base.extend<TestFx, WorkerFx>({
   ],
 
   accounts: [
+    // eslint-disable-next-line no-empty-pattern -- Playwright requires the destructuring form
     async ({}, use) => {
       await use(await ensureAccounts());
     },
@@ -104,6 +105,7 @@ export const test = base.extend<TestFx, WorkerFx>({
   ],
 
   catalog: [
+    // eslint-disable-next-line no-empty-pattern -- Playwright requires the destructuring form
     async ({}, use) => {
       const tag = runTag();
       const cat = await createCatalog(tag);

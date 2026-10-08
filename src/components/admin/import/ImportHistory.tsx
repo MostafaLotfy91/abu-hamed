@@ -32,7 +32,7 @@ export function ImportHistory() {
     queryKey: ["import_jobs"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("import_jobs" as any)
+        .from("import_jobs")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(30);
@@ -53,7 +53,7 @@ export function ImportHistory() {
       }))
     )
       return;
-    const { data, error } = await supabase.rpc("admin_undo_import" as any, { _job_id: id } as any);
+    const { data, error } = await supabase.rpc("admin_undo_import", { _job_id: id });
     if (error) return toast.error(error.message);
     toast.success(`تم إخفاء ${data} منتج`);
     qc.invalidateQueries({ queryKey: ["import_jobs"] });

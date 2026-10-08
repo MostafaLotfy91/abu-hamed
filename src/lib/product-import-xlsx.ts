@@ -136,6 +136,7 @@ async function fetchAll<T>(
 
 export async function exportProducts(cats: CategoryInfo[]) {
   const XLSX = await loadXlsx();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- loosely typed export row
   type P = Record<string, any> & { product_variants: Record<string, any>[] };
   const products = await fetchAll<P>(
     (f) =>
@@ -145,12 +146,12 @@ export async function exportProducts(cats: CategoryInfo[]) {
           "sku,name_ar,name_en,category_id,brand,gender,season,material_ar,description_ar,description_en,care_ar,price,old_price,stock,images,is_active,top_notes,middle_notes,base_notes,volume_ml,concentration,product_variants(size,color_ar,color_hex,sku,stock,price,is_active)",
         )
         .order("created_at")
-        .range(f, f + 999) as any,
+        .range(f, f + 999) as unknown as PromiseLike<{ data: P[] | null; error: unknown }>,
   );
   const rows: unknown[][] = [[...COLUMNS]];
   for (const p of products) {
     const imgs = [0, 1, 2, 3, 4].map((i) => p.images?.[i] ?? "");
-    const base = (v: Record<string, any> | null) => [
+    const base = (v: P["product_variants"][number] | null) => [
       p.sku ?? "",
       p.name_ar,
       p.name_en,

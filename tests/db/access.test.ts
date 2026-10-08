@@ -57,7 +57,9 @@ describe("customer isolation", () => {
       history: (
         await tx.query(`select id from public.order_status_history where order_id = $1`, [bobOrder])
       ).rows.length,
-      own: (await tx.query(`select id from public.orders`)).rows.map((x: any) => x.id),
+      own: (await tx.query(`select id from public.orders`)).rows.map(
+        (x) => (x as { id: string }).id,
+      ),
     }));
     expect(r).toEqual({ orders: 0, items: 0, history: 0, own: [aliceOrder] });
   });

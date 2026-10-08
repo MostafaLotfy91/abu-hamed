@@ -76,7 +76,7 @@ export function QuickAddSheet({
         </SheetHeader>
         <div className="flex gap-3 px-4">
           <img
-            src={(p as any).thumbnails?.[0] ?? p.images?.[0]}
+            src={p.thumbnails?.[0] ?? p.images?.[0]}
             alt=""
             className="aspect-[4/5] w-20 rounded-md bg-muted object-cover"
           />

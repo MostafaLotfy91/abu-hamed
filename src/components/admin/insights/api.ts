@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { InsightName, InsightRow } from "@/lib/insights-types";
 
 /** POSTs to the admin insights route with the signed-in user's token. */
@@ -17,10 +18,10 @@ export async function insightsFetch(body: unknown, signal?: AbortSignal) {
 
 /** Runs one fixed aggregated query directly (no AI). */
 export async function runInsight(name: InsightName, params: Record<string, unknown> = {}) {
-  const { data, error } = await supabase.rpc(
-    "admin_insight" as any,
-    { _name: name, _params: params } as any,
-  );
+  const { data, error } = await supabase.rpc("admin_insight", {
+    _name: name,
+    _params: params as Json,
+  });
   if (error) throw error;
   return (data ?? []) as InsightRow[];
 }

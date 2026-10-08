@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import type { Json } from "@/integrations/supabase/types";
 import { Badge } from "@/components/ui/badge";
 
 type Summary = ReturnType<typeof validateRows>["summary"];
@@ -102,12 +103,12 @@ export function ImportWizard() {
     setBusy(true);
     setProgress(0);
     const { data: job, error } = await supabase
-      .from("import_jobs" as any)
+      .from("import_jobs")
       .insert({
         file_name: file.name,
         total_rows: checked.length,
         error_rows: checked.length - ok.length,
-      } as any)
+      })
       .select("id")
       .single();
     if (error || !job) {
@@ -115,29 +116,27 @@ export function ImportWizard() {
       setBusy(false);
       return;
     }
-    const jobId = (job as any).id as string;
+    const jobId = job.id;
     let failed = 0,
       serverErrors = 0;
     for (let i = 0; i < ok.length; i += IMPORT_BATCH) {
       const batch = ok.slice(i, i + IMPORT_BATCH);
-      const { data, error: e } = await supabase.rpc(
-        "admin_import_batch" as any,
-        { _job_id: jobId, _rows: batch, _create_categories: createCats } as any,
-      );
+      const { data, error: e } = await supabase.rpc("admin_import_batch", {
+        _job_id: jobId,
+        _rows: batch as unknown as Json,
+        _create_categories: createCats,
+      });
       if (e) {
         failed += batch.length;
         console.error(e);
-      } else serverErrors += ((data as any)?.errors ?? []).length;
+      } else serverErrors += ((data as { errors?: unknown[] } | null)?.errors ?? []).length;
       setProgress(Math.round(((i + batch.length) / ok.length) * 100));
     }
-    const { error: finishError } = await supabase.rpc(
-      "admin_finish_import" as any,
-      {
-        _job_id: jobId,
-        _status: failed === ok.length ? "failed" : "completed",
-        _extra_errors: failed,
-      } as any,
-    );
+    const { error: finishError } = await supabase.rpc("admin_finish_import", {
+      _job_id: jobId,
+      _status: failed === ok.length ? "failed" : "completed",
+      _extra_errors: failed,
+    });
     if (finishError)
       toast.error(
         `تعذر إنهاء سجل الاستيراد / Could not close the import job: ${finishError.message}`,

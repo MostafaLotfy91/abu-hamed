@@ -97,8 +97,8 @@ export function ProductCard({ p }: { p: Product }) {
   ];
   const isNew = Date.now() - new Date(p.created_at).getTime() < NEW_DAYS * 864e5;
   const liked = wish.data?.has(p.id) ?? false;
-  const img1 = (p as any).thumbnails?.[0] ?? p.images?.[0];
-  const img2 = (p as any).thumbnails?.[1] ?? p.images?.[1];
+  const img1 = p.thumbnails?.[0] ?? p.images?.[0];
+  const img2 = p.thumbnails?.[1] ?? p.images?.[1];
 
   const toggleWish = async () => {
     if (!user) {

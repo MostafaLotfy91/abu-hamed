@@ -8,6 +8,7 @@ import {
   type InsightName,
   type InsightRow,
 } from "./insights-types";
+import type { Json } from "@/integrations/supabase/types";
 import { checkRateLimit, rateLimitResponse } from "./rate-limit.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1";
@@ -62,7 +63,16 @@ const WEEKLY_PROMPT = `اعمل ملخص أسبوعي لآخر 7 أيام بعن
 4) اقتراحات إعادة تخزين بكميات تقريبية.
 5) منتجات نسبة مرتجعاتها عالية وأسبابها المحتملة.`;
 
-function statusOf(e: any) {
+/** Shape of errors thrown by the AI SDK / gateway (all fields optional). */
+type AiError = {
+  statusCode?: number;
+  lastError?: { statusCode?: number };
+  cause?: { statusCode?: number };
+  message?: string;
+};
+
+function statusOf(err: unknown) {
+  const e = err as AiError | null;
   const s = Number(e?.statusCode ?? e?.lastError?.statusCode ?? e?.cause?.statusCode) || 500;
   return [402, 403, 429].includes(s) ? s : 500;
 }
@@ -83,7 +93,8 @@ async function authorize(request: Request) {
   const { data: isAdmin } = await db.rpc("has_role", { _user_id: u.user.id, _role: "admin" });
   if (!isAdmin) return { error: json(403, { error: "forbidden" }) };
   const { data: s } = await db.from("store_settings").select("features").eq("id", 1).maybeSingle();
-  if (!(s as any)?.features?.ai_analytics) return { error: json(403, { error: "disabled" }) };
+  if (!(s as { features?: { ai_analytics?: boolean } } | null)?.features?.ai_analytics)
+    return { error: json(403, { error: "disabled" }) };
   return { db, userId: u.user.id };
 }
 
@@ -102,10 +113,10 @@ function runModel(
         inputSchema: paramsSchema,
         execute: async (params) => {
           // Only predefined, aggregated queries — the model never writes SQL.
-          const { data, error } = await db.rpc(
-            "admin_insight" as any,
-            { _name: name, _params: params } as any,
-          );
+          const { data, error } = await db.rpc("admin_insight", {
+            _name: name,
+            _params: params as Json,
+          });
           if (error) return { error: error.message };
           const rows = (data ?? []) as InsightRow[];
           onData(name, rows);
@@ -164,11 +175,11 @@ export async function handleInsights(request: Request): Promise<Response> {
   if (body.mode === "weekly") {
     if (!body.refresh) {
       const { data: c } = await db
-        .from("ai_insights_cache" as any)
+        .from("ai_insights_cache")
         .select("payload,created_at")
         .eq("kind", "weekly")
         .maybeSingle();
-      const row = c as any;
+      const row = c as { payload: { text: string }; created_at: string } | null;
       if (row && Date.now() - new Date(row.created_at).getTime() < WEEK_MS)
         return json(200, { text: row.payload.text, created_at: row.created_at, cached: true });
     }
@@ -186,14 +197,12 @@ export async function handleInsights(request: Request): Promise<Response> {
       }
       if (!text.trim()) return json(500, { error: "empty" });
       const created_at = new Date().toISOString();
-      await db
-        .from("ai_insights_cache" as any)
-        .upsert({ kind: "weekly", payload: { text }, created_at } as any);
+      await db.from("ai_insights_cache").upsert({ kind: "weekly", payload: { text }, created_at });
       return json(200, { text, created_at, cached: false });
-    } catch (e: any) {
+    } catch (e) {
       if (request.signal.aborted) return json(499, { error: "aborted" });
       const status = statusOf(e);
-      console.error("insights weekly error", status, e?.message);
+      console.error("insights weekly error", status, (e as AiError | null)?.message);
       return json(status, { error: "ai_error" });
     }
   }
@@ -214,10 +223,10 @@ export async function handleInsights(request: Request): Promise<Response> {
           if (part.type === "text-delta") send({ type: "text", delta: part.text });
           else if (part.type === "error") throw part.error;
         }
-      } catch (e: any) {
+      } catch (e) {
         if (!request.signal.aborted) {
           const status = statusOf(e);
-          console.error("insights ask error", status, e?.message);
+          console.error("insights ask error", status, (e as AiError | null)?.message);
           send({ type: "error", status });
         }
       } finally {

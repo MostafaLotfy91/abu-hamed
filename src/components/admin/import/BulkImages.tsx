@@ -66,7 +66,7 @@ export function BulkImages() {
         items.sort((a, b) => (a.color ?? "").localeCompare(b.color ?? "") || a.index - b.index);
         const hasColor = items.some((i) => i.color);
         const images = hasColor ? [] : [...(p.images ?? [])];
-        const thumbs = hasColor ? [] : [...((p as any).thumbnails ?? [])];
+        const thumbs = hasColor ? [] : [...(p.thumbnails ?? [])];
         for (const [pos, it] of items.entries()) {
           const slot = hasColor ? pos : it.index - 1;
           const id = crypto.randomUUID();
@@ -82,7 +82,7 @@ export function BulkImages() {
         const compact = <T,>(a: T[]) => a.filter(Boolean);
         const { error: e } = await supabase
           .from("products")
-          .update({ images: compact(images), thumbnails: compact(thumbs) } as any)
+          .update({ images: compact(images), thumbnails: compact(thumbs) })
           .eq("id", p.id);
         if (e) throw e;
       }

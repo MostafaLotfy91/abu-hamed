@@ -24,12 +24,33 @@ const bodySchema = z.object({
 const COLS =
   "id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,stock,images,thumbnails,gender,season,size_type,category_id,product_variants(id,size,color_ar,color_en,color_hex,price,stock,is_active)";
 
-function toProduct(r: any): AssistantProduct {
+type VariantRow = {
+  id: string;
+  size: string | null;
+  color_ar: string | null;
+  color_en: string | null;
+  color_hex: string | null;
+  price: number | null;
+  stock: number;
+  is_active: boolean;
+};
+type ProductRow = Parameters<typeof effectivePrice>[0] & {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  stock: number;
+  images: string[] | null;
+  thumbnails: string[] | null;
+  size_type: string | null;
+  product_variants: VariantRow[] | null;
+};
+
+function toProduct(r: ProductRow): AssistantProduct {
   const base = effectivePrice(r).current;
-  const all = (r.product_variants ?? []).filter((v: any) => v.is_active);
+  const all = (r.product_variants ?? []).filter((v) => v.is_active);
   const variants = all
-    .filter((v: any) => Number(v.stock) > 0)
-    .map((v: any) => ({
+    .filter((v) => Number(v.stock) > 0)
+    .map((v) => ({
       id: v.id,
       size: v.size,
       color_ar: v.color_ar,
@@ -88,7 +109,14 @@ export async function handleAssistant(request: Request): Promise<Response> {
     .select("features,name_ar,name_en,currency_symbol_ar,whatsapp_number,contact_phone")
     .limit(1)
     .maybeSingle();
-  const s = settings as any;
+  const s = settings as {
+    features?: { ai_assistant?: boolean };
+    name_ar?: string | null;
+    name_en?: string | null;
+    currency_symbol_ar?: string | null;
+    whatsapp_number?: string | null;
+    contact_phone?: string | null;
+  } | null;
   if (!s?.features?.ai_assistant) return json(403, { error: "disabled" });
 
   // Rate limit + anonymous usage log; refuses the request if the check can't run.
@@ -126,13 +154,13 @@ export async function handleAssistant(request: Request): Promise<Response> {
             .from("categories")
             .select("id,parent_id")
             .or(`name_ar.ilike.%${c}%,name_en.ilike.%${c}%`);
-          const ids = new Set((cats ?? []).map((x: any) => x.id));
+          const ids = new Set((cats ?? []).map((x: { id: string }) => x.id));
           if (ids.size) {
             const { data: kids } = await db
               .from("categories")
               .select("id")
               .in("parent_id", [...ids]);
-            (kids ?? []).forEach((x: any) => ids.add(x.id));
+            (kids ?? []).forEach((x: { id: string }) => ids.add(x.id));
             q = q.in("category_id", [...ids]);
           }
         }
@@ -242,10 +270,15 @@ ${SIZE_GUIDE}
           else if (part.type === "error") throw part.error;
         }
         send({ type: "products", items: [...suggested.values()] });
-      } catch (e: any) {
+      } catch (e) {
         if (!request.signal.aborted) {
-          const status = Number(e?.statusCode ?? e?.lastError?.statusCode) || 500;
-          console.error("assistant error", status, e?.message);
+          const err = e as {
+            statusCode?: number;
+            lastError?: { statusCode?: number };
+            message?: string;
+          } | null;
+          const status = Number(err?.statusCode ?? err?.lastError?.statusCode) || 500;
+          console.error("assistant error", status, err?.message);
           send({ type: "error", status: [402, 403, 429].includes(status) ? status : 500 });
         }
       } finally {
