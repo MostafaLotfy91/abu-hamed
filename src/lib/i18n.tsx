@@ -198,20 +198,31 @@ type Ctx = {
 const I18nContext = createContext<Ctx | null>(null);
 const LS_KEY = "app.lang";
 
+function readSavedLang(): Lang | null {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    return saved === "ar" || saved === "en" ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
 export function I18nProvider({ children, defaultLang = "ar" }: { children: ReactNode; defaultLang?: Lang }) {
   const [lang, setLangState] = useState<Lang>(defaultLang);
   const [userChose, setUserChose] = useState(false);
 
+  // A saved choice always wins over the store default. Both effects run in the same first commit, so the
+  // default effect must check storage itself instead of relying on `userChose` (still false at that point).
   useEffect(() => {
-    const saved = localStorage.getItem(LS_KEY) as Lang | null;
-    if (saved === "ar" || saved === "en") {
+    const saved = readSavedLang();
+    if (saved) {
       setLangState(saved);
       setUserChose(true);
     }
   }, []);
 
   useEffect(() => {
-    if (!userChose) setLangState(defaultLang);
+    if (!userChose && !readSavedLang()) setLangState(defaultLang);
   }, [defaultLang, userChose]);
 
   useEffect(() => {
