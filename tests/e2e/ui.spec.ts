@@ -1,7 +1,8 @@
 import { test, expect } from "./fixtures/test";
 import { E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { T, toast, visible } from "./fixtures/helpers";
+import { T, login, toast, visible } from "./fixtures/helpers";
 import {
+  createPendingOrder,
   readSettings,
   setFlash,
   setProductImages,
@@ -209,5 +210,25 @@ test.describe("right-to-left components", () => {
     expect(await x("البريد الإلكتروني")).toBeGreaterThan(await x("رقم الموبايل"));
     await page.getByRole("button", { name: "English" }).click();
     expect(await x("Email")).toBeLessThan(await x("Phone"));
+  });
+});
+
+test.describe("admin new-order alert", () => {
+  test.use({ lang: "ar" });
+
+  test("a new order shows a toast with an open button and the pending badge", async ({
+    page,
+    catalog,
+  }) => {
+    await login(page, "admin", "/admin");
+    await expect(page.getByRole("heading", { name: "الإحصائيات" })).toBeVisible();
+    // Give Realtime a moment to subscribe, then a customer orders.
+    await page.waitForTimeout(2000);
+    const order = await createPendingOrder(catalog);
+    const t = toast(page, `طلب جديد #${order.order_number}`);
+    await expect(t).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator("[data-pending-badge]").first()).toBeVisible();
+    await t.getByRole("button", { name: "فتح" }).click();
+    await expect(page).toHaveURL(new RegExp(`/admin/orders/${order.id}$`));
   });
 });

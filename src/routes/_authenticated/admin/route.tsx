@@ -26,6 +26,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/lib/theme";
+import { useNewOrderAlerts } from "@/lib/admin-alerts";
+import { formatCount } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: ({ matches }) =>
@@ -64,6 +66,8 @@ function AdminLayout() {
   const { features } = useSettings();
   const { lang, toggle, t } = useI18n();
   const [collapsed, setCollapsed] = useState(false);
+  // Chime + toast on new orders; pending count for the badge on "الطلبات".
+  const pendingCount = useNewOrderAlerts(isStaff, lang === "ar");
   useEffect(() => {
     setCollapsed(localStorage.getItem("admin-sidebar") === "1");
   }, []);
@@ -153,6 +157,19 @@ function AdminLayout() {
             >
               <l.icon className="h-4 w-4 shrink-0" />
               <span className={cn(collapsed && "md:sr-only")}>{lang === "ar" ? l.ar : l.en}</span>
+              {l.to === "/admin/orders" && pendingCount > 0 && (
+                <span
+                  data-pending-badge
+                  aria-label={
+                    lang === "ar"
+                      ? `قيد الانتظار: ${formatCount(pendingCount, "ar")}`
+                      : `Pending: ${pendingCount}`
+                  }
+                  className="ms-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-white"
+                >
+                  {formatCount(pendingCount, lang)}
+                </span>
+              )}
             </Link>
           ))}
           <Link

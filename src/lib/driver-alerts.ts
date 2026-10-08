@@ -186,3 +186,9 @@ export async function resumeSound() {
   }
   return a.state === "running";
 }
+
+/** One chime (admin new-order alert). Plays only once audio is unlocked by a tap in this page load. */
+export function playChime() {
+  const a = audio();
+  if (a && a.state === "running") chime(a);
+}
