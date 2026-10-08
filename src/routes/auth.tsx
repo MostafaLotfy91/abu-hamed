@@ -37,14 +37,33 @@ function AuthPage() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [phoneSent, setPhoneSent] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (ready && user) nav({ to: dest, replace: true });
   }, [ready, user, dest, nav]);
 
-  const emailSubmit = async (e: React.FormEvent) => {
+  // After hydration, adopt anything typed or autofilled into the server-rendered inputs, so the next render
+  // of these controlled inputs doesn't clear it.
+  useEffect(() => {
+    const dom = (id: string) =>
+      (document.getElementById(id) as HTMLInputElement | null)?.value ?? "";
+    if (dom("auth-email")) setEmail(dom("auth-email"));
+    if (dom("auth-password")) setPassword(dom("auth-password"));
+    if (dom("auth-phone")) setPhone(dom("auth-phone"));
+  }, []);
+
+  // Values are read from the form, not React state: text typed (or autofilled) before hydration is in the DOM
+  // but never reached onChange.
+  const field = (e: React.FormEvent<HTMLFormElement>, n: string) =>
+    String(new FormData(e.currentTarget).get(n) ?? "");
+
+  const emailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const email = field(e, "email").trim();
+    const password = field(e, "password");
+    const name = field(e, "full_name").trim();
     setBusy(true);
     try {
       if (mode === "in") {
@@ -69,13 +88,16 @@ function AuthPage() {
     }
   };
 
-  const phoneSubmit = async (e: React.FormEvent) => {
+  const phoneSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const phone = otpSent ? phoneSent : field(e, "phone").trim();
+    const otp = field(e, "otp").trim();
     setBusy(true);
     try {
       if (!otpSent) {
         const { error } = await supabase.auth.signInWithOtp({ phone });
         if (error) throw error;
+        setPhoneSent(phone);
         setOtpSent(true);
       } else {
         const { error } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
@@ -126,6 +148,7 @@ function AuthPage() {
                   <Label htmlFor="auth-name">{t("full_name")}</Label>
                   <Input
                     id="auth-name"
+                    name="full_name"
                     autoComplete="name"
                     className="h-11"
                     value={name}
@@ -139,6 +162,7 @@ function AuthPage() {
                 <Label htmlFor="auth-email">{t("email")}</Label>
                 <Input
                   id="auth-email"
+                  name="email"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
@@ -153,6 +177,7 @@ function AuthPage() {
                 <Label htmlFor="auth-password">{t("password")}</Label>
                 <Input
                   id="auth-password"
+                  name="password"
                   type="password"
                   autoComplete={mode === "in" ? "current-password" : "new-password"}
                   dir="ltr"
@@ -180,6 +205,7 @@ function AuthPage() {
                 <Label htmlFor="auth-phone">{t("phone")}</Label>
                 <Input
                   id="auth-phone"
+                  name="phone"
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
@@ -197,6 +223,7 @@ function AuthPage() {
                   <Label htmlFor="auth-otp">{t("otp_code")}</Label>
                   <Input
                     id="auth-otp"
+                    name="otp"
                     dir="ltr"
                     inputMode="numeric"
                     autoComplete="one-time-code"
