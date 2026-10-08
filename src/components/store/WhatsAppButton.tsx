@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/store-settings";
 import { fillTemplate, useWaContext, waLink } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
+import { useMergedHelp } from "./FloatingHelp";
 
 export function WhatsAppIcon({ className = "h-7 w-7" }: { className?: string }) {
   return (
@@ -47,10 +48,12 @@ export function WhatsAppButton() {
   const { lang } = useI18n();
   const ctx = useWaContext();
   const link = useWhatsAppLink();
+  const merged = useMergedHelp();
   if (!link || path.startsWith("/admin") || path.startsWith("/driver")) return null;
   const onProduct = ctx?.kind === "product";
   // Pages with a sticky action bar on mobile (product, cart, checkout): keep the bar and totals clear.
-  const hideOnMobile = onProduct || path === "/cart" || path === "/checkout";
+  // ... and when the phone shows one "help" button for WhatsApp + Stylist instead (FloatingHelp).
+  const hideOnMobile = onProduct || path === "/cart" || path === "/checkout" || merged;
   return (
     <a
       href={link.href}

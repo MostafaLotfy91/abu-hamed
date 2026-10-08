@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures/test";
 import { ACCOUNTS, E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { T, login, parseWa, pngFile, toast, xlsxFile } from "./fixtures/helpers";
+import { T, floatingWhatsApp, login, parseWa, pngFile, toast, xlsxFile } from "./fixtures/helpers";
 
 /** Confirms the in-app AlertDialog used for destructive admin actions. */
 const confirmDialog = (page: Page, label: string) =>
@@ -383,9 +383,9 @@ test.describe("admin", () => {
 
       await page.goto("/");
       await expect(page.locator(`footer a[href="${url}"]`)).toBeVisible();
-      expect(
-        parseWa(await page.getByRole("link", { name: T.ar.waFloat }).getAttribute("href")).number,
-      ).toBe("201098765432");
+      expect(parseWa(await (await floatingWhatsApp(page, "ar")).getAttribute("href")).number).toBe(
+        "201098765432",
+      );
     } finally {
       await updateSettings({ whatsapp_number: WA.number });
     }

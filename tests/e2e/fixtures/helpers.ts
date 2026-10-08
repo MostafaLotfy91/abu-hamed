@@ -283,3 +283,25 @@ export const xlsxFile = (name: string, rows: Partial<Record<Column, string | num
   mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   buffer: makeImportXlsx(rows),
 });
+
+/**
+ * Phones show one "help" button for WhatsApp + Stylist (FloatingHelp) when both are on; desktop shows both.
+ * These open the right control either way.
+ */
+export async function openStylist(page: Page, lang: Lang = "ar") {
+  const help = page.getByRole("button", { name: lang === "ar" ? "مساعدة" : "Help", exact: true });
+  if (await help.isVisible()) {
+    await help.click();
+    await page.getByRole("menuitem", { name: T[lang].stylist }).click();
+  } else await page.getByRole("button", { name: T[lang].stylist, exact: true }).click();
+}
+
+/** The floating WhatsApp link (inside the help menu on phones when it is merged). */
+export async function floatingWhatsApp(page: Page, lang: Lang = "ar") {
+  const help = page.getByRole("button", { name: lang === "ar" ? "مساعدة" : "Help", exact: true });
+  if (await help.isVisible()) {
+    await help.click();
+    return page.getByRole("menuitem", { name: T[lang].waFloat });
+  }
+  return page.getByRole("link", { name: T[lang].waFloat });
+}

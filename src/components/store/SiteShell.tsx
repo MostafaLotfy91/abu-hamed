@@ -1,5 +1,6 @@
 import { ShoppingAssistant } from "./ShoppingAssistant";
 import { WhatsAppButton } from "./WhatsAppButton";
+import { FloatingHelp } from "./FloatingHelp";
 import { SiteFooter } from "./SiteFooter";
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -153,6 +154,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <SiteFooter />
       <ShoppingAssistant />
       <WhatsAppButton />
+      <FloatingHelp />
 
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t bg-background md:hidden"

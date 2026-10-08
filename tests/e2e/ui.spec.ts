@@ -143,3 +143,31 @@ test.describe("mini-cart", () => {
     await expect(drawer).toBeHidden();
   });
 });
+
+test.describe("floating help", () => {
+  test.use({ lang: "ar" });
+
+  test("phones get one help button for Stylist + WhatsApp; desktop keeps both", async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto("/");
+    const help = page.getByRole("button", { name: "مساعدة", exact: true });
+    if (!isMobile) {
+      await expect(help).toBeHidden();
+      await expect(page.getByRole("button", { name: "الستايلست", exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name: "تواصل عبر واتساب" })).toBeVisible();
+      return;
+    }
+    await expect(page.getByRole("button", { name: "الستايلست", exact: true })).toBeHidden();
+    await expect(help).toHaveAttribute("aria-expanded", "false");
+    await help.click();
+    await expect(help).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("menuitem", { name: "تواصل عبر واتساب" })).toHaveAttribute(
+      "href",
+      /^https:\/\/wa\.me\//,
+    );
+    await page.getByRole("menuitem", { name: "الستايلست" }).click();
+    await expect(page.getByRole("dialog", { name: "الستايلست" })).toBeVisible();
+  });
+});

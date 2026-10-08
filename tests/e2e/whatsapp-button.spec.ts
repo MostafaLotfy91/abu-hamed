@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures/test";
 import { E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { T, fill, login, parseWa } from "./fixtures/helpers";
+import { T, fill, floatingWhatsApp, login, parseWa } from "./fixtures/helpers";
 import { WA, createPendingOrder, readSettings } from "./fixtures/seed";
 
 test.skip(!E2E_READY, SKIP_REASON);
@@ -14,7 +14,7 @@ for (const lang of ["ar", "en"] as const) {
     test("general message on the home page", async ({ page }) => {
       const st = await readSettings();
       await page.goto("/");
-      const link = page.getByRole("link", { name: s.waFloat });
+      const link = await floatingWhatsApp(page, lang);
       await expect(link).toHaveAttribute("target", "_blank");
       await expect(link).toHaveAttribute("rel", /noopener/);
       const wa = parseWa(await link.getAttribute("href"));
@@ -57,7 +57,7 @@ for (const lang of ["ar", "en"] as const) {
       const order = await createPendingOrder(catalog);
       await login(page, "customer", `/orders/${order.id}`);
       const expected = fill(WA.order[lang], { order_number: order.order_number });
-      const floating = page.getByRole("link", { name: s.waFloat });
+      const floating = await floatingWhatsApp(page, lang);
       await expect
         .poll(async () => parseWa(await floating.getAttribute("href")).text)
         .toBe(expected);

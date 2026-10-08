@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures/test";
 import { E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { T, toast } from "./fixtures/helpers";
+import { T, openStylist, toast } from "./fixtures/helpers";
 import { assistantProductFor, assistantStream } from "./fixtures/mocks";
 import { applyBaselineSettings, readSettings, updateSettings, type Catalog } from "./fixtures/seed";
 
@@ -43,7 +43,7 @@ test.describe("AI stylist (mocked)", () => {
   test("chat opens, product cards render and add to cart works", async ({ page, catalog }) => {
     const requests = await mockAssistant(page, catalog);
     await page.goto("/");
-    await page.getByRole("button", { name: s.stylist, exact: true }).click();
+    await openStylist(page, "ar");
     await expect(page.getByText(s.stylistSub)).toBeVisible();
 
     await page.getByPlaceholder(s.stylistInput).fill("عايز قميص أسود مقاس M");
@@ -75,7 +75,7 @@ test.describe("AI stylist (mocked)", () => {
   }) => {
     const requests = await mockAssistant(page, catalog);
     await page.goto("/");
-    await page.getByRole("button", { name: s.stylist, exact: true }).click();
+    await openStylist(page, "ar");
     // Chips are the store's top-level departments (no hardcoded phrases); the seed's department sorts first.
     await page.getByRole("button", { name: catalog.category.ar, exact: true }).click();
     await expect.poll(() => requests.at(-1)?.messages.at(-1)?.content).toBe(catalog.category.ar);
@@ -93,7 +93,7 @@ test.describe("AI stylist (mocked)", () => {
       }),
     );
     await page.goto("/");
-    await page.getByRole("button", { name: s.stylist, exact: true }).click();
+    await openStylist(page, "ar");
     await page.getByPlaceholder(s.stylistInput).fill("مرحبا");
     await page.keyboard.press("Enter");
     await expect(page.getByText("بعت رسايل كتير، استنى شوية وجرب تاني.")).toBeVisible();
@@ -106,6 +106,8 @@ test.describe("AI stylist (mocked)", () => {
       await page.goto("/");
       await expect(page.getByRole("heading", { name: T.ar.shopByDept })).toBeVisible();
       await expect(page.getByRole("button", { name: s.stylist, exact: true })).toHaveCount(0);
+      // With only WhatsApp left, phones show the WhatsApp button itself, not a merged help menu.
+      await expect(page.getByRole("button", { name: "مساعدة", exact: true })).toHaveCount(0);
     } finally {
       await applyBaselineSettings();
     }
@@ -118,7 +120,7 @@ test.describe("AI stylist (mocked, English)", () => {
   test("English chat uses English labels and product names", async ({ page, catalog }) => {
     await mockAssistant(page, catalog);
     await page.goto("/");
-    await page.getByRole("button", { name: T.en.stylist, exact: true }).click();
+    await openStylist(page, "en");
     await page.getByPlaceholder(T.en.stylistInput).fill("black shirt size L");
     await page.getByRole("button", { name: T.en.send, exact: true }).click();
     // The storefront behind the chat can list the same product, so look inside the chat.

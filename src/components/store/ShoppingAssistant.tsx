@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { AssistantEvent, AssistantProduct } from "@/lib/assistant-types";
 import { AssistantProductCard } from "./AssistantProductCard";
+import { STYLIST_OPEN_EVENT, useMergedHelp } from "./FloatingHelp";
 
 type Msg = {
   role: "user" | "assistant";
@@ -54,6 +55,13 @@ export function ShoppingAssistant() {
       s.location.pathname === "/checkout",
   });
   const [open, setOpen] = useState(false);
+  const merged = useMergedHelp();
+  // Opened from the phone "help" menu.
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(STYLIST_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(STYLIST_OPEN_EVENT, onOpen);
+  }, []);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -148,7 +156,7 @@ export function ShoppingAssistant() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className={`fixed bottom-20 end-4 z-40 ${onProduct ? "hidden md:flex" : "flex"} h-12 w-12 md:bottom-6 md:h-14 md:w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6`}
+          className={`fixed bottom-20 end-4 z-40 ${onProduct || merged ? "hidden md:flex" : "flex"} h-12 w-12 md:bottom-6 md:h-14 md:w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6`}
           aria-label={ar ? "الستايلست" : "Stylist"}
         >
           <Shirt className="h-6 w-6" />
