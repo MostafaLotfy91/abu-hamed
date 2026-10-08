@@ -97,6 +97,8 @@ export function ProductCard({ p }: { p: Product }) {
   ];
   const isNew = Date.now() - new Date(p.created_at).getTime() < NEW_DAYS * 864e5;
   const liked = wish.data?.has(p.id) ?? false;
+  // Until the saved list is known the heart can't tell "add" from "remove", so it waits.
+  const wishUnknown = !!user && !wish.isSuccess;
   const img1 = p.thumbnails?.[0] ?? p.images?.[0];
   const img2 = p.thumbnails?.[1] ?? p.images?.[1];
 
@@ -107,7 +109,12 @@ export function ProductCard({ p }: { p: Product }) {
     }
     const { error } = liked
       ? await supabase.from("wishlist").delete().eq("product_id", p.id).eq("user_id", user.id)
-      : await supabase.from("wishlist").insert({ product_id: p.id, user_id: user.id });
+      : await supabase
+          .from("wishlist")
+          .upsert(
+            { product_id: p.id, user_id: user.id },
+            { onConflict: "user_id,product_id", ignoreDuplicates: true },
+          );
     if (error) toast.error(t("error_title"));
     qc.invalidateQueries({ queryKey: ["wishlist"] });
     qc.invalidateQueries({ queryKey: ["wish"] });
@@ -156,6 +163,7 @@ export function ProductCard({ p }: { p: Product }) {
         </div>
         <button
           onClick={toggleWish}
+          disabled={wishUnknown}
           aria-label={t("wishlist")}
           aria-pressed={liked}
           className="absolute end-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-foreground transition hover:scale-110"
