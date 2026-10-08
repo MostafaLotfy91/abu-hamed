@@ -133,6 +133,20 @@ export async function fetchProfiles(): Promise<Profile[]> {
   if (error) throw error;
   return (data ?? []) as unknown as Profile[];
 }
+/** Picture for each category card: its own image, else a real product photo from it (see the view). */
+export async function fetchCategoryImages() {
+  const { data, error } = await supabase
+    .from("category_display_images")
+    .select("category_id,image_url,source");
+  if (error) throw error;
+  return new Map((data ?? []).map((r) => [r.category_id, r.image_url]));
+}
+export const categoryImagesQuery = {
+  queryKey: ["category_display_images"],
+  queryFn: fetchCategoryImages,
+  staleTime: 5 * 60_000,
+};
+
 export const profilesQuery = {
   queryKey: ["product_profiles"],
   queryFn: fetchProfiles,

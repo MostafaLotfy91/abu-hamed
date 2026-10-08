@@ -7,7 +7,13 @@ import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/store-settings";
 import { useMoney } from "@/components/store/use-money";
 import { isSafeLink } from "@/lib/whatsapp";
-import { fetchBanners, fetchCategories, fetchProductsHome, type Product } from "@/lib/queries";
+import {
+  categoryImagesQuery,
+  fetchBanners,
+  fetchCategories,
+  fetchProductsHome,
+  type Product,
+} from "@/lib/queries";
 import { ProductCard } from "@/components/store/ProductCard";
 import { SectionHeader } from "@/components/store/SiteShell";
 import { Countdown } from "@/components/store/Countdown";
@@ -85,6 +91,7 @@ function BannerSlider() {
 /** Top-level departments; the whole section is hidden when the store has none. */
 function Departments() {
   const { t, tx } = useI18n();
+  const images = useQuery(categoryImagesQuery);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
@@ -112,7 +119,7 @@ function Departments() {
                 key={c.id}
                 id={c.id}
                 name={tx(c, "name")}
-                image={c.image_url}
+                image={images.data?.get(c.id) ?? c.image_url}
                 profileKey={profileKeyOf(c.id, data ?? [])}
                 variant="tile"
                 priority={i < 4}

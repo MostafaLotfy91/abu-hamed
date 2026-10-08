@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { fetchCategories } from "@/lib/queries";
+import { categoryImagesQuery, fetchCategories } from "@/lib/queries";
 import { ErrorState, EmptyState } from "@/components/store/states";
 import { Skeleton } from "@/components/ui/skeleton";
 import { pageHead } from "@/lib/seo";
@@ -18,6 +18,8 @@ export const Route = createFileRoute("/categories")({
 
 function CategoriesPage() {
   const { t, tx, dir } = useI18n();
+  // Own image or a real product photo per category (falls back to image_url if the view is unavailable).
+  const images = useQuery(categoryImagesQuery);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
@@ -75,7 +77,7 @@ function CategoriesPage() {
                 key={c.id}
                 id={c.id}
                 name={tx(c, "name")}
-                image={c.image_url}
+                image={images.data?.get(c.id) ?? c.image_url}
                 profileKey={profileKeyOf(c.id, all)}
                 variant="card"
               />

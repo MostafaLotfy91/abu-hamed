@@ -1183,7 +1183,10 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      category_display_images: {
+        Row: { category_id: string; image_url: string | null; source: string };
+        Relationships: [];
+      };
     };
     Functions: {
       admin_add_driver: { Args: { _email: string }; Returns: string };
