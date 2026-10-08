@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useMoney } from "./use-money";
 import { useSettings } from "@/lib/store-settings";
 import { QuickAddSheet } from "./QuickAddSheet";
+import { usableImage } from "@/lib/category-image";
 
 const NEW_DAYS = 21;
 
@@ -35,7 +36,9 @@ export function ProductImage({
   const ref = useCallback((el: HTMLImageElement | null) => {
     if (el?.complete && el.naturalWidth) setLoaded(true);
   }, []);
-  if (!src || failed)
+  // Old/relative paths (e.g. /__l5e/...) can't load here: go straight to the placeholder.
+  const url = usableImage(src);
+  if (!url || failed)
     return (
       // Same accessible name as the real image would have, so links wrapping the placeholder still have text.
       <div
@@ -56,7 +59,7 @@ export function ProductImage({
   return (
     <img
       ref={ref}
-      src={src}
+      src={url}
       alt={alt}
       loading={priority ? "eager" : "lazy"}
       decoding="async"

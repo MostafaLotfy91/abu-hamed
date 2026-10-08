@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { countLabel } from "@/lib/format";
 import { CategoryCard } from "@/components/store/CategoryCard";
 import { profileKeyOf } from "@/lib/catalog";
+import { usableImage } from "@/lib/category-image";
 
 export const Route = createFileRoute("/")({
   head: ({ matches }) => pageHead(matches),
@@ -44,12 +45,14 @@ function BannerSlider() {
     return (
       <Skeleton className="-mx-3 -mt-4 aspect-[4/5] rounded-none sm:aspect-[16/9] md:-mx-6 md:aspect-[21/9]" />
     );
-  if (!data?.length) return null;
+  // Banners whose picture can't load anywhere (empty, old /__l5e/ path) are skipped, not shown broken.
+  const banners = (data ?? []).filter((b) => usableImage(b.image_url));
+  if (!banners.length) return null;
   return (
     <div className="relative -mx-3 -mt-4 md:-mx-6">
       <div ref={ref} className="overflow-hidden">
         <div className="flex">
-          {data.map((b, i) => (
+          {banners.map((b, i) => (
             <a
               key={b.id}
               href={b.link && isSafeLink(b.link) ? b.link : "#"}
@@ -77,7 +80,7 @@ function BannerSlider() {
         </div>
       </div>
       <div className="absolute inset-x-0 bottom-4 flex justify-center gap-1.5">
-        {data.map((b, i) => (
+        {banners.map((b, i) => (
           <span
             key={b.id}
             className={`h-1 rounded-full bg-background transition-all ${i === idx ? "w-5" : "w-1.5 opacity-60"}`}

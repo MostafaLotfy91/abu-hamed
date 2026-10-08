@@ -26,6 +26,7 @@ import { CartLines, CartTotals } from "./CartContents";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/lib/theme";
 import { formatCount } from "@/lib/format";
+import { usableImage } from "@/lib/category-image";
 
 const NAV: {
   to: "/" | "/categories" | "/cart" | "/orders" | "/account";
@@ -47,9 +48,9 @@ export function StoreLogo() {
     // Logo keeps its own proportions (wide wordmarks or square marks); the name shows when there is no logo,
     // and next to the logo from tablet width up.
     <Link to="/" aria-label={name} className="flex min-h-11 shrink-0 items-center gap-2">
-      {settings?.logo_url ? (
+      {usableImage(settings?.logo_url) ? (
         <img
-          src={settings.logo_url}
+          src={usableImage(settings?.logo_url)!}
           alt=""
           width={160}
           height={44}

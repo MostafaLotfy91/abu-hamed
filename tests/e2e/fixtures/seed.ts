@@ -930,3 +930,33 @@ export async function setFlash(productId: string, price: number | null, hoursFro
     "set flash",
   );
 }
+
+/* ---------------------------------------------------------- category images -- */
+
+export async function setCategoryImage(categoryId: string, url: string | null) {
+  must(
+    await service().from("categories").update({ image_url: url }).eq("id", categoryId),
+    "set category image",
+  );
+}
+
+export async function categoryImage(categoryId: string) {
+  const r = must(
+    await service().from("categories").select("image_url").eq("id", categoryId).single(),
+    "category image",
+  ) as { image_url: string | null };
+  return r.image_url;
+}
+
+/** Two real, publicly served images already in storage (department pictures), for display tests. */
+export async function storedImages(): Promise<string[]> {
+  const rows = (must(
+    await service()
+      .from("categories")
+      .select("image_url")
+      .like("image_url", "https://%/storage/v1/object/public/%")
+      .limit(2),
+    "stored images",
+  ) ?? []) as { image_url: string }[];
+  return rows.map((r) => r.image_url);
+}

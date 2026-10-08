@@ -1,7 +1,13 @@
 import { test, expect } from "./fixtures/test";
 import { E2E_READY, SKIP_REASON } from "./fixtures/env";
 import { T, toast, visible } from "./fixtures/helpers";
-import { readSettings, setFlash, setProductImages, setVariantStock } from "./fixtures/seed";
+import {
+  readSettings,
+  setFlash,
+  setProductImages,
+  setVariantStock,
+  storedImages,
+} from "./fixtures/seed";
 
 test.skip(!E2E_READY, SKIP_REASON);
 
@@ -93,9 +99,10 @@ test.describe("product photos", () => {
   });
 
   test("viewer: next/previous, counter and tap-to-zoom", async ({ page, catalog }) => {
-    const dot = (color: string) =>
-      `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="${color}"/></svg>`)}`;
-    await setProductImages(catalog.productId, [dot("#c33"), dot("#33c")]);
+    // Two real, publicly served images from storage (inline data: URLs are not valid product images).
+    const photos = await storedImages();
+    test.skip(photos.length < 2, "needs two stored images in the project");
+    await setProductImages(catalog.productId, photos);
     try {
       await page.goto(`/product/${catalog.productId}`);
       await page.getByRole("button", { name: "تكبير الصورة" }).first().click();
