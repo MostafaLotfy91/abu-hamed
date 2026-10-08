@@ -163,7 +163,8 @@ function SocialManager() {
             platform,
             url: `https://${platform}.com/`,
             is_active: false,
-            sort_order: data.length + 1,
+            // After the highest, not the count: after deletions the count collides with existing rows.
+            sort_order: Math.max(0, ...data.map((d) => d.sort_order ?? 0)) + 1,
           })
         ).error,
       )
