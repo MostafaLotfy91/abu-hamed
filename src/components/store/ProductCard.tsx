@@ -7,7 +7,8 @@ import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { effectivePrice } from "@/lib/format";
+import { countLabel, effectivePrice } from "@/lib/format";
+import { LOW_STOCK } from "@/lib/fashion";
 import type { Product } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { useMoney } from "./use-money";
@@ -79,7 +80,7 @@ function useWishlistIds() {
 }
 
 export function ProductCard({ p }: { p: Product }) {
-  const { t, tx } = useI18n();
+  const { t, tx, lang } = useI18n();
   const money = useMoney();
   const cart = useCart();
   const { user } = useAuth();
@@ -158,6 +159,11 @@ export function ProductCard({ p }: { p: Product }) {
           {isNew && (
             <span className="rounded-sm bg-card px-1.5 py-0.5 text-[11px] font-bold">
               {t("badge_new")}
+            </span>
+          )}
+          {stock > 0 && stock <= LOW_STOCK && (
+            <span className="rounded-sm bg-brand-secondary px-1.5 py-0.5 text-[11px] font-bold text-brand-secondary-foreground">
+              {t("only_left").replace("{n}", countLabel(stock, lang, "piece"))}
             </span>
           )}
         </div>

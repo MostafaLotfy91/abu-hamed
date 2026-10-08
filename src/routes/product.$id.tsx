@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Heart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,6 +80,9 @@ function ProductPage() {
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
+  // "Add to cart" without a size: scroll to the size row and highlight it instead of a dead, disabled button.
+  const sizeRef = useRef<HTMLDivElement>(null);
+  const [nudge, setNudge] = useState(false);
 
   const q = useQuery({
     queryKey: ["product", id],
@@ -201,7 +204,12 @@ function ProductPage() {
     !!(p.top_notes || p.middle_notes || p.base_notes || p.volume_ml || p.concentration);
 
   const add = () => {
-    if (!ready) return toast.error(t("select_size_color"));
+    if (!ready) {
+      sizeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setNudge(true);
+      setTimeout(() => setNudge(false), 1200);
+      return toast.error(t("select_size_color"));
+    }
     cart.add(
       {
         productId: p.id,
@@ -331,9 +339,20 @@ function ProductPage() {
           )}
 
           {needSize && (
-            <div>
+            <div
+              ref={sizeRef}
+              role="group"
+              aria-labelledby="size-label"
+              data-nudge={nudge || undefined}
+              className={cn(
+                "scroll-mt-24 rounded-lg transition-shadow",
+                nudge && "animate-nudge ring-2 ring-deal ring-offset-4 ring-offset-background",
+              )}
+            >
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold">{sizeAxisLabel}</p>
+                <p id="size-label" className="text-sm font-semibold">
+                  {sizeAxisLabel}
+                </p>
                 {profile.size_guide && <SizeGuide type={profile.size_guide} />}
               </div>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
@@ -365,6 +384,7 @@ function ProductPage() {
           )}
 
           <p
+            aria-live="polite"
             className={cn(
               "text-sm font-medium",
               !ready
@@ -395,12 +415,7 @@ function ProductPage() {
                   onChange={(n) => setQty(Math.max(1, n))}
                 />
               </div>
-              <Button
-                size="lg"
-                className="h-12 flex-1 font-semibold"
-                onClick={add}
-                disabled={!ready}
-              >
+              <Button size="lg" className="h-12 flex-1 font-semibold" onClick={add}>
                 {t("add_to_cart")} · {money(pricing.current * curQty)}
               </Button>
             </div>
@@ -527,8 +542,8 @@ function ProductPage() {
             </p>
             <p className="font-bold">{money(pricing.current)}</p>
           </div>
-          <Button size="lg" className="h-12 flex-1 font-semibold" onClick={add} disabled={!ready}>
-            {ready ? t("add_to_cart") : t("select_size_color")}
+          <Button size="lg" className="h-12 flex-1 font-semibold" onClick={add}>
+            {ready ? t("add_to_cart") : t("choose_size")}
           </Button>
         </div>
       )}
