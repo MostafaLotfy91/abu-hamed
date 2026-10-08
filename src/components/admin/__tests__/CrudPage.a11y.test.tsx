@@ -5,7 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 // Table query (server-side paging): supabase.from(t).select("*", { count }).order()[.eq/.or]().range() -> one row.
 vi.mock("@/integrations/supabase/client", () => {
   const rows = [{ id: "1", code: "SALE", value: 10, image_url: null, is_active: true }];
-  const chain = { select: () => chain, order: () => chain, eq: () => chain, or: () => chain, range: async () => ({ data: rows, error: null, count: rows.length }) };
+  const chain = {
+    select: () => chain,
+    order: () => chain,
+    eq: () => chain,
+    or: () => chain,
+    range: async () => ({ data: rows, error: null, count: rows.length }),
+  };
   return { supabase: { from: () => chain } };
 });
 

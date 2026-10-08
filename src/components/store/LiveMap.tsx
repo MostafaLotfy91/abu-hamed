@@ -12,8 +12,14 @@ export function LiveMap({ lat, lng, className }: { lat: number; lng: number; cla
     let cancelled = false;
     import("leaflet").then((L) => {
       if (cancelled || !el.current || map.current) return;
-      const m = L.map(el.current, { zoomControl: true, attributionControl: true }).setView([lat, lng], 16);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(m);
+      const m = L.map(el.current, { zoomControl: true, attributionControl: true }).setView(
+        [lat, lng],
+        16,
+      );
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "© OpenStreetMap",
+      }).addTo(m);
       const icon = L.divIcon({
         className: "",
         html: '<div style="width:22px;height:22px;border-radius:9999px;background:var(--primary);border:3px solid var(--background);box-shadow:0 0 0 6px color-mix(in oklab, var(--primary) 30%, transparent)"></div>',
@@ -37,5 +43,7 @@ export function LiveMap({ lat, lng, className }: { lat: number; lng: number; cla
     map.current?.panTo([lat, lng], { animate: true });
   }, [lat, lng]);
 
-  return <div ref={el} className={className ?? "z-0 h-64 w-full overflow-hidden rounded-2xl border"} />;
+  return (
+    <div ref={el} className={className ?? "z-0 h-64 w-full overflow-hidden rounded-2xl border"} />
+  );
 }

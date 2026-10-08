@@ -9,10 +9,15 @@ test.describe("returns and exchanges (Arabic)", () => {
   test.use({ lang: "ar" });
   const s = T.ar;
 
-  test("customer requests an exchange for one item of a delivered order", async ({ page, catalog }) => {
+  test("customer requests an exchange for one item of a delivered order", async ({
+    page,
+    catalog,
+  }) => {
     const order = await createDeliveredOrder(catalog);
     await login(page, "customer", `/orders/${order.id}`);
-    await expect(page.getByRole("heading", { level: 1, name: `${s.order} #${order.order_number}` })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: `${s.order} #${order.order_number}` }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: s.returnExchange })).toBeVisible();
     await expect(page.getByText("متاح خلال 14 يوم من التوصيل")).toBeVisible();
 
@@ -39,7 +44,9 @@ test.describe("returns and exchanges (Arabic)", () => {
   test("return section is not offered before the order is delivered", async ({ page, catalog }) => {
     const order = await createPendingOrder(catalog);
     await login(page, "customer", `/orders/${order.id}`);
-    await expect(page.getByRole("heading", { level: 1, name: `${s.order} #${order.order_number}` })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: `${s.order} #${order.order_number}` }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: s.returnExchange })).toHaveCount(0);
     await expect(page.getByRole("button", { name: s.requestReturn })).toHaveCount(0);
   });
@@ -56,7 +63,9 @@ test.describe("returns and exchanges (English)", () => {
     const dialog = page.getByRole("dialog", { name: e.requestReturn });
     await dialog.getByRole("button", { name: e.return, exact: true }).click();
     // The exchange-preference field only exists for exchanges.
-    await expect(dialog.locator(`xpath=.//label[normalize-space(.)="${e.exchangePref}"]`)).toHaveCount(0);
+    await expect(
+      dialog.locator(`xpath=.//label[normalize-space(.)="${e.exchangePref}"]`),
+    ).toHaveCount(0);
     await expect(fieldAfterLabel(dialog, e.items)).toHaveValue("");
     await fieldAfterLabel(dialog, e.reason).fill("Changed my mind");
     await dialog.getByRole("button", { name: e.submit, exact: true }).click();

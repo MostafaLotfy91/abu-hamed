@@ -16,7 +16,11 @@ export type FeatureFlags = {
 export const settingsQuery = {
   queryKey: ["store_settings"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("store_settings").select("*").eq("id", 1).maybeSingle();
+    const { data, error } = await supabase
+      .from("store_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -30,16 +34,26 @@ function readableOn(hex: string) {
   const m = hex.replace("#", "").match(/^([0-9a-f]{6})$/i);
   if (!m) return "oklch(0.99 0 0)";
   const n = parseInt(m[1], 16);
-  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const r = (n >> 16) & 255,
+    g = (n >> 8) & 255,
+    b = n & 255;
   const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return lum > 0.62 ? "oklch(0.2 0.02 160)" : "oklch(0.99 0 0)";
 }
 
 /** CSS custom properties for the store colours (also rendered inline on <html> by the server). */
-export function themeVars(s: Pick<StoreSettings, "primary_color" | "secondary_color"> | null): Record<string, string> {
+export function themeVars(
+  s: Pick<StoreSettings, "primary_color" | "secondary_color"> | null,
+): Record<string, string> {
   const v: Record<string, string> = {};
-  if (s?.primary_color) { v["--primary"] = s.primary_color; v["--primary-foreground"] = readableOn(s.primary_color); }
-  if (s?.secondary_color) { v["--brand-secondary"] = s.secondary_color; v["--brand-secondary-foreground"] = readableOn(s.secondary_color); }
+  if (s?.primary_color) {
+    v["--primary"] = s.primary_color;
+    v["--primary-foreground"] = readableOn(s.primary_color);
+  }
+  if (s?.secondary_color) {
+    v["--brand-secondary"] = s.secondary_color;
+    v["--brand-secondary-foreground"] = readableOn(s.secondary_color);
+  }
   return v;
 }
 
@@ -47,8 +61,17 @@ export function themeVars(s: Pick<StoreSettings, "primary_color" | "secondary_co
  * Provides store settings. `initial` comes from the root route loader (server-rendered), so the first paint already
  * has the store's name, logo and colours; nothing waits on a client fetch.
  */
-export function SettingsProvider({ children, initial }: { children: ReactNode; initial?: StoreSettings | null }) {
-  const { data, isLoading } = useQuery({ ...settingsQuery, ...(initial ? { initialData: initial } : {}) });
+export function SettingsProvider({
+  children,
+  initial,
+}: {
+  children: ReactNode;
+  initial?: StoreSettings | null;
+}) {
+  const { data, isLoading } = useQuery({
+    ...settingsQuery,
+    ...(initial ? { initialData: initial } : {}),
+  });
 
   useEffect(() => {
     if (isLoading) return;
@@ -65,7 +88,11 @@ export function SettingsProvider({ children, initial }: { children: ReactNode; i
 
   return (
     <SettingsContext.Provider
-      value={{ settings: data ?? null, loading: isLoading, features: ((data?.features ?? {}) as FeatureFlags) }}
+      value={{
+        settings: data ?? null,
+        loading: isLoading,
+        features: (data?.features ?? {}) as FeatureFlags,
+      }}
     >
       {children}
     </SettingsContext.Provider>

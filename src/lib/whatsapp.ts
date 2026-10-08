@@ -10,10 +10,22 @@ export function normalizeEgyptPhone(input: string): string | null {
   return null;
 }
 
-export const WA_VARIABLES = ["{store_name}", "{product_name}", "{product_url}", "{size}", "{color}", "{order_number}"] as const;
+export const WA_VARIABLES = [
+  "{store_name}",
+  "{product_name}",
+  "{product_url}",
+  "{size}",
+  "{color}",
+  "{order_number}",
+] as const;
 
-export function fillTemplate(tpl: string, vars: Record<string, string | number | null | undefined>) {
-  return tpl.replace(/\{(\w+)\}/g, (m, k) => (vars[k] == null || vars[k] === "" ? "-" : String(vars[k])));
+export function fillTemplate(
+  tpl: string,
+  vars: Record<string, string | number | null | undefined>,
+) {
+  return tpl.replace(/\{(\w+)\}/g, (m, k) =>
+    vars[k] == null || vars[k] === "" ? "-" : String(vars[k]),
+  );
 }
 
 export function waLink(number: string, message: string) {
@@ -44,11 +56,23 @@ export type WaContext =
 
 let current: WaContext = null;
 const listeners = new Set<() => void>();
-const sub = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
-const set = (c: WaContext) => { current = c; listeners.forEach((l) => l()); };
+const sub = (l: () => void) => {
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+  };
+};
+const set = (c: WaContext) => {
+  current = c;
+  listeners.forEach((l) => l());
+};
 
 export function useWaContext() {
-  return useSyncExternalStore(sub, () => current, () => null);
+  return useSyncExternalStore(
+    sub,
+    () => current,
+    () => null,
+  );
 }
 
 export function usePublishWaContext(ctx: WaContext) {

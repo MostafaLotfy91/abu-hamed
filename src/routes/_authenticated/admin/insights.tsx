@@ -10,7 +10,8 @@ import { pageHead } from "@/lib/seo";
 import { AlertsPanel, ReturnsPanel } from "@/components/admin/insights/StockPanels";
 
 export const Route = createFileRoute("/_authenticated/admin/insights")({
-  head: ({ matches }) => pageHead(matches, { title: { ar: "التحليلات الذكية", en: "AI insights" }, noindex: true }),
+  head: ({ matches }) =>
+    pageHead(matches, { title: { ar: "التحليلات الذكية", en: "AI insights" }, noindex: true }),
   component: InsightsPage,
 });
 
@@ -21,7 +22,12 @@ function InsightsPage() {
   const ar = lang === "ar";
   if (!isAdmin) return <EmptyState title={ar ? "للمدير فقط" : "Admins only"} />;
   if (!features.ai_analytics)
-    return <EmptyState title={ar ? "التحليلات الذكية غير مفعلة" : "AI analytics is off"} hint={ar ? "فعّل ai_analytics من الإعدادات" : "Turn on ai_analytics in Settings"} />;
+    return (
+      <EmptyState
+        title={ar ? "التحليلات الذكية غير مفعلة" : "AI analytics is off"}
+        hint={ar ? "فعّل ai_analytics من الإعدادات" : "Turn on ai_analytics in Settings"}
+      />
+    );
   return (
     <div className="max-w-5xl space-y-4">
       <h1 className="text-xl font-extrabold">{ar ? "التحليلات الذكية" : "AI insights"}</h1>
@@ -33,10 +39,18 @@ function InsightsPage() {
           <TabsTrigger value="returns">{ar ? "المرتجعات" : "Returns"}</TabsTrigger>
         </TabsList>
         <div className="mt-3 rounded-2xl bg-card p-4 shadow-card">
-          <TabsContent value="weekly"><WeeklyPanel ar={ar} /></TabsContent>
-          <TabsContent value="ask"><AskPanel ar={ar} /></TabsContent>
-          <TabsContent value="alerts"><AlertsPanel ar={ar} /></TabsContent>
-          <TabsContent value="returns"><ReturnsPanel ar={ar} /></TabsContent>
+          <TabsContent value="weekly">
+            <WeeklyPanel ar={ar} />
+          </TabsContent>
+          <TabsContent value="ask">
+            <AskPanel ar={ar} />
+          </TabsContent>
+          <TabsContent value="alerts">
+            <AlertsPanel ar={ar} />
+          </TabsContent>
+          <TabsContent value="returns">
+            <ReturnsPanel ar={ar} />
+          </TabsContent>
         </div>
       </Tabs>
     </div>

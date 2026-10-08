@@ -17,16 +17,32 @@ export async function insightsFetch(body: unknown, signal?: AbortSignal) {
 
 /** Runs one fixed aggregated query directly (no AI). */
 export async function runInsight(name: InsightName, params: Record<string, unknown> = {}) {
-  const { data, error } = await supabase.rpc("admin_insight" as any, { _name: name, _params: params } as any);
+  const { data, error } = await supabase.rpc(
+    "admin_insight" as any,
+    { _name: name, _params: params } as any,
+  );
   if (error) throw error;
   return (data ?? []) as InsightRow[];
 }
 
 export function aiErrorText(status: number, ar: boolean) {
-  if (status === 402) return ar ? "رصيد الذكاء الاصطناعي خلص. زوّد الرصيد من الإعدادات وجرب تاني." : "AI credits ran out. Top up and try again.";
-  if (status === 429) return ar ? "طلبات كتير في وقت قصير، استنى دقيقة وجرب تاني." : "Too many requests, wait a minute and retry.";
-  if (status === 401) return ar ? "انتهت الجلسة، سجّل الدخول تاني." : "Your session expired, please sign in again.";
-  if (status === 503) return ar ? "الخدمة غير متاحة مؤقتاً، جرب بعد شوية." : "Service temporarily unavailable, try again shortly.";
-  if (status === 403) return ar ? "التحليلات الذكية غير مفعلة أو غير مسموح لك." : "AI analytics is off or not allowed.";
+  if (status === 402)
+    return ar
+      ? "رصيد الذكاء الاصطناعي خلص. زوّد الرصيد من الإعدادات وجرب تاني."
+      : "AI credits ran out. Top up and try again.";
+  if (status === 429)
+    return ar
+      ? "طلبات كتير في وقت قصير، استنى دقيقة وجرب تاني."
+      : "Too many requests, wait a minute and retry.";
+  if (status === 401)
+    return ar ? "انتهت الجلسة، سجّل الدخول تاني." : "Your session expired, please sign in again.";
+  if (status === 503)
+    return ar
+      ? "الخدمة غير متاحة مؤقتاً، جرب بعد شوية."
+      : "Service temporarily unavailable, try again shortly.";
+  if (status === 403)
+    return ar
+      ? "التحليلات الذكية غير مفعلة أو غير مسموح لك."
+      : "AI analytics is off or not allowed.";
   return ar ? "حصلت مشكلة، جرب تاني." : "Something went wrong, try again.";
 }

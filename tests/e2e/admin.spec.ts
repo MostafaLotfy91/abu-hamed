@@ -4,23 +4,45 @@ import { ACCOUNTS, E2E_READY, SKIP_REASON } from "./fixtures/env";
 import { T, login, parseWa, pngFile, toast, xlsxFile } from "./fixtures/helpers";
 
 /** Confirms the in-app AlertDialog used for destructive admin actions. */
-const confirmDialog = (page: Page, label: string) => page.getByRole("alertdialog").getByRole("button", { name: label }).click();
+const confirmDialog = (page: Page, label: string) =>
+  page.getByRole("alertdialog").getByRole("button", { name: label }).click();
 import {
-  WA, createPendingOrder, findBanner, findCoupon, findProductBySku, getOrder, lastImportJob, readSettings, updateSettings, variantsOf,
+  WA,
+  createPendingOrder,
+  findBanner,
+  findCoupon,
+  findProductBySku,
+  getOrder,
+  lastImportJob,
+  readSettings,
+  updateSettings,
+  variantsOf,
 } from "./fixtures/seed";
 
 test.skip(!E2E_READY, SKIP_REASON);
 
 /** CrudPage table row containing text; its icon buttons are named "تعديل / Edit" and "حذف / Delete". */
 const row = (page: Page, text: string) => page.locator("tbody tr").filter({ hasText: text });
-const rowButton = (page: Page, text: string, name: "تعديل / Edit" | "حذف / Delete") => row(page, text).getByRole("button", { name });
+const rowButton = (page: Page, text: string, name: "تعديل / Edit" | "حذف / Delete") =>
+  row(page, text).getByRole("button", { name });
 
 test.describe("admin", () => {
   test.use({ lang: "ar" });
 
   test("admin signs in and sees the dashboard navigation", async ({ page }) => {
     await login(page, "admin", "/admin");
-    for (const label of ["الإحصائيات", "الطلبات", "الاسترجاع", "المندوبين", "المنتجات", "استيراد Excel", "الأقسام", "البانرات", "الكوبونات", "إعدادات المتجر"]) {
+    for (const label of [
+      "الإحصائيات",
+      "الطلبات",
+      "الاسترجاع",
+      "المندوبين",
+      "المنتجات",
+      "استيراد Excel",
+      "الأقسام",
+      "البانرات",
+      "الكوبونات",
+      "إعدادات المتجر",
+    ]) {
       await expect(page.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
   });
@@ -36,7 +58,9 @@ test.describe("admin", () => {
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("الاسم (عربي) *", { exact: true }).fill(name);
     await dialog.getByLabel("Name (EN) *", { exact: true }).fill(`E2E Admin ${catalog.tag}`);
-    await dialog.getByLabel("Category / القسم", { exact: true }).selectOption({ label: catalog.category.ar });
+    await dialog
+      .getByLabel("Category / القسم", { exact: true })
+      .selectOption({ label: catalog.category.ar });
     await dialog.getByLabel("SKU", { exact: true }).fill(sku);
     await dialog.getByLabel("Price / السعر *", { exact: true }).fill("250");
     // Image upload: generated PNG -> compressed to WebP in the browser -> store-media bucket.
@@ -62,7 +86,9 @@ test.describe("admin", () => {
     await expect.poll(async () => Number((await findProductBySku(sku))?.price)).toBe(275);
 
     // Variants (VariantEditor): S + M in Black, 7 each, then S stock -> 0.
-    await row(page, name).getByRole("button", { name: "Sizes & colors / المقاسات والألوان" }).click();
+    await row(page, name)
+      .getByRole("button", { name: "Sizes & colors / المقاسات والألوان" })
+      .click();
     const variants = page.getByRole("dialog", { name: `${name} — المقاسات والألوان` });
     await variants.getByRole("button", { name: "S", exact: true }).click();
     await variants.getByRole("button", { name: "M", exact: true }).click();
@@ -71,11 +97,19 @@ test.describe("admin", () => {
     await variants.getByRole("button", { name: "Generate / توليد" }).click();
     await expect(toast(page, "+2")).toBeVisible();
     await expect(variants.locator("tbody tr")).toHaveCount(2);
-    const sStock = variants.getByRole("spinbutton", { name: "المخزون / Stock S / Black", exact: true });
+    const sStock = variants.getByRole("spinbutton", {
+      name: "المخزون / Stock S / Black",
+      exact: true,
+    });
     await sStock.fill("0");
     await sStock.press("Tab");
     await expect
-      .poll(async () => (await variantsOf(created!.id)).map((v) => `${v.size}:${v.color_en}:${v.stock}`).sort().join(","))
+      .poll(async () =>
+        (await variantsOf(created!.id))
+          .map((v) => `${v.size}:${v.color_en}:${v.stock}`)
+          .sort()
+          .join(","),
+      )
       .toBe("M:Black:7,S:Black:0");
     await page.keyboard.press("Escape");
 
@@ -97,19 +131,38 @@ test.describe("admin", () => {
   test("Excel import: valid file imports, then undo hides it", async ({ page, catalog }) => {
     const code = `E2EIMP${catalog.tag}`;
     const file = `e2e-import-${catalog.tag}.xlsx`;
-    const base = { product_code: code, category: catalog.category.ar, price: 300, color_ar: "أسود", is_active: 1 };
+    const base = {
+      product_code: code,
+      category: catalog.category.ar,
+      price: 300,
+      color_ar: "أسود",
+      is_active: 1,
+    };
     await login(page, "admin", "/admin/import");
     await expect(page.getByRole("heading", { name: "استيراد المنتجات من Excel" })).toBeVisible();
     await page.locator('input[type="file"][accept=".xlsx,.xls,.csv"]').setInputFiles(
       xlsxFile(file, [
-        { ...base, name_ar: `مستورد ${catalog.tag}`, name_en: `E2E Imported ${catalog.tag}`, gender: "men", season: "summer", size: "M", sku: `${code}-M`, stock: 4 },
+        {
+          ...base,
+          name_ar: `مستورد ${catalog.tag}`,
+          name_en: `E2E Imported ${catalog.tag}`,
+          gender: "men",
+          season: "summer",
+          size: "M",
+          sku: `${code}-M`,
+          stock: 4,
+        },
         { ...base, size: "L", sku: `${code}-L`, stock: 2 },
       ]),
     );
     await expect(page.getByRole("heading", { name: "2. مراجعة البيانات" })).toBeVisible();
     await expect(page.getByText("منتجات جديدة", { exact: true }).locator("..")).toContainText("1");
-    await expect(page.getByText("مقاسات/ألوان جديدة", { exact: true }).locator("..")).toContainText("2");
-    await expect(page.getByText("صفوف بها أخطاء", { exact: true }).locator("..")).toContainText("0");
+    await expect(page.getByText("مقاسات/ألوان جديدة", { exact: true }).locator("..")).toContainText(
+      "2",
+    );
+    await expect(page.getByText("صفوف بها أخطاء", { exact: true }).locator("..")).toContainText(
+      "0",
+    );
     await page.getByRole("button", { name: /3\. تأكيد الاستيراد \(2 صف/ }).click();
     await expect(toast(page, "تم استيراد 2 صف")).toBeVisible({ timeout: 30_000 });
 
@@ -120,7 +173,11 @@ test.describe("admin", () => {
     // Undo the last import from the history tab.
     await page.getByRole("tab", { name: "السجل" }).click();
     await expect(page.getByRole("row").filter({ hasText: file })).toContainText("مكتمل");
-    await page.getByRole("button", { name: new RegExp(`التراجع عن آخر استيراد \\(${file.replace(/\./g, "\\.")}\\)`) }).click();
+    await page
+      .getByRole("button", {
+        name: new RegExp(`التراجع عن آخر استيراد \\(${file.replace(/\./g, "\\.")}\\)`),
+      })
+      .click();
     await confirmDialog(page, "تراجع / Undo");
     await expect(toast(page, /تم إخفاء \d+ منتج/)).toBeVisible();
     await expect.poll(async () => (await findProductBySku(code))?.is_active).toBe(false);
@@ -133,21 +190,48 @@ test.describe("admin", () => {
     await login(page, "admin", "/admin/import");
     await page.locator('input[type="file"][accept=".xlsx,.xls,.csv"]').setInputFiles(
       xlsxFile(file, [
-        { product_code: `E2EOK${tag}`, name_ar: `سليم ${tag}`, name_en: `E2E OK ${tag}`, category: catalog.category.ar, price: 120, stock: 3 },
-        { product_code: `E2EBAD1${tag}`, name_ar: "سعر خطأ", category: catalog.category.ar, price: "abc" },
+        {
+          product_code: `E2EOK${tag}`,
+          name_ar: `سليم ${tag}`,
+          name_en: `E2E OK ${tag}`,
+          category: catalog.category.ar,
+          price: 120,
+          stock: 3,
+        },
+        {
+          product_code: `E2EBAD1${tag}`,
+          name_ar: "سعر خطأ",
+          category: catalog.category.ar,
+          price: "abc",
+        },
         { product_code: "", name_ar: "بدون كود", price: 10 },
         { product_code: `E2EBAD3${tag}`, name_ar: "قسم خطأ", category: "قسم غير موجود", price: 10 },
-        { product_code: `E2EBAD4${tag}`, name_ar: "مقاس خطأ", category: catalog.category.ar, size: "XXXXL", price: 10 },
+        {
+          product_code: `E2EBAD4${tag}`,
+          name_ar: "مقاس خطأ",
+          category: catalog.category.ar,
+          size: "XXXXL",
+          price: 10,
+        },
       ]),
     );
-    await expect(page.getByText("صفوف بها أخطاء", { exact: true }).locator("..")).toContainText("4");
-    for (const msg of ["السعر ليس رقماً", "كود المنتج مفقود", "القسم غير موجود: قسم غير موجود", "المقاس XXXXL غير مسموح لهذا القسم"]) {
+    await expect(page.getByText("صفوف بها أخطاء", { exact: true }).locator("..")).toContainText(
+      "4",
+    );
+    for (const msg of [
+      "السعر ليس رقماً",
+      "كود المنتج مفقود",
+      "القسم غير موجود: قسم غير موجود",
+      "المقاس XXXXL غير مسموح لهذا القسم",
+    ]) {
       await expect(page.getByRole("cell", { name: new RegExp(msg) })).toBeVisible();
     }
     await page.getByRole("button", { name: "خطأ", exact: true }).click();
     await expect(page.locator("table tbody tr")).toHaveCount(4);
 
-    await page.getByRole("button", { name: /3\. تأكيد الاستيراد \(1 صف — سيتم تخطي الأخطاء\)/ }).click();
+    await page
+      .getByRole("button", { name: /3\. تأكيد الاستيراد \(1 صف — سيتم تخطي الأخطاء\)/ })
+      .click();
     await expect(toast(page, "تم استيراد 1 صف")).toBeVisible({ timeout: 30_000 });
     expect(await findProductBySku(`E2EOK${tag}`)).not.toBeNull();
     expect(await findProductBySku(`E2EBAD1${tag}`)).toBeNull();
@@ -178,7 +262,9 @@ test.describe("admin", () => {
     await statusBtn(T.ar.timeline.out_for_delivery).click();
     await expect.poll(async () => (await getOrder(order.id)).status).toBe("out_for_delivery");
     const history = (await getOrder(order.id)).order_status_history.map((h) => h.status);
-    expect(history).toEqual(expect.arrayContaining(["pending", "confirmed", "preparing", "out_for_delivery"]));
+    expect(history).toEqual(
+      expect.arrayContaining(["pending", "confirmed", "preparing", "out_for_delivery"]),
+    );
   });
 
   test("coupons: create and delete", async ({ page, catalog }) => {
@@ -200,7 +286,10 @@ test.describe("admin", () => {
     await expect.poll(() => findCoupon(code)).toBeNull();
   });
 
-  test("banners: javascript: link is rejected, safe link is saved and shown on the storefront", async ({ page, catalog }) => {
+  test("banners: javascript: link is rejected, safe link is saved and shown on the storefront", async ({
+    page,
+    catalog,
+  }) => {
     const titleAr = `بانر ${catalog.tag}`;
     const titleEn = `E2E Banner ${catalog.tag}`;
     await login(page, "admin", "/admin/banners");
@@ -224,16 +313,23 @@ test.describe("admin", () => {
     await expect.poll(async () => (await findBanner(titleEn))?.link).toBe("/products");
 
     await page.goto("/");
-    await expect(page.locator('a[href="/products"]').filter({ has: page.getByRole("img", { name: titleAr }) })).toHaveCount(1);
+    await expect(
+      page.locator('a[href="/products"]').filter({ has: page.getByRole("img", { name: titleAr }) }),
+    ).toHaveCount(1);
     await expect(page.locator('a[href^="javascript:"]')).toHaveCount(0);
   });
 
-  test("settings: store name and primary colour are applied on the storefront", async ({ page, catalog }) => {
+  test("settings: store name and primary colour are applied on the storefront", async ({
+    page,
+    catalog,
+  }) => {
     const original = await readSettings();
     const newName = `متجر اختبار ${catalog.tag}`;
     try {
       await login(page, "admin", "/admin/settings");
-      await expect(page.getByRole("heading", { name: "إعدادات المتجر / Store settings" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "إعدادات المتجر / Store settings" }),
+      ).toBeVisible();
       await page.getByLabel("اسم المتجر", { exact: true }).fill(newName);
       await page.getByLabel("Primary", { exact: true }).fill("#123456");
       await page.getByRole("button", { name: "Save / حفظ" }).click();
@@ -241,7 +337,11 @@ test.describe("admin", () => {
 
       await page.goto("/");
       await expect(page.locator("footer")).toContainText(newName);
-      await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue("--primary").trim())).toBe("#123456");
+      await expect
+        .poll(() =>
+          page.evaluate(() => document.documentElement.style.getPropertyValue("--primary").trim()),
+        )
+        .toBe("#123456");
     } finally {
       await updateSettings({ name_ar: original.name_ar, primary_color: original.primary_color });
     }
@@ -273,7 +373,9 @@ test.describe("admin", () => {
 
       await page.goto("/");
       await expect(page.locator(`footer a[href="${url}"]`)).toBeVisible();
-      expect(parseWa(await page.getByRole("link", { name: T.ar.waFloat }).getAttribute("href")).number).toBe("201098765432");
+      expect(
+        parseWa(await page.getByRole("link", { name: T.ar.waFloat }).getAttribute("href")).number,
+      ).toBe("201098765432");
     } finally {
       await updateSettings({ whatsapp_number: WA.number });
     }

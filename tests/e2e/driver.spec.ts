@@ -11,7 +11,11 @@ test.describe("driver app", () => {
   test.use({ lang: "ar", permissions: ["geolocation"], geolocation: CAIRO });
   const s = T.ar;
 
-  test("sees the assigned order, accepts, starts delivery (location saved) and marks it delivered", async ({ page, catalog, accounts }) => {
+  test("sees the assigned order, accepts, starts delivery (location saved) and marks it delivered", async ({
+    page,
+    catalog,
+    accounts,
+  }) => {
     const order = await createAssignedOrder(catalog);
     await login(page, "driver", "/driver");
     await expect(page.getByText("تطبيق المندوب").first()).toBeVisible();
@@ -32,7 +36,9 @@ test.describe("driver app", () => {
     await expect(page.getByText(/يتم مشاركة موقعك مع العميل/)).toBeVisible();
 
     // The tracker sends the first position ~1.5s after the delivery starts, then every 10s.
-    await expect.poll(async () => (await driverLocations(order.id)).length, { timeout: 30_000 }).toBeGreaterThan(0);
+    await expect
+      .poll(async () => (await driverLocations(order.id)).length, { timeout: 30_000 })
+      .toBeGreaterThan(0);
     const [loc] = await driverLocations(order.id);
     expect(loc.driver_id).toBe(accounts.driver);
     expect(loc.lat).toBeCloseTo(CAIRO.latitude, 3);
@@ -52,7 +58,9 @@ test.describe("driver app", () => {
       await expect.poll(async () => (await driverProfile(accounts.driver)).status).toBe("busy");
     } finally {
       await page.getByRole("button", { name: "متاح", exact: true }).click();
-      await expect.poll(async () => (await driverProfile(accounts.driver)).status).toBe("available");
+      await expect
+        .poll(async () => (await driverProfile(accounts.driver)).status)
+        .toBe("available");
     }
   });
 });

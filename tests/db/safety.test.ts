@@ -29,14 +29,22 @@ describe("test safety allowlist", () => {
   it("refuses the staging project unless E2E_ALLOW_REMOTE=staging", () => {
     remote(false);
     expect(isAllowedSupabaseUrl(`https://${ref}.supabase.co`)).toBe(false);
-    expect(isAllowedDbUrl(`postgresql://postgres:x@db.${ref}.supabase.co:5432/postgres`)).toBe(false);
+    expect(isAllowedDbUrl(`postgresql://postgres:x@db.${ref}.supabase.co:5432/postgres`)).toBe(
+      false,
+    );
   });
 
   it("with the switch on, allows only the staging ref", () => {
     remote(true);
     expect(isAllowedSupabaseUrl(`https://${ref}.supabase.co`)).toBe(true);
-    expect(isAllowedDbUrl(`postgresql://postgres:x@db.${ref}.supabase.co:5432/postgres`)).toBe(true);
-    expect(isAllowedDbUrl(`postgresql://postgres.${ref}:x@aws-0-eu-central-1.pooler.supabase.com:6543/postgres`)).toBe(true);
+    expect(isAllowedDbUrl(`postgresql://postgres:x@db.${ref}.supabase.co:5432/postgres`)).toBe(
+      true,
+    );
+    expect(
+      isAllowedDbUrl(
+        `postgresql://postgres.${ref}:x@aws-0-eu-central-1.pooler.supabase.com:6543/postgres`,
+      ),
+    ).toBe(true);
   });
 
   it("with the switch on, still refuses every other project and host", () => {
@@ -47,24 +55,33 @@ describe("test safety allowlist", () => {
       `https://${ref}.supabase.co.evil.example`,
       `https://evil.example/${ref}.supabase.co`,
       "https://example.com",
-    ]) expect(isAllowedSupabaseUrl(u), u).toBe(false);
+    ])
+      expect(isAllowedSupabaseUrl(u), u).toBe(false);
     for (const u of [
       `postgresql://postgres:x@db.${other}.supabase.co:5432/postgres`,
       `postgresql://postgres.${other}:x@aws-0-eu-central-1.pooler.supabase.com:6543/postgres`,
       `postgresql://postgres:x@db.${ref}.supabase.co.evil.example:5432/postgres`,
       "postgresql://postgres:x@10.0.0.5:5432/postgres",
-    ]) expect(isAllowedDbUrl(u), u).toBe(false);
+    ])
+      expect(isAllowedDbUrl(u), u).toBe(false);
   });
 
   it("never allows a remote app URL, even with the switch on", () => {
     remote(true);
-    expect(() => assertAllowed("https://abu-hamed.lovable.app", "E2E_BASE_URL", "app")).toThrow(/localhost only/);
+    expect(() => assertAllowed("https://abu-hamed.lovable.app", "E2E_BASE_URL", "app")).toThrow(
+      /localhost only/,
+    );
     expect(() => assertAllowed("http://localhost:8080", "E2E_BASE_URL", "app")).not.toThrow();
   });
 
   it("error messages never echo credentials", () => {
     remote(true);
-    expect(() => assertAllowed(`postgresql://postgres:SECRET@db.${other}.supabase.co:5432/postgres`, "TEST_DATABASE_URL", "db"))
-      .toThrow(/^(?!.*SECRET)/s);
+    expect(() =>
+      assertAllowed(
+        `postgresql://postgres:SECRET@db.${other}.supabase.co:5432/postgres`,
+        "TEST_DATABASE_URL",
+        "db",
+      ),
+    ).toThrow(/^(?!.*SECRET)/s);
   });
 });

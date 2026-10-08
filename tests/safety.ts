@@ -20,7 +20,8 @@ export function loadEnvTest() {
     const m = /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
     if (!m) continue;
     let v = m[2].trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))
+      v = v.slice(1, -1);
     else v = v.replace(/\s+#.*$/, "");
     if (process.env[m[1]] === undefined) process.env[m[1]] = v;
   }
@@ -38,7 +39,14 @@ export function stagingProjectRef(): string | null {
   }
 }
 
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]", "0.0.0.0", "host.docker.internal"]);
+const LOCAL_HOSTS = new Set([
+  "localhost",
+  "127.0.0.1",
+  "::1",
+  "[::1]",
+  "0.0.0.0",
+  "host.docker.internal",
+]);
 export const remoteAllowed = () => (process.env["E2E_ALLOW_REMOTE"] ?? "").trim() === "staging";
 
 function hostOf(url: string) {
@@ -80,18 +88,27 @@ export function isAllowedDbUrl(url: string) {
   const ref = stagingProjectRef();
   if (!remoteAllowed() || !ref) return false;
   if (host === `db.${ref}.supabase.co`) return true;
-  return /\.pooler\.supabase\.com$/.test(host) && decodeURIComponent(u.username) === `postgres.${ref}`;
+  return (
+    /\.pooler\.supabase\.com$/.test(host) && decodeURIComponent(u.username) === `postgres.${ref}`
+  );
 }
 
 /** Throws a clear error unless the URL is allowed. `kind` picks the API or database rule. */
 export function assertAllowed(url: string, what: string, kind: "app" | "supabase" | "db") {
   if (!url) return;
-  const ok = kind === "app" ? isLocalUrl(url) : kind === "supabase" ? isAllowedSupabaseUrl(url) : isAllowedDbUrl(url);
+  const ok =
+    kind === "app"
+      ? isLocalUrl(url)
+      : kind === "supabase"
+        ? isAllowedSupabaseUrl(url)
+        : isAllowedDbUrl(url);
   if (ok) return;
   const ref = stagingProjectRef();
   throw new Error(
     `[test safety] ${what} (${hostOf(url) ?? "invalid URL"}) is not allowed. Tests create users, orders and change ` +
       `store settings. Allowed: localhost` +
-      (kind === "app" ? " only (run the app locally)." : `, or the staging project ${ref ?? "(no ref in supabase/config.toml)"} with E2E_ALLOW_REMOTE=staging.`),
+      (kind === "app"
+        ? " only (run the app locally)."
+        : `, or the staging project ${ref ?? "(no ref in supabase/config.toml)"} with E2E_ALLOW_REMOTE=staging.`),
   );
 }

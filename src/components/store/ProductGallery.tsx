@@ -6,7 +6,15 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ProductImage } from "./ProductCard";
 
 /** Swipeable gallery (scroll-snap) with dots on mobile, thumbnails on desktop and a tap-to-zoom viewer. */
-export function ProductGallery({ images, alt, overlay }: { images: (string | null)[]; alt: string; overlay?: React.ReactNode }) {
+export function ProductGallery({
+  images,
+  alt,
+  overlay,
+}: {
+  images: (string | null)[];
+  alt: string;
+  overlay?: React.ReactNode;
+}) {
   const { t } = useI18n();
   const track = useRef<HTMLDivElement>(null);
   const [idx, setIdx] = useState(0);
@@ -27,25 +35,63 @@ export function ProductGallery({ images, alt, overlay }: { images: (string | nul
   return (
     <div className="flex gap-3 md:flex-row-reverse rtl:md:flex-row">
       <div className="relative min-w-0 flex-1">
-        <div ref={track} onScroll={onScroll} className="flex snap-x snap-mandatory overflow-x-auto rounded-md bg-muted scrollbar-none">
+        <div
+          ref={track}
+          onScroll={onScroll}
+          className="flex snap-x snap-mandatory overflow-x-auto rounded-md bg-muted scrollbar-none"
+        >
           {images.map((src, i) => (
-            <button key={i} type="button" onClick={() => { setIdx(i); setZoom(true); }} aria-label={t("zoom")} className="w-full shrink-0 snap-start cursor-zoom-in">
-              <ProductImage src={src} alt={i === 0 ? alt : ""} priority={i === 0} className="aspect-[4/5] w-full" />
+            <button
+              key={i}
+              type="button"
+              onClick={() => {
+                setIdx(i);
+                setZoom(true);
+              }}
+              aria-label={t("zoom")}
+              className="w-full shrink-0 snap-start cursor-zoom-in"
+            >
+              <ProductImage
+                src={src}
+                alt={i === 0 ? alt : ""}
+                priority={i === 0}
+                className="aspect-[4/5] w-full"
+              />
             </button>
           ))}
         </div>
         {overlay}
-        <ZoomIn className="pointer-events-none absolute bottom-3 end-3 hidden h-5 w-5 text-foreground/70 md:block" aria-hidden />
+        <ZoomIn
+          className="pointer-events-none absolute bottom-3 end-3 hidden h-5 w-5 text-foreground/70 md:block"
+          aria-hidden
+        />
         {images.length > 1 && (
           <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden">
-            {images.map((_, i) => <span key={i} className={cn("h-1.5 rounded-full bg-foreground/40 transition-all", i === idx ? "w-5 bg-foreground" : "w-1.5")} />)}
+            {images.map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-1.5 rounded-full bg-foreground/40 transition-all",
+                  i === idx ? "w-5 bg-foreground" : "w-1.5",
+                )}
+              />
+            ))}
           </div>
         )}
       </div>
       {images.length > 1 && (
         <div className="hidden w-16 shrink-0 flex-col gap-2 md:flex">
           {images.map((src, i) => (
-            <button key={i} type="button" onClick={() => go(i)} aria-label={`${i + 1}`} className={cn("overflow-hidden rounded-sm border transition", i === idx ? "border-foreground" : "border-transparent opacity-70 hover:opacity-100")}>
+            <button
+              key={i}
+              type="button"
+              onClick={() => go(i)}
+              aria-label={`${i + 1}`}
+              className={cn(
+                "overflow-hidden rounded-sm border transition",
+                i === idx ? "border-foreground" : "border-transparent opacity-70 hover:opacity-100",
+              )}
+            >
               <ProductImage src={src} alt="" className="aspect-[4/5] w-full" />
             </button>
           ))}

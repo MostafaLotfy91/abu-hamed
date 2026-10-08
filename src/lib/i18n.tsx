@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 export type Lang = "ar" | "en";
 
@@ -40,7 +48,10 @@ const dict = {
   exchange: { ar: "استبدال", en: "Exchange" },
   reason: { ar: "السبب", en: "Reason" },
   exchange_pref: { ar: "المقاس/اللون المطلوب بدلاً منه", en: "Wanted size/color instead" },
-  return_window_note: { ar: "متاح خلال {n} يوم من التوصيل", en: "Available within {n} days of delivery" },
+  return_window_note: {
+    ar: "متاح خلال {n} يوم من التوصيل",
+    en: "Available within {n} days of delivery",
+  },
   return_requests: { ar: "طلبات الاسترجاع", en: "Return requests" },
   whole_order: { ar: "الطلب كله", en: "Whole order" },
   rr_requested: { ar: "تم الطلب", en: "Requested" },
@@ -72,7 +83,10 @@ const dict = {
   free_delivery_left: { ar: "باقي {n} وتوصل مجاناً", en: "{n} away from free delivery" },
   free_delivery_unlocked: { ar: "مبروك! التوصيل مجاني", en: "You unlocked free delivery" },
   items_in_cart: { ar: "({n})", en: "({n})" },
-  secure_checkout: { ar: "الأسعار والمخزون بيتأكدوا تاني عند تأكيد الطلب", en: "Prices and stock are re-checked when you place the order" },
+  secure_checkout: {
+    ar: "الأسعار والمخزون بيتأكدوا تاني عند تأكيد الطلب",
+    en: "Prices and stock are re-checked when you place the order",
+  },
   clear_all: { ar: "مسح الكل", en: "Clear all" },
   items_count: { ar: "{n} منتج", en: "{n} items" },
   show_results: { ar: "عرض {n} منتج", en: "Show {n} items" },
@@ -80,7 +94,10 @@ const dict = {
   discounted_label: { ar: "عليه خصم", en: "On sale" },
   all_products: { ar: "كل المنتجات", en: "All products" },
   no_products: { ar: "لا توجد منتجات", en: "No products found" },
-  no_products_hint: { ar: "جرّب تغيير التصفية أو البحث بكلمة أخرى", en: "Try different filters or another search" },
+  no_products_hint: {
+    ar: "جرّب تغيير التصفية أو البحث بكلمة أخرى",
+    en: "Try different filters or another search",
+  },
   error_title: { ar: "حدث خطأ", en: "Something went wrong" },
   retry: { ar: "حاول مرة أخرى", en: "Try again" },
   related: { ar: "منتجات مشابهة", en: "Related products" },
@@ -93,7 +110,10 @@ const dict = {
   options: { ar: "الاختيارات", en: "Options" },
   description: { ar: "الوصف", en: "Description" },
   cart_empty: { ar: "سلتك فاضية", en: "Your cart is empty" },
-  cart_empty_hint: { ar: "ابدأ التسوق وأضف منتجاتك المفضلة", en: "Start shopping and add your favorites" },
+  cart_empty_hint: {
+    ar: "ابدأ التسوق وأضف منتجاتك المفضلة",
+    en: "Start shopping and add your favorites",
+  },
   start_shopping: { ar: "ابدأ التسوق", en: "Start shopping" },
   item_note: { ar: "ملاحظة على المنتج", en: "Note for this item" },
   coupon: { ar: "كود الخصم", en: "Coupon code" },
@@ -205,7 +225,13 @@ function readSavedLang(): Lang | null {
   }
 }
 
-export function I18nProvider({ children, defaultLang = "ar" }: { children: ReactNode; defaultLang?: Lang }) {
+export function I18nProvider({
+  children,
+  defaultLang = "ar",
+}: {
+  children: ReactNode;
+  defaultLang?: Lang;
+}) {
   const [lang, setLangState] = useState<Lang>(defaultLang);
   const [userChose, setUserChose] = useState(false);
 

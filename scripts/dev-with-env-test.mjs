@@ -18,7 +18,12 @@ for (const k of ["VITE_SUPABASE_URL", "SUPABASE_URL"]) {
   }
   assertAllowed(v, k, "supabase");
 }
-const port = process.argv[2] ?? new URL(process.env.E2E_BASE_URL || "http://localhost:8080").port ?? "8080";
-const child = spawn("npx", ["vite", "dev", "--port", String(port), "--strictPort"], { stdio: "inherit", shell: process.platform === "win32", env: process.env });
+const port =
+  process.argv[2] ?? new URL(process.env.E2E_BASE_URL || "http://localhost:8080").port ?? "8080";
+const child = spawn("npx", ["vite", "dev", "--port", String(port), "--strictPort"], {
+  stdio: "inherit",
+  shell: process.platform === "win32",
+  env: process.env,
+});
 child.on("exit", (code) => process.exit(code ?? 0));
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => child.kill(sig));

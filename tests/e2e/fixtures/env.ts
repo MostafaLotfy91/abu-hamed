@@ -26,7 +26,8 @@ export function assertSafeTarget(url: string, what: string) {
 export const BASE_URL = e("E2E_BASE_URL") || "http://localhost:8080";
 // Supabase used by the seed helper (service role). Accept the app's names as fallbacks, but only from .env.test / env.
 export const SUPABASE_URL = e("E2E_SUPABASE_URL") || e("SUPABASE_URL") || e("VITE_SUPABASE_URL");
-export const SUPABASE_ANON_KEY = e("E2E_SUPABASE_ANON_KEY") || e("SUPABASE_PUBLISHABLE_KEY") || e("VITE_SUPABASE_PUBLISHABLE_KEY");
+export const SUPABASE_ANON_KEY =
+  e("E2E_SUPABASE_ANON_KEY") || e("SUPABASE_PUBLISHABLE_KEY") || e("VITE_SUPABASE_PUBLISHABLE_KEY");
 export const SUPABASE_SERVICE_ROLE_KEY = e("SUPABASE_SERVICE_ROLE_KEY");
 
 // Supabase the app itself talks to. `vite --mode test` still loads `.env` as a fallback, so .env.test must set this
@@ -36,8 +37,14 @@ export const APP_SUPABASE_URL = e("VITE_SUPABASE_URL");
 assertAllowed(BASE_URL, "E2E_BASE_URL", "app");
 assertSafeTarget(SUPABASE_URL, "Supabase URL");
 assertSafeTarget(APP_SUPABASE_URL, "VITE_SUPABASE_URL");
-if (SUPABASE_URL && APP_SUPABASE_URL && new URL(SUPABASE_URL).host !== new URL(APP_SUPABASE_URL).host) {
-  throw new Error("[test safety] SUPABASE_URL and VITE_SUPABASE_URL must be the same project (seed and app must match).");
+if (
+  SUPABASE_URL &&
+  APP_SUPABASE_URL &&
+  new URL(SUPABASE_URL).host !== new URL(APP_SUPABASE_URL).host
+) {
+  throw new Error(
+    "[test safety] SUPABASE_URL and VITE_SUPABASE_URL must be the same project (seed and app must match).",
+  );
 }
 
 export type Role = "admin" | "customer" | "driver";
@@ -48,15 +55,20 @@ export const ACCOUNTS: Record<Role, { email: string; password: string }> = {
 };
 
 const REQUIRED = [
-  "E2E_ADMIN_EMAIL", "E2E_ADMIN_PASSWORD",
-  "E2E_CUSTOMER_EMAIL", "E2E_CUSTOMER_PASSWORD",
-  "E2E_DRIVER_EMAIL", "E2E_DRIVER_PASSWORD",
+  "E2E_ADMIN_EMAIL",
+  "E2E_ADMIN_PASSWORD",
+  "E2E_CUSTOMER_EMAIL",
+  "E2E_CUSTOMER_PASSWORD",
+  "E2E_DRIVER_EMAIL",
+  "E2E_DRIVER_PASSWORD",
 ] as const;
 
 const missing = [
   ...REQUIRED.filter((k) => !e(k)),
   ...(SUPABASE_URL ? [] : ["SUPABASE_URL (or E2E_SUPABASE_URL / VITE_SUPABASE_URL)"]),
-  ...(SUPABASE_ANON_KEY ? [] : ["SUPABASE_PUBLISHABLE_KEY (or E2E_SUPABASE_ANON_KEY / VITE_SUPABASE_PUBLISHABLE_KEY)"]),
+  ...(SUPABASE_ANON_KEY
+    ? []
+    : ["SUPABASE_PUBLISHABLE_KEY (or E2E_SUPABASE_ANON_KEY / VITE_SUPABASE_PUBLISHABLE_KEY)"]),
   ...(SUPABASE_SERVICE_ROLE_KEY ? [] : ["SUPABASE_SERVICE_ROLE_KEY"]),
   ...(APP_SUPABASE_URL ? [] : ["VITE_SUPABASE_URL (the app's Supabase, must be set in .env.test)"]),
   ...(e("VITE_SUPABASE_PUBLISHABLE_KEY") ? [] : ["VITE_SUPABASE_PUBLISHABLE_KEY"]),

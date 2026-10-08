@@ -3,10 +3,24 @@ import { Facebook, Instagram, Youtube, Send, Ghost, Music2, Twitter } from "luci
 import { supabase } from "@/integrations/supabase/client";
 import { isSafeHttpsUrl } from "@/lib/whatsapp";
 
-export const PLATFORMS = ["facebook", "instagram", "tiktok", "youtube", "x", "snapchat", "telegram"] as const;
+export const PLATFORMS = [
+  "facebook",
+  "instagram",
+  "tiktok",
+  "youtube",
+  "x",
+  "snapchat",
+  "telegram",
+] as const;
 export type Platform = (typeof PLATFORMS)[number];
 export const PLATFORM_ICON: Record<Platform, typeof Facebook> = {
-  facebook: Facebook, instagram: Instagram, tiktok: Music2, youtube: Youtube, x: Twitter, snapchat: Ghost, telegram: Send,
+  facebook: Facebook,
+  instagram: Instagram,
+  tiktok: Music2,
+  youtube: Youtube,
+  x: Twitter,
+  snapchat: Ghost,
+  telegram: Send,
 };
 
 export const socialLinksQuery = {
@@ -28,8 +42,14 @@ export function SocialIcons({ className = "" }: { className?: string }) {
       {links.map((l) => {
         const Icon = PLATFORM_ICON[l.platform as Platform] ?? Send;
         return (
-          <a key={l.id} href={l.url} target="_blank" rel="noopener noreferrer" aria-label={l.platform}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
+          <a
+            key={l.id}
+            href={l.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={l.platform}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+          >
             <Icon className="h-5 w-5" />
           </a>
         );

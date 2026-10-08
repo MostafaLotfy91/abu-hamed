@@ -27,19 +27,27 @@ describe.skipIf(!url)("concurrency on a real Supabase database", () => {
     const target = new URL(url);
     const txPooler = /\.pooler\.supabase\.com$/.test(target.hostname) && target.port === "5432";
     if (txPooler) target.port = "6543";
-    sql = postgres(target.toString(), { max: 25, prepare: !txPooler, ssl: isLocalUrl(url) ? false : "require" });
+    sql = postgres(target.toString(), {
+      max: 25,
+      prepare: !txPooler,
+      ssl: isLocalUrl(url) ? false : "require",
+    });
     const [s] = await sql`select min_order_amount from public.store_settings where id = 1`;
     originalMinOrder = s.min_order_amount;
     await sql`update public.store_settings set min_order_amount = 0 where id = 1`;
     for (let i = 0; i < 20; i++) {
-      const [u] = await sql`insert into auth.users(id, email) values (gen_random_uuid(), ${`conc${i}-${Date.now()}@test.local`}) returning id`;
+      const [u] =
+        await sql`insert into auth.users(id, email) values (gen_random_uuid(), ${`conc${i}-${Date.now()}@test.local`}) returning id`;
       users.push(u.id);
-      const [a] = await sql`insert into public.addresses(user_id, city, street) values (${u.id}, 'Cairo', 'St') returning id`;
+      const [a] =
+        await sql`insert into public.addresses(user_id, city, street) values (${u.id}, 'Cairo', 'St') returning id`;
       addresses.push(a.id);
     }
-    const [p] = await sql`insert into public.products(name_ar, name_en, price, sku) values ('م', 'P', 100, ${`CONC-${Date.now()}`}) returning id`;
+    const [p] =
+      await sql`insert into public.products(name_ar, name_en, price, sku) values ('م', 'P', 100, ${`CONC-${Date.now()}`}) returning id`;
     productId = p.id;
-    const [v] = await sql`insert into public.product_variants(product_id, name_ar, name_en, stock) values (${productId}, 'L', 'L', 5) returning id`;
+    const [v] =
+      await sql`insert into public.product_variants(product_id, name_ar, name_en, stock) values (${productId}, 'L', 'L', 5) returning id`;
     variantId = v.id;
   });
 
@@ -48,9 +56,11 @@ describe.skipIf(!url)("concurrency on a real Supabase database", () => {
     try {
       if (users.length) await sql`delete from public.orders where user_id = any(${users})`;
       if (productId) await sql`delete from public.products where id = ${productId}`;
-      if (couponCodes.length) await sql`delete from public.coupons where code = any(${couponCodes})`;
+      if (couponCodes.length)
+        await sql`delete from public.coupons where code = any(${couponCodes})`;
       if (users.length) await sql`delete from auth.users where id = any(${users})`;
-      if (originalMinOrder !== null) await sql`update public.store_settings set min_order_amount = ${originalMinOrder} where id = 1`;
+      if (originalMinOrder !== null)
+        await sql`update public.store_settings set min_order_amount = ${originalMinOrder} where id = 1`;
     } finally {
       await sql.end();
     }
@@ -58,18 +68,26 @@ describe.skipIf(!url)("concurrency on a real Supabase database", () => {
 
   /** place_order as user i on its own connection, in parallel. */
   const place = (i: number, coupon = "") =>
-    sql.begin(async (tx) => {
-      await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: users[i], role: "authenticated" })}, true)`;
-      await tx`set local role authenticated`;
-      // Pass the array itself: postgres.js serializes json params, so a pre-stringified value would arrive as a JSON string.
-      const items = tx.json([{ product_id: productId, variant_id: variantId, quantity: 1 }]);
-      await tx`select public.place_order(${items}, ${addresses[i]}, 'asap', 'cod', ${coupon}, null)`;
-    }).then(() => "ok", (e: Error) => e.message);
+    sql
+      .begin(async (tx) => {
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: users[i], role: "authenticated" })}, true)`;
+        await tx`set local role authenticated`;
+        // Pass the array itself: postgres.js serializes json params, so a pre-stringified value would arrive as a JSON string.
+        const items = tx.json([{ product_id: productId, variant_id: variantId, quantity: 1 }]);
+        await tx`select public.place_order(${items}, ${addresses[i]}, 'asap', 'cod', ${coupon}, null)`;
+      })
+      .then(
+        () => "ok",
+        (e: Error) => e.message,
+      );
 
   it("20 parallel orders on stock 5 -> exactly 5 succeed and stock ends at 0", async () => {
     const results = await Promise.all(users.map((_, i) => place(i)));
     const why = [...new Set(results.filter((r) => r !== "ok"))].join(" | ");
-    expect(results.filter((r) => r === "ok"), why).toHaveLength(5);
+    expect(
+      results.filter((r) => r === "ok"),
+      why,
+    ).toHaveLength(5);
     const [v] = await sql`select stock from public.product_variants where id = ${variantId}`;
     expect(v.stock).toBe(0);
   });
@@ -81,7 +99,10 @@ describe.skipIf(!url)("concurrency on a real Supabase database", () => {
     await sql`insert into public.coupons(code, discount_type, value, max_uses) values (${code}, 'fixed', 10, 3)`;
     const results = await Promise.all(users.map((_, i) => place(i, code)));
     const why = [...new Set(results.filter((r) => r !== "ok"))].join(" | ");
-    expect(results.filter((r) => r === "ok"), why).toHaveLength(3);
+    expect(
+      results.filter((r) => r === "ok"),
+      why,
+    ).toHaveLength(3);
     const [c] = await sql`select used_count from public.coupons where code = ${code}`;
     expect(c.used_count).toBe(3);
   });

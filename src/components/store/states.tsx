@@ -4,7 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/lib/i18n";
 
-export function EmptyState({ icon, title, hint, action }: { icon?: ReactNode; title: string; hint?: string; action?: ReactNode }) {
+export function EmptyState({
+  icon,
+  title,
+  hint,
+  action,
+}: {
+  icon?: ReactNode;
+  title: string;
+  hint?: string;
+  action?: ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full border text-muted-foreground">

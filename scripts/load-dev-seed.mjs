@@ -31,8 +31,20 @@ const CATEGORY_IMAGES = {
   "736a95ca-d315-564a-8e99-9c7189ccde43": "d991d5c1-7876-48dc-8e6a-be68cadbcfca-ah-accessories.jpg",
 };
 const BANNERS = [
-  { file: "dc0510dc-5a2a-4497-97c9-5f327a7ec261-ah-banner1.jpg", ar: "كوليكشن الموسم الجديد", en: "New season collection", sar: "أحدث التصميمات لكل العيلة", sen: "The latest styles for the whole family" },
-  { file: "1414e9cb-edeb-421f-8638-837442ebfdfe-ah-banner2.jpg", ar: "عبايات وعطور", en: "Abayas & perfumes", sar: "اكتشف التشكيلة", sen: "Discover the range" },
+  {
+    file: "dc0510dc-5a2a-4497-97c9-5f327a7ec261-ah-banner1.jpg",
+    ar: "كوليكشن الموسم الجديد",
+    en: "New season collection",
+    sar: "أحدث التصميمات لكل العيلة",
+    sen: "The latest styles for the whole family",
+  },
+  {
+    file: "1414e9cb-edeb-421f-8638-837442ebfdfe-ah-banner2.jpg",
+    ar: "عبايات وعطور",
+    en: "Abayas & perfumes",
+    sar: "اكتشف التشكيلة",
+    sen: "Discover the range",
+  },
 ];
 
 const sql = postgres(DB, { max: 1, ssl: isLocalUrl(DB) ? false : "require", onnotice: () => {} });
@@ -54,7 +66,8 @@ try {
                  values (${img(b.file)}, ${b.ar}, ${b.en}, ${b.sar}, ${b.sen}, '/products', ${i})`;
       }
     });
-    const [c] = await sql`select (select count(*) from public.products where sku like 'DEMO-%')::int products,
+    const [c] =
+      await sql`select (select count(*) from public.products where sku like 'DEMO-%')::int products,
       (select count(*) from public.product_variants v join public.products p on p.id = v.product_id where p.sku like 'DEMO-%')::int variants,
       (select count(*) from public.categories)::int categories, (select count(*) from public.banners)::int banners`;
     console.log("loaded dev seed:", c);

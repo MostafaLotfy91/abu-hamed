@@ -31,9 +31,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // A freshly issued token lasts ~1h. If it already looks expired, the device
       // clock is wrong: the client would refresh nonstop until the server revokes
       // the session. Warn the user once so they can fix their clock.
-      if (event === "TOKEN_REFRESHED" && s?.expires_at && s.expires_at * 1000 - Date.now() < 5 * 60_000 && !clockWarned) {
+      if (
+        event === "TOKEN_REFRESHED" &&
+        s?.expires_at &&
+        s.expires_at * 1000 - Date.now() < 5 * 60_000 &&
+        !clockWarned
+      ) {
         clockWarned = true;
-        toast.error("تاريخ أو ساعة جهازك غير مضبوطة، وهذا يسبب تسجيل خروجك. اضبط الوقت تلقائياً ثم أعد تسجيل الدخول. · Your device clock is wrong, which logs you out. Set date/time to automatic and sign in again.", { duration: 20000, closeButton: true });
+        toast.error(
+          "تاريخ أو ساعة جهازك غير مضبوطة، وهذا يسبب تسجيل خروجك. اضبط الوقت تلقائياً ثم أعد تسجيل الدخول. · Your device clock is wrong, which logs you out. Set date/time to automatic and sign in again.",
+          { duration: 20000, closeButton: true },
+        );
       }
       // Only update state when the signed-in user actually changes; token refreshes
       // also emit SIGNED_IN and reacting to them caused a refresh loop.
@@ -50,7 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           supabase
             .from("profiles")
             .upsert(
-              { id: u.id, email: u.email ?? null, phone: u.phone ?? null, full_name: (u.user_metadata?.full_name as string) ?? null },
+              {
+                id: u.id,
+                email: u.email ?? null,
+                phone: u.phone ?? null,
+                full_name: (u.user_metadata?.full_name as string) ?? null,
+              },
               { onConflict: "id", ignoreDuplicates: true },
             )
             .then(() => {});

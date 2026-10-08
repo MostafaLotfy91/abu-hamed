@@ -12,7 +12,9 @@ describe("whatsapp", () => {
     expect(normalizeEgyptPhone("0131234567")).toBeNull();
   });
   it("fills variables", () => {
-    expect(fillTemplate("#{order_number} {store_name}", { order_number: 12, store_name: "X" })).toBe("#12 X");
+    expect(
+      fillTemplate("#{order_number} {store_name}", { order_number: 12, store_name: "X" }),
+    ).toBe("#12 X");
   });
   it("builds wa.me link", () => {
     expect(waLink("201012345678", "hi there")).toBe("https://wa.me/201012345678?text=hi%20there");

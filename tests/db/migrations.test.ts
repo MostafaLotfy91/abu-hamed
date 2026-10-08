@@ -5,13 +5,19 @@ describe("migrations build a fresh database", () => {
   it("applies every migration in order with no manual steps", async () => {
     const db = await freshDb();
     expect(migrationFiles().length).toBeGreaterThanOrEqual(13);
-    const { rows } = await db.query<{ n: number }>(`select count(*)::int n from pg_tables where schemaname = 'public'`);
+    const { rows } = await db.query<{ n: number }>(
+      `select count(*)::int n from pg_tables where schemaname = 'public'`,
+    );
     expect(rows[0].n).toBeGreaterThan(20);
   });
 
   it("creates the store-media bucket as public, images only, with a size limit", async () => {
     const db = await freshDb();
-    const { rows } = await db.query<{ public: boolean; file_size_limit: number; allowed_mime_types: string[] }>(
+    const { rows } = await db.query<{
+      public: boolean;
+      file_size_limit: number;
+      allowed_mime_types: string[];
+    }>(
       `select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'store-media'`,
     );
     expect(rows).toHaveLength(1);

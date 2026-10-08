@@ -8,7 +8,8 @@ import { pageHead } from "@/lib/seo";
 import { ImportHistory } from "@/components/admin/import/ImportHistory";
 
 export const Route = createFileRoute("/_authenticated/admin/import")({
-  head: ({ matches }) => pageHead(matches, { title: { ar: "استيراد المنتجات", en: "Product import" }, noindex: true }),
+  head: ({ matches }) =>
+    pageHead(matches, { title: { ar: "استيراد المنتجات", en: "Product import" }, noindex: true }),
   component: Page,
 });
 
@@ -24,9 +25,15 @@ function Page() {
           <TabsTrigger value="images">رفع الصور</TabsTrigger>
           <TabsTrigger value="history">السجل</TabsTrigger>
         </TabsList>
-        <TabsContent value="import"><ImportWizard /></TabsContent>
-        <TabsContent value="images"><BulkImages /></TabsContent>
-        <TabsContent value="history"><ImportHistory /></TabsContent>
+        <TabsContent value="import">
+          <ImportWizard />
+        </TabsContent>
+        <TabsContent value="images">
+          <BulkImages />
+        </TabsContent>
+        <TabsContent value="history">
+          <ImportHistory />
+        </TabsContent>
       </Tabs>
     </div>
   );

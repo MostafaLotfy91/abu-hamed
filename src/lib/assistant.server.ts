@@ -15,7 +15,10 @@ const MAX_HISTORY = 12;
 const MAX_CHARS = 1000;
 
 const bodySchema = z.object({
-  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1) })).min(1).max(60),
+  messages: z
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1) }))
+    .min(1)
+    .max(60),
 });
 
 const COLS =
@@ -26,11 +29,26 @@ function toProduct(r: any): AssistantProduct {
   const all = (r.product_variants ?? []).filter((v: any) => v.is_active);
   const variants = all
     .filter((v: any) => Number(v.stock) > 0)
-    .map((v: any) => ({ id: v.id, size: v.size, color_ar: v.color_ar, color_en: v.color_en, color_hex: v.color_hex, price: v.price != null ? Number(v.price) : base, stock: Number(v.stock) }));
+    .map((v: any) => ({
+      id: v.id,
+      size: v.size,
+      color_ar: v.color_ar,
+      color_en: v.color_en,
+      color_hex: v.color_hex,
+      price: v.price != null ? Number(v.price) : base,
+      stock: Number(v.stock),
+    }));
   const has_variants = all.length > 0;
   return {
-    id: r.id, name_ar: r.name_ar, name_en: r.name_en, price: base, image: r.thumbnails?.[0] ?? r.images?.[0] ?? null,
-    has_variants, variants, size_type: r.size_type ?? null, stock: Number(r.stock),
+    id: r.id,
+    name_ar: r.name_ar,
+    name_en: r.name_en,
+    price: base,
+    image: r.thumbnails?.[0] ?? r.images?.[0] ?? null,
+    has_variants,
+    variants,
+    size_type: r.size_type ?? null,
+    stock: Number(r.stock),
     in_stock: has_variants ? variants.length > 0 : Number(r.stock) > 0,
   };
 }
@@ -38,14 +56,19 @@ function toProduct(r: any): AssistantProduct {
 const json = (status: number, data: unknown) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
 
-const clean = (s: string) => s.replace(/[%,()*]/g, " ").trim().slice(0, 60);
+const clean = (s: string) =>
+  s
+    .replace(/[%,()*]/g, " ")
+    .trim()
+    .slice(0, 60);
 
 const SIZE_GUIDE = `دليل المقاسات (سم): ملابس كبار حسب محيط الصدر: S 88–94، M 95–101، L 102–108، XL 109–115، XXL 116–122، XXXL 123–129. تقريب بالوزن (للمعلومة فقط): أقل من 60كجم S، 60–70 M، 70–80 L، 80–90 XL، 90–100 XXL، أكثر من 100 XXXL. الأحذية 36–46 (طول القدم تقريباً 22.5سم للمقاس 36 ويزيد 0.65سم لكل مقاس). الأطفال بالسن/الطول: 3-4y 98–104، 4-5y 104–110، 5-6y 110–116، 6-7y 116–122، 7-8y 122–128، 8-10y 128–140، 10-12y 140–152، 12-14y 152–164.`;
 
 export async function handleAssistant(request: Request): Promise<Response> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   const url = process.env["SUPABASE_URL"];
-  const anon = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+  const anon =
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
   if (!apiKey || !url || !anon) return json(500, { error: "config" });
 
   let body: z.infer<typeof bodySchema>;
@@ -55,7 +78,9 @@ export async function handleAssistant(request: Request): Promise<Response> {
     return json(400, { error: "bad_request" });
   }
   // Cap history and length before anything reaches the model.
-  const messages = body.messages.slice(-MAX_HISTORY).map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }));
+  const messages = body.messages
+    .slice(-MAX_HISTORY)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }));
 
   const db = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: settings } = await db
@@ -91,14 +116,22 @@ export async function handleAssistant(request: Request): Promise<Response> {
         let q = db.from("products").select(COLS).eq("is_active", true);
         if (f.keywords && clean(f.keywords)) {
           const k = clean(f.keywords);
-          q = q.or(`name_ar.ilike.%${k}%,name_en.ilike.%${k}%,brand.ilike.%${k}%,description_ar.ilike.%${k}%`);
+          q = q.or(
+            `name_ar.ilike.%${k}%,name_en.ilike.%${k}%,brand.ilike.%${k}%,description_ar.ilike.%${k}%`,
+          );
         }
         if (f.category && clean(f.category)) {
           const c = clean(f.category);
-          const { data: cats } = await db.from("categories").select("id,parent_id").or(`name_ar.ilike.%${c}%,name_en.ilike.%${c}%`);
+          const { data: cats } = await db
+            .from("categories")
+            .select("id,parent_id")
+            .or(`name_ar.ilike.%${c}%,name_en.ilike.%${c}%`);
           const ids = new Set((cats ?? []).map((x: any) => x.id));
           if (ids.size) {
-            const { data: kids } = await db.from("categories").select("id").in("parent_id", [...ids]);
+            const { data: kids } = await db
+              .from("categories")
+              .select("id")
+              .in("parent_id", [...ids]);
             (kids ?? []).forEach((x: any) => ids.add(x.id));
             q = q.in("category_id", [...ids]);
           }
@@ -116,7 +149,9 @@ export async function handleAssistant(request: Request): Promise<Response> {
               const v = p.variants.filter(
                 (x) =>
                   (!size || x.size?.toLowerCase() === size) &&
-                  (!color || x.color_ar?.toLowerCase().includes(color) || x.color_en?.toLowerCase().includes(color)),
+                  (!color ||
+                    x.color_ar?.toLowerCase().includes(color) ||
+                    x.color_en?.toLowerCase().includes(color)),
               );
               return v.length ? { ...p, variants: v } : null;
             })
@@ -136,7 +171,8 @@ export async function handleAssistant(request: Request): Promise<Response> {
       },
     }),
     suggest_items: tool({
-      description: "Show product cards (with add-to-cart) to the customer. Only use ids returned by search_products.",
+      description:
+        "Show product cards (with add-to-cart) to the customer. Only use ids returned by search_products.",
       inputSchema: z.object({ product_ids: z.array(z.string()) }),
       execute: async ({ product_ids }) => {
         const rejected: string[] = [];
@@ -217,5 +253,7 @@ ${SIZE_GUIDE}
       }
     },
   });
-  return new Response(stream, { headers: { "content-type": "application/x-ndjson", "cache-control": "no-store" } });
+  return new Response(stream, {
+    headers: { "content-type": "application/x-ndjson", "cache-control": "no-store" },
+  });
 }

@@ -8,7 +8,9 @@ describe("return window", () => {
     expect(returnDaysLeft(delivered, 14, Date.parse("2026-10-10T12:00:00Z"))).toBe(5);
   });
   it("closes after the configured days", () => {
-    expect(returnDaysLeft(delivered, 14, Date.parse("2026-10-16T12:00:01Z"))).toBeLessThanOrEqual(0);
+    expect(returnDaysLeft(delivered, 14, Date.parse("2026-10-16T12:00:01Z"))).toBeLessThanOrEqual(
+      0,
+    );
   });
   it("is closed when not delivered", () => {
     expect(returnDaysLeft(null, 14)).toBe(-1);
@@ -21,8 +23,24 @@ describe("sizes and variants", () => {
   });
   it("finds the variant for a size + color", () => {
     const v = [
-      { id: "a", size: "M", color_en: "Black", color_ar: null, color_hex: null, stock: 0, is_active: true },
-      { id: "b", size: "L", color_en: "Black", color_ar: null, color_hex: null, stock: 3, is_active: true },
+      {
+        id: "a",
+        size: "M",
+        color_en: "Black",
+        color_ar: null,
+        color_hex: null,
+        stock: 0,
+        is_active: true,
+      },
+      {
+        id: "b",
+        size: "L",
+        color_en: "Black",
+        color_ar: null,
+        color_hex: null,
+        stock: 3,
+        is_active: true,
+      },
     ];
     expect(findVariant(v, "L", "Black")?.id).toBe("b");
     expect(findVariant(v, "XL", "Black")).toBeNull();

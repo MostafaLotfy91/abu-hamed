@@ -9,7 +9,11 @@ import { sizeLabel } from "@/lib/fashion";
 import { cn } from "@/lib/utils";
 import type { AssistantProduct } from "@/lib/assistant-types";
 
-type Props = { p: AssistantProduct; sym: { ar?: string | null; en?: string | null }; onNavigate: () => void };
+type Props = {
+  p: AssistantProduct;
+  sym: { ar?: string | null; en?: string | null };
+  onNavigate: () => void;
+};
 
 /** Product recommendation card with inline size/color picking and add-to-cart. */
 export function AssistantProductCard({ p, sym, onNavigate }: Props) {
@@ -18,16 +22,27 @@ export function AssistantProductCard({ p, sym, onNavigate }: Props) {
   const ar = lang === "ar";
   const colors = useMemo(() => {
     const m = new Map<string, { ar: string | null; en: string | null; hex: string | null }>();
-    p.variants.forEach((v) => m.set(v.color_en ?? v.color_ar ?? "", { ar: v.color_ar, en: v.color_en, hex: v.color_hex }));
+    p.variants.forEach((v) =>
+      m.set(v.color_en ?? v.color_ar ?? "", { ar: v.color_ar, en: v.color_en, hex: v.color_hex }),
+    );
     return [...m.entries()].filter(([k]) => k);
   }, [p.variants]);
   const [color, setColor] = useState<string | null>(colors.length === 1 ? colors[0][0] : null);
-  const sizes = [...new Set(p.variants.filter((v) => !color || (v.color_en ?? v.color_ar) === color).map((v) => v.size).filter(Boolean))] as string[];
+  const sizes = [
+    ...new Set(
+      p.variants
+        .filter((v) => !color || (v.color_en ?? v.color_ar) === color)
+        .map((v) => v.size)
+        .filter(Boolean),
+    ),
+  ] as string[];
   const [size, setSize] = useState<string | null>(null);
 
   const variant = p.has_variants
     ? p.variants.find(
-        (v) => (colors.length === 0 || (v.color_en ?? v.color_ar) === color) && (sizes.length === 0 || v.size === size),
+        (v) =>
+          (colors.length === 0 || (v.color_en ?? v.color_ar) === color) &&
+          (sizes.length === 0 || v.size === size),
       )
     : null;
   const canAdd = p.in_stock && (!p.has_variants || !!variant);
@@ -52,10 +67,23 @@ export function AssistantProductCard({ p, sym, onNavigate }: Props) {
   return (
     <div className="space-y-2 rounded-xl border bg-card p-2">
       <div className="flex items-center gap-2">
-        {p.image ? <img src={p.image} alt="" width={56} height={56} loading="lazy" className="h-14 w-14 rounded-lg object-cover" /> : <div className="h-14 w-14 rounded-lg bg-muted" />}
+        {p.image ? (
+          <img
+            src={p.image}
+            alt=""
+            width={56}
+            height={56}
+            loading="lazy"
+            className="h-14 w-14 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="h-14 w-14 rounded-lg bg-muted" />
+        )}
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{ar ? p.name_ar : p.name_en}</div>
-          <div className="text-xs text-muted-foreground">{formatMoney(variant?.price ?? p.price, lang, sym)}</div>
+          <div className="text-xs text-muted-foreground">
+            {formatMoney(variant?.price ?? p.price, lang, sym)}
+          </div>
         </div>
       </div>
       {colors.length > 0 && (
@@ -64,10 +92,16 @@ export function AssistantProductCard({ p, sym, onNavigate }: Props) {
             <button
               key={k}
               type="button"
-              onClick={() => { setColor(k); setSize(null); }}
+              onClick={() => {
+                setColor(k);
+                setSize(null);
+              }}
               title={(ar ? c.ar : c.en) ?? k}
               aria-label={(ar ? c.ar : c.en) ?? k}
-              className={cn("h-6 w-6 rounded-full border-2", color === k ? "border-primary" : "border-border")}
+              className={cn(
+                "h-6 w-6 rounded-full border-2",
+                color === k ? "border-primary" : "border-border",
+              )}
               style={{ background: c.hex ?? undefined }}
             />
           ))}
@@ -80,7 +114,12 @@ export function AssistantProductCard({ p, sym, onNavigate }: Props) {
               key={s}
               type="button"
               onClick={() => setSize(s)}
-              className={cn("rounded-md border px-2 py-0.5 text-xs", size === s ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent")}
+              className={cn(
+                "rounded-md border px-2 py-0.5 text-xs",
+                size === s
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "hover:bg-accent",
+              )}
             >
               {sizeLabel(s, lang)}
             </button>
@@ -89,10 +128,18 @@ export function AssistantProductCard({ p, sym, onNavigate }: Props) {
       )}
       <div className="grid grid-cols-2 gap-2">
         <Button size="sm" variant="outline" asChild>
-          <Link to="/product/$id" params={{ id: p.id }} onClick={onNavigate}>{ar ? "عرض المنتج" : "View product"}</Link>
+          <Link to="/product/$id" params={{ id: p.id }} onClick={onNavigate}>
+            {ar ? "عرض المنتج" : "View product"}
+          </Link>
         </Button>
         <Button size="sm" disabled={!canAdd} onClick={add}>
-          {p.has_variants && !variant ? (ar ? "اختار المقاس" : "Pick size") : ar ? "أضف للسلة" : "Add to cart"}
+          {p.has_variants && !variant
+            ? ar
+              ? "اختار المقاس"
+              : "Pick size"
+            : ar
+              ? "أضف للسلة"
+              : "Add to cart"}
         </Button>
       </div>
     </div>

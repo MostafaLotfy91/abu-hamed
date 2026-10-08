@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 /** Cart quantities are always whole pieces. */
 export type CartItem = {
@@ -72,13 +80,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const key = `${item.productId}|${item.variantId ?? ""}`;
     setItems((prev) => {
       const existing = prev.find((i) => i.key === key);
-      if (existing) return prev.map((i) => (i.key === key ? { ...i, ...item, quantity: clampQty(i.quantity + qty, item.maxQty) } : i));
+      if (existing)
+        return prev.map((i) =>
+          i.key === key ? { ...i, ...item, quantity: clampQty(i.quantity + qty, item.maxQty) } : i,
+        );
       return [...prev, { ...item, key, quantity: clampQty(qty, item.maxQty) }];
     });
   }, []);
 
   const setQty = useCallback((key: string, qty: number) => {
-    setItems((prev) => prev.flatMap((i) => (i.key !== key ? [i] : qty < 1 ? [] : [{ ...i, quantity: clampQty(qty, i.maxQty) }])));
+    setItems((prev) =>
+      prev.flatMap((i) =>
+        i.key !== key ? [i] : qty < 1 ? [] : [{ ...i, quantity: clampQty(qty, i.maxQty) }],
+      ),
+    );
   }, []);
 
   const value = useMemo<Ctx>(
@@ -90,7 +105,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setCoupon,
       add,
       setQty,
-      setNotes: (key, notes) => setItems((p) => p.map((i) => (i.key === key ? { ...i, notes } : i))),
+      setNotes: (key, notes) =>
+        setItems((p) => p.map((i) => (i.key === key ? { ...i, notes } : i))),
       remove: (key) => setItems((p) => p.filter((i) => i.key !== key)),
       clear: () => {
         setItems([]);

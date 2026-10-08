@@ -9,7 +9,11 @@ import { BASE_URL, isLocalUrl } from "./tests/e2e/fixtures/env";
 
 const startServer = process.env.E2E_WEB_SERVER === "1";
 const port = (() => {
-  try { return Number(new URL(BASE_URL).port) || 8080; } catch { return 8080; }
+  try {
+    return Number(new URL(BASE_URL).port) || 8080;
+  } catch {
+    return 8080;
+  }
 })();
 
 export default defineConfig({
@@ -57,14 +61,15 @@ export default defineConfig({
   ],
   // Opt-in: E2E_WEB_SERVER=1 starts the app via scripts/dev-with-env-test.mjs, which puts .env.test in the server's
   // environment (ranked above .env) after the allowlist check. Only allowed for a local base URL.
-  webServer: startServer && isLocalUrl(BASE_URL)
-    ? {
-        command: `node scripts/dev-with-env-test.mjs ${port}`,
-        url: BASE_URL,
-        reuseExistingServer: true,
-        timeout: 180_000,
-        stdout: "ignore",
-        stderr: "pipe",
-      }
-    : undefined,
+  webServer:
+    startServer && isLocalUrl(BASE_URL)
+      ? {
+          command: `node scripts/dev-with-env-test.mjs ${port}`,
+          url: BASE_URL,
+          reuseExistingServer: true,
+          timeout: 180_000,
+          stdout: "ignore",
+          stderr: "pipe",
+        }
+      : undefined,
 });

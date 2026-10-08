@@ -19,7 +19,8 @@ export function useWhatsAppLink(overrideOrder?: number | string) {
   const ctx = useWaContext();
   const s = settings as (Record<string, unknown> & typeof settings) | null;
   if (!s || !features.whatsapp_button || !s.whatsapp_enabled || !s.whatsapp_number) return null;
-  const pick = (k: string) => (s[`${k}_${lang}`] as string | null) || (s[`${k}_ar`] as string | null) || "";
+  const pick = (k: string) =>
+    (s[`${k}_${lang}`] as string | null) || (s[`${k}_ar`] as string | null) || "";
   const vars: Record<string, string | number | null | undefined> = { store_name: tx(s, "name") };
   let tpl = pick("whatsapp_message_general");
   const order = overrideOrder ?? (ctx?.kind === "order" ? ctx.orderNumber : undefined);
@@ -28,9 +29,17 @@ export function useWhatsAppLink(overrideOrder?: number | string) {
     vars.order_number = order;
   } else if (ctx?.kind === "product") {
     tpl = pick("whatsapp_message_product");
-    Object.assign(vars, { product_name: ctx.name, size: ctx.size, color: ctx.color, product_url: typeof window !== "undefined" ? window.location.href : "" });
+    Object.assign(vars, {
+      product_name: ctx.name,
+      size: ctx.size,
+      color: ctx.color,
+      product_url: typeof window !== "undefined" ? window.location.href : "",
+    });
   }
-  return { href: waLink(s.whatsapp_number, fillTemplate(tpl, vars)), hours: pick("whatsapp_reply_hours_text") };
+  return {
+    href: waLink(s.whatsapp_number, fillTemplate(tpl, vars)),
+    hours: pick("whatsapp_reply_hours_text"),
+  };
 }
 
 export function WhatsAppButton() {
@@ -43,10 +52,17 @@ export function WhatsAppButton() {
   // Pages with a sticky action bar on mobile (product, cart, checkout): keep the bar and totals clear.
   const hideOnMobile = onProduct || path === "/cart" || path === "/checkout";
   return (
-    <a href={link.href} target="_blank" rel="noopener noreferrer"
+    <a
+      href={link.href}
+      target="_blank"
+      rel="noopener noreferrer"
       aria-label={lang === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
       // On mobile product pages the sticky add-to-cart bar carries its own WhatsApp button instead.
-      className={cn("group fixed bottom-20 start-4 z-40 md:bottom-6", hideOnMobile && "hidden md:block")}>
+      className={cn(
+        "group fixed bottom-20 start-4 z-40 md:bottom-6",
+        hideOnMobile && "hidden md:block",
+      )}
+    >
       <span className="absolute inset-0 animate-ping rounded-full bg-whatsapp opacity-30" />
       <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg md:h-14 md:w-14">
         <WhatsAppIcon className="h-6 w-6 md:h-7 md:w-7" />
@@ -66,8 +82,13 @@ export function WhatsAppInlineIcon() {
   const link = useWhatsAppLink();
   if (!link) return null;
   return (
-    <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={lang === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border text-whatsapp">
+    <a
+      href={link.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={lang === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border text-whatsapp"
+    >
       <WhatsAppIcon className="h-6 w-6" />
     </a>
   );
@@ -78,9 +99,14 @@ export function WhatsAppOrderButton({ orderNumber }: { orderNumber: number | str
   const link = useWhatsAppLink(orderNumber);
   if (!link) return null;
   return (
-    <a href={link.href} target="_blank" rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 rounded-xl bg-whatsapp px-4 py-2 text-sm font-bold text-whatsapp-foreground">
-      <WhatsAppIcon className="h-5 w-5" />{lang === "ar" ? "تواصل معنا على واتساب" : "Contact us on WhatsApp"}
+    <a
+      href={link.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 rounded-xl bg-whatsapp px-4 py-2 text-sm font-bold text-whatsapp-foreground"
+    >
+      <WhatsAppIcon className="h-5 w-5" />
+      {lang === "ar" ? "تواصل معنا على واتساب" : "Contact us on WhatsApp"}
     </a>
   );
 }

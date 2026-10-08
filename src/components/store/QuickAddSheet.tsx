@@ -12,12 +12,25 @@ import { cn } from "@/lib/utils";
 import { useMoney } from "./use-money";
 
 /** Size/colour picker for the product card's quick-add: bottom sheet on mobile, side panel on desktop. */
-export function QuickAddSheet({ p, price, open, onOpenChange }: { p: Product; price: number; open: boolean; onOpenChange: (o: boolean) => void }) {
+export function QuickAddSheet({
+  p,
+  price,
+  open,
+  onOpenChange,
+}: {
+  p: Product;
+  price: number;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const { t, tx, lang } = useI18n();
   const money = useMoney();
   const cart = useCart();
   const mobile = useIsMobile();
-  const variants = useMemo(() => (p.product_variants ?? []).filter((v) => v.is_active !== false), [p.product_variants]);
+  const variants = useMemo(
+    () => (p.product_variants ?? []).filter((v) => v.is_active !== false),
+    [p.product_variants],
+  );
   const colors = useMemo(() => {
     const m = new Map<string, (typeof variants)[number]>();
     variants.forEach((v) => v.color_en && !m.has(v.color_en) && m.set(v.color_en, v));
@@ -33,9 +46,17 @@ export function QuickAddSheet({ p, price, open, onOpenChange }: { p: Product; pr
   const add = () => {
     if (!chosen) return;
     cart.add({
-      productId: p.id, variantId: chosen.id, name_ar: p.name_ar, name_en: p.name_en,
-      size: chosen.size, color_ar: chosen.color_ar, color_en: chosen.color_en, color_hex: chosen.color_hex,
-      image: p.images?.[0], maxQty: stock, price: Number(chosen.price ?? price),
+      productId: p.id,
+      variantId: chosen.id,
+      name_ar: p.name_ar,
+      name_en: p.name_en,
+      size: chosen.size,
+      color_ar: chosen.color_ar,
+      color_en: chosen.color_en,
+      color_hex: chosen.color_hex,
+      image: p.images?.[0],
+      maxQty: stock,
+      price: Number(chosen.price ?? price),
     });
     toast.success(t("added_to_cart"));
     onOpenChange(false);
@@ -43,12 +64,22 @@ export function QuickAddSheet({ p, price, open, onOpenChange }: { p: Product; pr
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side={mobile ? "bottom" : lang === "ar" ? "left" : "right"} className={cn("flex flex-col gap-5", mobile ? "max-h-[85vh] rounded-t-lg" : "w-full sm:max-w-sm")}>
+      <SheetContent
+        side={mobile ? "bottom" : lang === "ar" ? "left" : "right"}
+        className={cn(
+          "flex flex-col gap-5",
+          mobile ? "max-h-[85vh] rounded-t-lg" : "w-full sm:max-w-sm",
+        )}
+      >
         <SheetHeader className="pe-10 text-start">
           <SheetTitle className="text-base font-bold">{t("select_size_color")}</SheetTitle>
         </SheetHeader>
         <div className="flex gap-3 px-4">
-          <img src={(p as any).thumbnails?.[0] ?? p.images?.[0]} alt="" className="aspect-[4/5] w-20 rounded-md bg-muted object-cover" />
+          <img
+            src={(p as any).thumbnails?.[0] ?? p.images?.[0]}
+            alt=""
+            className="aspect-[4/5] w-20 rounded-md bg-muted object-cover"
+          />
           <div className="min-w-0">
             <p className="line-clamp-2 text-sm font-semibold">{tx(p, "name")}</p>
             <p className="mt-1 font-bold">{money(chosen?.price ?? price)}</p>
@@ -56,12 +87,27 @@ export function QuickAddSheet({ p, price, open, onOpenChange }: { p: Product; pr
         </div>
         {colors.length > 0 && (
           <div className="px-4">
-            <p className="mb-2 text-xs font-semibold text-muted-foreground">{tx(colors.find((c) => c.color_en === color) ?? null, "color")}</p>
+            <p className="mb-2 text-xs font-semibold text-muted-foreground">
+              {tx(colors.find((c) => c.color_en === color) ?? null, "color")}
+            </p>
             <div className="flex flex-wrap gap-2">
               {colors.map((c) => (
-                <button key={c.color_en} onClick={() => { setColor(c.color_en!); setSize(null); }} aria-label={tx(c, "color")}
-                  className={cn("h-11 w-11 rounded-full border p-1 transition", color === c.color_en ? "border-foreground" : "border-border")}>
-                  <span className="block h-full w-full rounded-full border border-border" style={{ background: c.color_hex ?? undefined }} />
+                <button
+                  key={c.color_en}
+                  onClick={() => {
+                    setColor(c.color_en!);
+                    setSize(null);
+                  }}
+                  aria-label={tx(c, "color")}
+                  className={cn(
+                    "h-11 w-11 rounded-full border p-1 transition",
+                    color === c.color_en ? "border-foreground" : "border-border",
+                  )}
+                >
+                  <span
+                    className="block h-full w-full rounded-full border border-border"
+                    style={{ background: c.color_hex ?? undefined }}
+                  />
                 </button>
               ))}
             </div>
@@ -74,9 +120,17 @@ export function QuickAddSheet({ p, price, open, onOpenChange }: { p: Product; pr
                 const v = forColor.find((x) => x.size === s);
                 const out = Number(v?.stock ?? 0) <= 0;
                 return (
-                  <button key={s} disabled={out} onClick={() => setSize(s)}
-                    className={cn("h-11 rounded-md border text-sm font-semibold transition disabled:cursor-not-allowed disabled:text-muted-foreground disabled:line-through",
-                      size === s ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground")}>
+                  <button
+                    key={s}
+                    disabled={out}
+                    onClick={() => setSize(s)}
+                    className={cn(
+                      "h-11 rounded-md border text-sm font-semibold transition disabled:cursor-not-allowed disabled:text-muted-foreground disabled:line-through",
+                      size === s
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border hover:border-foreground",
+                    )}
+                  >
                     {sizeLabel(s, lang)}
                   </button>
                 );
@@ -85,8 +139,22 @@ export function QuickAddSheet({ p, price, open, onOpenChange }: { p: Product; pr
           </div>
         )}
         <div className="mt-auto grid gap-2 p-4">
-          <Button size="lg" className="h-12" disabled={!chosen || stock <= 0 || (sizes.length > 0 && !size)} onClick={add}>{t("add")}</Button>
-          <Link to="/product/$id" params={{ id: p.id }} onClick={() => onOpenChange(false)} className="py-2 text-center text-sm font-semibold underline underline-offset-4">{t("view_details")}</Link>
+          <Button
+            size="lg"
+            className="h-12"
+            disabled={!chosen || stock <= 0 || (sizes.length > 0 && !size)}
+            onClick={add}
+          >
+            {t("add")}
+          </Button>
+          <Link
+            to="/product/$id"
+            params={{ id: p.id }}
+            onClick={() => onOpenChange(false)}
+            className="py-2 text-center text-sm font-semibold underline underline-offset-4"
+          >
+            {t("view_details")}
+          </Link>
         </div>
       </SheetContent>
     </Sheet>

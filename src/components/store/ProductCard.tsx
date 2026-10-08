@@ -15,23 +15,52 @@ import { QuickAddSheet } from "./QuickAddSheet";
 
 const NEW_DAYS = 21;
 
-export function ProductImage({ src, alt, className, priority }: { src?: string | null; alt: string; className?: string; priority?: boolean }) {
+export function ProductImage({
+  src,
+  alt,
+  className,
+  priority,
+}: {
+  src?: string | null;
+  alt: string;
+  className?: string;
+  priority?: boolean;
+}) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   // Images already in the browser cache can finish before React attaches onLoad.
-  const ref = useCallback((el: HTMLImageElement | null) => { if (el?.complete && el.naturalWidth) setLoaded(true); }, []);
+  const ref = useCallback((el: HTMLImageElement | null) => {
+    if (el?.complete && el.naturalWidth) setLoaded(true);
+  }, []);
   if (!src || failed)
     return (
       // Same accessible name as the real image would have, so links wrapping the placeholder still have text.
-      <div className={cn("flex items-center justify-center bg-muted text-muted-foreground/60", className)}
-        {...(alt ? { role: "img", "aria-label": alt } : { "aria-hidden": true })}>
+      <div
+        className={cn(
+          "flex items-center justify-center bg-muted text-muted-foreground/60",
+          className,
+        )}
+        {...(alt ? { role: "img", "aria-label": alt } : { "aria-hidden": true })}
+      >
         <ImageOff className="h-7 w-7" aria-hidden />
       </div>
     );
   return (
-    <img ref={ref} src={src} alt={alt} loading={priority ? "eager" : "lazy"} decoding="async" {...(priority ? { fetchPriority: "high" as const } : {})}
-      onLoad={() => setLoaded(true)} onError={() => setFailed(true)}
-      className={cn("object-cover transition-opacity duration-500", loaded ? "opacity-100" : "animate-pulse bg-muted opacity-60", className)} />
+    <img
+      ref={ref}
+      src={src}
+      alt={alt}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+      {...(priority ? { fetchPriority: "high" as const } : {})}
+      onLoad={() => setLoaded(true)}
+      onError={() => setFailed(true)}
+      className={cn(
+        "object-cover transition-opacity duration-500",
+        loaded ? "opacity-100" : "animate-pulse bg-muted opacity-60",
+        className,
+      )}
+    />
   );
 }
 
@@ -63,14 +92,19 @@ export function ProductCard({ p }: { p: Product }) {
   const stock = Number(p.stock);
   const variants = (p.product_variants ?? []).filter((v) => v.is_active !== false);
   const hasVariants = variants.length > 0;
-  const colors = [...new Map(variants.filter((v) => v.color_hex).map((v) => [v.color_hex, v])).values()];
+  const colors = [
+    ...new Map(variants.filter((v) => v.color_hex).map((v) => [v.color_hex, v])).values(),
+  ];
   const isNew = Date.now() - new Date(p.created_at).getTime() < NEW_DAYS * 864e5;
   const liked = wish.data?.has(p.id) ?? false;
   const img1 = (p as any).thumbnails?.[0] ?? p.images?.[0];
   const img2 = (p as any).thumbnails?.[1] ?? p.images?.[1];
 
   const toggleWish = async () => {
-    if (!user) { toast(t("sign_in_to_save")); return navigate({ to: "/auth" }); }
+    if (!user) {
+      toast(t("sign_in_to_save"));
+      return navigate({ to: "/auth" });
+    }
     const { error } = liked
       ? await supabase.from("wishlist").delete().eq("product_id", p.id).eq("user_id", user.id)
       : await supabase.from("wishlist").insert({ product_id: p.id, user_id: user.id });
@@ -81,7 +115,15 @@ export function ProductCard({ p }: { p: Product }) {
 
   const quickAdd = () => {
     if (hasVariants) return setQuick(true);
-    cart.add({ productId: p.id, variantId: null, name_ar: p.name_ar, name_en: p.name_en, image: p.images?.[0], maxQty: stock, price: current });
+    cart.add({
+      productId: p.id,
+      variantId: null,
+      name_ar: p.name_ar,
+      name_en: p.name_en,
+      image: p.images?.[0],
+      maxQty: stock,
+      price: current,
+    });
     toast.success(t("added_to_cart"));
   };
 
@@ -91,41 +133,83 @@ export function ProductCard({ p }: { p: Product }) {
         <Link to="/product/$id" params={{ id: p.id }} className="block aspect-[4/5]">
           <ProductImage src={img1} alt={name} className="absolute inset-0 h-full w-full" />
           {img2 && (
-            <img src={img2} alt="" loading="lazy" aria-hidden
-              className="absolute inset-0 hidden h-full w-full object-cover opacity-0 transition-opacity duration-500 md:block md:group-hover:opacity-100" />
+            <img
+              src={img2}
+              alt=""
+              loading="lazy"
+              aria-hidden
+              className="absolute inset-0 hidden h-full w-full object-cover opacity-0 transition-opacity duration-500 md:block md:group-hover:opacity-100"
+            />
           )}
         </Link>
         <div className="pointer-events-none absolute start-2 top-2 flex flex-col items-start gap-1">
-          {pct > 0 && <span className="rounded-sm bg-deal px-1.5 py-0.5 text-[11px] font-bold text-deal-foreground">-{pct}%</span>}
-          {isNew && <span className="rounded-sm bg-card px-1.5 py-0.5 text-[11px] font-bold">{t("badge_new")}</span>}
+          {pct > 0 && (
+            <span className="rounded-sm bg-deal px-1.5 py-0.5 text-[11px] font-bold text-deal-foreground">
+              -{pct}%
+            </span>
+          )}
+          {isNew && (
+            <span className="rounded-sm bg-card px-1.5 py-0.5 text-[11px] font-bold">
+              {t("badge_new")}
+            </span>
+          )}
         </div>
-        <button onClick={toggleWish} aria-label={t("wishlist")} aria-pressed={liked}
-          className="absolute end-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-foreground transition hover:scale-110">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-card/90"><Heart className={cn("h-4 w-4", liked && "fill-deal text-deal")} /></span>
+        <button
+          onClick={toggleWish}
+          aria-label={t("wishlist")}
+          aria-pressed={liked}
+          className="absolute end-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-foreground transition hover:scale-110"
+        >
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-card/90">
+            <Heart className={cn("h-4 w-4", liked && "fill-deal text-deal")} />
+          </span>
         </button>
         {stock > 0 ? (
-          <button onClick={quickAdd} aria-label={t("quick_add")}
-            className="absolute bottom-2 end-2 flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-card transition hover:bg-foreground hover:text-background md:h-10 md:w-auto md:translate-y-2 md:gap-1 md:px-3 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:focus-visible:opacity-100">
-            <Plus className="h-4 w-4" /><span className="hidden text-xs font-bold md:inline">{t("quick_add")}</span>
+          <button
+            onClick={quickAdd}
+            aria-label={t("quick_add")}
+            className="absolute bottom-2 end-2 flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-card transition hover:bg-foreground hover:text-background md:h-10 md:w-auto md:translate-y-2 md:gap-1 md:px-3 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden text-xs font-bold md:inline">{t("quick_add")}</span>
           </button>
         ) : (
-          <span className="absolute inset-x-0 bottom-0 bg-background/85 py-2 text-center text-xs font-bold">{t("out_of_stock")}</span>
+          <span className="absolute inset-x-0 bottom-0 bg-background/85 py-2 text-center text-xs font-bold">
+            {t("out_of_stock")}
+          </span>
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1 pt-2">
-        <Link to="/product/$id" params={{ id: p.id }} className="line-clamp-1 text-sm leading-5 hover:underline">{name}</Link>
+        <Link
+          to="/product/$id"
+          params={{ id: p.id }}
+          className="line-clamp-1 text-sm leading-5 hover:underline"
+        >
+          {name}
+        </Link>
         <div className="flex flex-wrap items-baseline gap-x-2">
           <span className={cn("text-sm font-bold", was && "text-deal")}>{money(current)}</span>
           {was && <span className="text-xs text-muted-foreground line-through">{money(was)}</span>}
         </div>
         {colors.length > 1 && (
           <div className="flex items-center gap-1 pt-0.5">
-            {colors.slice(0, 5).map((c) => <span key={c.color_hex} title={tx(c, "color")} className="h-3 w-3 rounded-full border border-border" style={{ background: c.color_hex ?? undefined }} />)}
-            {colors.length > 5 && <span className="text-[11px] text-muted-foreground">+{colors.length - 5}</span>}
+            {colors.slice(0, 5).map((c) => (
+              <span
+                key={c.color_hex}
+                title={tx(c, "color")}
+                className="h-3 w-3 rounded-full border border-border"
+                style={{ background: c.color_hex ?? undefined }}
+              />
+            ))}
+            {colors.length > 5 && (
+              <span className="text-[11px] text-muted-foreground">+{colors.length - 5}</span>
+            )}
           </div>
         )}
       </div>
-      {hasVariants && quick && <QuickAddSheet p={p} price={current} open={quick} onOpenChange={setQuick} />}
+      {hasVariants && quick && (
+        <QuickAddSheet p={p} price={current} open={quick} onOpenChange={setQuick} />
+      )}
     </div>
   );
 }

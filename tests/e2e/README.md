@@ -115,16 +115,16 @@ If any required variable is missing, every spec is **skipped** with the list of 
 
 ## Layout
 
-| File | Covers |
-| --- | --- |
-| `customer-shopping.spec.ts` | departments, categories, filters, search, product page (size/colour, out-of-stock size), wishlist, cart, coupon, COD checkout, order timeline, language toggle |
-| `returns.spec.ts` | exchange / return requests on delivered orders |
-| `admin.spec.ts` | admin login, product CRUD + variants + image upload, Excel import (valid / errors / undo), order status, coupons, banners (`javascript:` rejected), settings (name/colour on storefront), WhatsApp number + social links, drivers |
-| `driver.spec.ts` | assigned order, accept, start delivery, `driver_locations` row saved, delivered, availability |
-| `live-tracking.spec.ts` | customer order page updates in real time from a second (driver) browser context |
-| `ai-stylist.spec.ts` | stylist chat with mocked stream, product cards, add to cart, errors, feature flag |
-| `whatsapp-button.spec.ts` | wa.me links per page (general / product / order), hidden on `/admin` and `/driver` |
-| `access-control.spec.ts` | signed-out redirects, customer/driver denied on `/admin` / `/driver` |
-| `a11y.spec.ts` | axe WCAG 2 A/AA on home, product, checkout (fails on serious/critical) |
+| File                        | Covers                                                                                                                                                                                                                            |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `customer-shopping.spec.ts` | departments, categories, filters, search, product page (size/colour, out-of-stock size), wishlist, cart, coupon, COD checkout, order timeline, language toggle                                                                    |
+| `returns.spec.ts`           | exchange / return requests on delivered orders                                                                                                                                                                                    |
+| `admin.spec.ts`             | admin login, product CRUD + variants + image upload, Excel import (valid / errors / undo), order status, coupons, banners (`javascript:` rejected), settings (name/colour on storefront), WhatsApp number + social links, drivers |
+| `driver.spec.ts`            | assigned order, accept, start delivery, `driver_locations` row saved, delivered, availability                                                                                                                                     |
+| `live-tracking.spec.ts`     | customer order page updates in real time from a second (driver) browser context                                                                                                                                                   |
+| `ai-stylist.spec.ts`        | stylist chat with mocked stream, product cards, add to cart, errors, feature flag                                                                                                                                                 |
+| `whatsapp-button.spec.ts`   | wa.me links per page (general / product / order), hidden on `/admin` and `/driver`                                                                                                                                                |
+| `access-control.spec.ts`    | signed-out redirects, customer/driver denied on `/admin` / `/driver`                                                                                                                                                              |
+| `a11y.spec.ts`              | axe WCAG 2 A/AA on home, product, checkout (fails on serious/critical)                                                                                                                                                            |
 
 Known gaps are marked `test.fixme` with the reason (branches: no admin page and no storefront page exist yet).

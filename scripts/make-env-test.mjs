@@ -30,7 +30,9 @@ const accounts = [
 
 let lines;
 if (staging) {
-  const ref = /^\s*project_id\s*=\s*"([a-z0-9]{20})"/m.exec(readFileSync("supabase/config.toml", "utf8"))?.[1];
+  const ref = /^\s*project_id\s*=\s*"([a-z0-9]{20})"/m.exec(
+    readFileSync("supabase/config.toml", "utf8"),
+  )?.[1];
   if (!ref) {
     console.error("No project_id in supabase/config.toml.");
     process.exit(1);
@@ -53,13 +55,22 @@ if (staging) {
 } else {
   let raw;
   try {
-    raw = execSync("npx supabase status -o env", { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    raw = execSync("npx supabase status -o env", {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
   } catch {
-    console.error("Could not read `supabase status`. Start the local stack first: npx supabase start (needs Docker).");
+    console.error(
+      "Could not read `supabase status`. Start the local stack first: npx supabase start (needs Docker).",
+    );
     process.exit(1);
   }
   const vars = Object.fromEntries(
-    raw.split(/\r?\n/).map((l) => /^([A-Z_]+)="?(.*?)"?$/.exec(l.trim())).filter(Boolean).map((m) => [m[1], m[2]]),
+    raw
+      .split(/\r?\n/)
+      .map((l) => /^([A-Z_]+)="?(.*?)"?$/.exec(l.trim()))
+      .filter(Boolean)
+      .map((m) => [m[1], m[2]]),
   );
   const api = vars.API_URL;
   const anon = vars.ANON_KEY ?? vars.PUBLISHABLE_KEY;
@@ -87,6 +98,8 @@ if (staging) {
 }
 
 writeFileSync(OUT, lines.join("\n"), { mode: 0o600 });
-console.log(staging
-  ? `Wrote ${OUT} for the staging project. Now open it and replace the three PASTE_ placeholders (keys are never printed).`
-  : `Wrote ${OUT} for the local stack (keys not shown).`);
+console.log(
+  staging
+    ? `Wrote ${OUT} for the staging project. Now open it and replace the three PASTE_ placeholders (keys are never printed).`
+    : `Wrote ${OUT} for the local stack (keys not shown).`,
+);

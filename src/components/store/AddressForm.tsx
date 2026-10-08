@@ -10,17 +10,48 @@ import { Label } from "@/components/ui/label";
 
 export type Address = Tables<"addresses">;
 
-export function AddressForm({ initial, onDone, onCancel }: { initial?: Address | null; onDone: (a: Address) => void; onCancel?: () => void }) {
+export function AddressForm({
+  initial,
+  onDone,
+  onCancel,
+}: {
+  initial?: Address | null;
+  onDone: (a: Address) => void;
+  onCancel?: () => void;
+}) {
   const { t } = useI18n();
   const { user } = useAuth();
   const [f, setF] = useState({
-    label: initial?.label ?? "", recipient_name: initial?.recipient_name ?? "", phone: initial?.phone ?? "",
-    city: initial?.city ?? "", area: initial?.area ?? "", street: initial?.street ?? "", building: initial?.building ?? "",
-    floor: initial?.floor ?? "", apartment: initial?.apartment ?? "", notes: initial?.notes ?? "",
+    label: initial?.label ?? "",
+    recipient_name: initial?.recipient_name ?? "",
+    phone: initial?.phone ?? "",
+    city: initial?.city ?? "",
+    area: initial?.area ?? "",
+    street: initial?.street ?? "",
+    building: initial?.building ?? "",
+    floor: initial?.floor ?? "",
+    apartment: initial?.apartment ?? "",
+    notes: initial?.notes ?? "",
   });
   const [busy, setBusy] = useState(false);
   const field = (k: keyof typeof f, label: DictKey, req = false, type = "text") => (
-    <div><Label htmlFor={`addr-${String(k)}`}>{t(label)}{req && " *"}</Label><Input id={`addr-${String(k)}`} type={type} inputMode={type === "tel" ? "tel" : undefined} dir={type === "tel" ? "ltr" : undefined} className="h-11" value={f[k]} required={req} maxLength={200} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>
+    <div>
+      <Label htmlFor={`addr-${String(k)}`}>
+        {t(label)}
+        {req && " *"}
+      </Label>
+      <Input
+        id={`addr-${String(k)}`}
+        type={type}
+        inputMode={type === "tel" ? "tel" : undefined}
+        dir={type === "tel" ? "ltr" : undefined}
+        className="h-11"
+        value={f[k]}
+        required={req}
+        maxLength={200}
+        onChange={(e) => setF({ ...f, [k]: e.target.value })}
+      />
+    </div>
   );
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +78,14 @@ export function AddressForm({ initial, onDone, onCancel }: { initial?: Address |
       {field("apartment", "apartment")}
       {field("notes", "notes")}
       <div className="col-span-2 flex gap-2">
-        <Button type="submit" disabled={busy}>{t("save")}</Button>
-        {onCancel && <Button type="button" variant="ghost" onClick={onCancel}>{t("cancel")}</Button>}
+        <Button type="submit" disabled={busy}>
+          {t("save")}
+        </Button>
+        {onCancel && (
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            {t("cancel")}
+          </Button>
+        )}
       </div>
     </form>
   );

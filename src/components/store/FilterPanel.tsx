@@ -214,7 +214,9 @@ export function FilterPanel({
               type="number"
               inputMode="decimal"
               aria-label={t("min")}
-              placeholder={o.price.min != null ? `${t("min")} ${Math.floor(o.price.min)}` : t("min")}
+              placeholder={
+                o.price.min != null ? `${t("min")} ${Math.floor(o.price.min)}` : t("min")
+              }
               value={v.minPrice ?? ""}
               onChange={(e) => set({ minPrice: num(e.target.value) })}
             />

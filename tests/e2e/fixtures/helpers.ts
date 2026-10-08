@@ -11,34 +11,138 @@ import { expect, installGuards, setInitialLang, type Lang } from "./test";
  */
 export const T = {
   ar: {
-    signIn: "تسجيل الدخول", shopByDept: "تسوق حسب القسم", allProducts: "كل المنتجات", searchPlaceholder: "ابحث عن منتج...",
-    resultsFor: "نتائج البحث عن", noProducts: "لا توجد منتجات", clearAll: "مسح الكل", filters: "تصفية", min: "من", max: "إلى",
-    size: "المقاس", color: "اللون", inStock: "متوفر", addToCart: "أضف للسلة", addedToCart: "تمت الإضافة للسلة", wishlist: "المفضلة",
-    cart: "السلة", checkout: "إتمام الطلب", coupon: "كود الخصم", apply: "تطبيق", discount: "الخصم", cod: "الدفع عند الاستلام",
-    online: "الدفع أونلاين", comingSoon: "قريباً", placeOrder: "تأكيد الطلب", orderPlaced: "تم استلام طلبك!", order: "طلب",
-    timeline: { pending: "قيد الانتظار", confirmed: "تم التأكيد", preparing: "جاري التجهيز", out_for_delivery: "في الطريق", delivered: "تم التوصيل", cancelled: "ملغي" },
-    returnExchange: "استرجاع / استبدال", requestReturn: "طلب استرجاع أو استبدال", return: "استرجاع", exchange: "استبدال",
-    reason: "السبب *", exchangePref: "المقاس/اللون المطلوب بدلاً منه", items: "منتجات", wholeOrder: "الطلب كله", submit: "إرسال",
-    saved: "تم الحفظ", rrRequested: "تم الطلب", waFloat: "تواصل عبر واتساب", waOrder: "تواصل معنا على واتساب",
-    stylist: "الستايلست", stylistSub: "بيرشح من منتجات المتجر بس", stylistInput: "اكتب طلبك…", send: "إرسال", viewProduct: "عرض المنتج",
-    stylistAdded: "اتضاف للسلة", noAccess: "غير مصرح لك بالدخول", driversOnly: "هذا التطبيق للمندوبين فقط",
-    driverNew: "جديدة", driverActive: "نشطة", driverDone: "مكتملة", accept: "قبول الطلب", start: "بدء التوصيل", delivered: "تم التسليم",
-    liveTracking: "تتبع المندوب مباشرة", waitingLocation: "في انتظار موقع المندوب…", language: "English",
+    signIn: "تسجيل الدخول",
+    shopByDept: "تسوق حسب القسم",
+    allProducts: "كل المنتجات",
+    searchPlaceholder: "ابحث عن منتج...",
+    resultsFor: "نتائج البحث عن",
+    noProducts: "لا توجد منتجات",
+    clearAll: "مسح الكل",
+    filters: "تصفية",
+    min: "من",
+    max: "إلى",
+    size: "المقاس",
+    color: "اللون",
+    inStock: "متوفر",
+    addToCart: "أضف للسلة",
+    addedToCart: "تمت الإضافة للسلة",
+    wishlist: "المفضلة",
+    cart: "السلة",
+    checkout: "إتمام الطلب",
+    coupon: "كود الخصم",
+    apply: "تطبيق",
+    discount: "الخصم",
+    cod: "الدفع عند الاستلام",
+    online: "الدفع أونلاين",
+    comingSoon: "قريباً",
+    placeOrder: "تأكيد الطلب",
+    orderPlaced: "تم استلام طلبك!",
+    order: "طلب",
+    timeline: {
+      pending: "قيد الانتظار",
+      confirmed: "تم التأكيد",
+      preparing: "جاري التجهيز",
+      out_for_delivery: "في الطريق",
+      delivered: "تم التوصيل",
+      cancelled: "ملغي",
+    },
+    returnExchange: "استرجاع / استبدال",
+    requestReturn: "طلب استرجاع أو استبدال",
+    return: "استرجاع",
+    exchange: "استبدال",
+    reason: "السبب *",
+    exchangePref: "المقاس/اللون المطلوب بدلاً منه",
+    items: "منتجات",
+    wholeOrder: "الطلب كله",
+    submit: "إرسال",
+    saved: "تم الحفظ",
+    rrRequested: "تم الطلب",
+    waFloat: "تواصل عبر واتساب",
+    waOrder: "تواصل معنا على واتساب",
+    stylist: "الستايلست",
+    stylistSub: "بيرشح من منتجات المتجر بس",
+    stylistInput: "اكتب طلبك…",
+    send: "إرسال",
+    viewProduct: "عرض المنتج",
+    stylistAdded: "اتضاف للسلة",
+    noAccess: "غير مصرح لك بالدخول",
+    driversOnly: "هذا التطبيق للمندوبين فقط",
+    driverNew: "جديدة",
+    driverActive: "نشطة",
+    driverDone: "مكتملة",
+    accept: "قبول الطلب",
+    start: "بدء التوصيل",
+    delivered: "تم التسليم",
+    liveTracking: "تتبع المندوب مباشرة",
+    waitingLocation: "في انتظار موقع المندوب…",
+    language: "English",
   },
   en: {
-    signIn: "Sign in", shopByDept: "Shop by department", allProducts: "All products", searchPlaceholder: "Search products...",
-    resultsFor: "Results for", noProducts: "No products found", clearAll: "Clear all", filters: "Filters", min: "Min", max: "Max",
-    size: "Size", color: "Color", inStock: "In stock", addToCart: "Add to cart", addedToCart: "Added to cart", wishlist: "Wishlist",
-    cart: "Cart", checkout: "Checkout", coupon: "Coupon code", apply: "Apply", discount: "Discount", cod: "Cash on delivery",
-    online: "Pay online", comingSoon: "Coming soon", placeOrder: "Place order", orderPlaced: "Order placed!", order: "Order",
-    timeline: { pending: "Pending", confirmed: "Confirmed", preparing: "Preparing", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" },
-    returnExchange: "Return / exchange", requestReturn: "Request return or exchange", return: "Return", exchange: "Exchange",
-    reason: "Reason *", exchangePref: "Wanted size/color instead", items: "items", wholeOrder: "Whole order", submit: "Submit",
-    saved: "Saved", rrRequested: "Requested", waFloat: "Chat on WhatsApp", waOrder: "Contact us on WhatsApp",
-    stylist: "Stylist", stylistSub: "Recommends store products only", stylistInput: "Type your request…", send: "Send", viewProduct: "View product",
-    stylistAdded: "Added to cart", noAccess: "You don't have access", driversOnly: "Drivers only",
-    driverNew: "New", driverActive: "Active", driverDone: "Completed", accept: "Accept order", start: "Start delivery", delivered: "Mark delivered",
-    liveTracking: "Live driver tracking", waitingLocation: "Waiting for the driver's location…", language: "العربية",
+    signIn: "Sign in",
+    shopByDept: "Shop by department",
+    allProducts: "All products",
+    searchPlaceholder: "Search products...",
+    resultsFor: "Results for",
+    noProducts: "No products found",
+    clearAll: "Clear all",
+    filters: "Filters",
+    min: "Min",
+    max: "Max",
+    size: "Size",
+    color: "Color",
+    inStock: "In stock",
+    addToCart: "Add to cart",
+    addedToCart: "Added to cart",
+    wishlist: "Wishlist",
+    cart: "Cart",
+    checkout: "Checkout",
+    coupon: "Coupon code",
+    apply: "Apply",
+    discount: "Discount",
+    cod: "Cash on delivery",
+    online: "Pay online",
+    comingSoon: "Coming soon",
+    placeOrder: "Place order",
+    orderPlaced: "Order placed!",
+    order: "Order",
+    timeline: {
+      pending: "Pending",
+      confirmed: "Confirmed",
+      preparing: "Preparing",
+      out_for_delivery: "Out for delivery",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
+    },
+    returnExchange: "Return / exchange",
+    requestReturn: "Request return or exchange",
+    return: "Return",
+    exchange: "Exchange",
+    reason: "Reason *",
+    exchangePref: "Wanted size/color instead",
+    items: "items",
+    wholeOrder: "Whole order",
+    submit: "Submit",
+    saved: "Saved",
+    rrRequested: "Requested",
+    waFloat: "Chat on WhatsApp",
+    waOrder: "Contact us on WhatsApp",
+    stylist: "Stylist",
+    stylistSub: "Recommends store products only",
+    stylistInput: "Type your request…",
+    send: "Send",
+    viewProduct: "View product",
+    stylistAdded: "Added to cart",
+    noAccess: "You don't have access",
+    driversOnly: "Drivers only",
+    driverNew: "New",
+    driverActive: "Active",
+    driverDone: "Completed",
+    accept: "Accept order",
+    start: "Start delivery",
+    delivered: "Mark delivered",
+    liveTracking: "Live driver tracking",
+    waitingLocation: "Waiting for the driver's location…",
+    language: "العربية",
   },
 } as const;
 
@@ -55,7 +159,11 @@ export async function login(page: Page, role: Role, dest = "/") {
 }
 
 /** A second, independently guarded browser context (e.g. driver + customer at the same time). */
-export async function newGuardedContext(browser: Browser, lang: Lang, opts: BrowserContextOptions = {}) {
+export async function newGuardedContext(
+  browser: Browser,
+  lang: Lang,
+  opts: BrowserContextOptions = {},
+) {
   const context = await browser.newContext({ baseURL: BASE_URL, ...opts });
   await installGuards(context);
   await context.addInitScript(setInitialLang, lang);
@@ -80,7 +188,8 @@ function xpathLiteral(s: string) {
 export const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Sonner toast containing text. */
-export const toast = (page: Page, text: string | RegExp) => page.locator("[data-sonner-toast]").filter({ hasText: text }).first();
+export const toast = (page: Page, text: string | RegExp) =>
+  page.locator("[data-sonner-toast]").filter({ hasText: text }).first();
 
 /** First visible match (desktop and mobile render duplicate controls, one hidden by CSS). */
 export const visible = (l: Locator) => l.filter({ visible: true }).first();
@@ -103,7 +212,8 @@ export function parseWa(href: string | null) {
   return { number: u.pathname.replace(/^\//, ""), text: u.searchParams.get("text") ?? "" };
 }
 
-export const fill = (tpl: string, vars: Record<string, string | number>) => tpl.replace(/\{(\w+)\}/g, (_, k) => (vars[k] == null || vars[k] === "" ? "-" : String(vars[k])));
+export const fill = (tpl: string, vars: Record<string, string | number>) =>
+  tpl.replace(/\{(\w+)\}/g, (_, k) => (vars[k] == null || vars[k] === "" ? "-" : String(vars[k])));
 
 /* ---------------------------------------------------------------- files -- */
 
@@ -122,23 +232,32 @@ function crc32(buf: Buffer) {
   return (c ^ 0xffffffff) >>> 0;
 }
 function chunk(type: string, data: Buffer) {
-  const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length);
   const td = Buffer.concat([Buffer.from(type, "ascii"), data]);
-  const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td));
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(td));
   return Buffer.concat([len, td, crc]);
 }
 
 /** Small valid RGB PNG generated in memory (no fixture files on disk). */
 export function makePng(width = 32, height = 32, rgb: [number, number, number] = [200, 30, 60]) {
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
   const row = Buffer.alloc(1 + width * 3);
   for (let x = 0; x < width; x++) row.set(rgb, 1 + x * 3);
   const raw = Buffer.concat(Array.from({ length: height }, () => row));
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0)),
+    chunk("IHDR", ihdr),
+    chunk("IDAT", deflateSync(raw)),
+    chunk("IEND", Buffer.alloc(0)),
   ]);
 }
 
@@ -153,5 +272,7 @@ export function makeImportXlsx(rows: Partial<Record<Column, string | number>>[])
 }
 
 export const xlsxFile = (name: string, rows: Partial<Record<Column, string | number>>[]) => ({
-  name, mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: makeImportXlsx(rows),
+  name,
+  mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  buffer: makeImportXlsx(rows),
 });

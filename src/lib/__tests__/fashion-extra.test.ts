@@ -2,23 +2,39 @@ import { describe, expect, it } from "vitest";
 import { defaultSelection } from "@/lib/fashion";
 
 describe("defaultSelection (what the product page and WhatsApp message treat as selected)", () => {
-  const v = (size: string | null, color_en: string | null, stock: number, is_active = true) => ({ size, color_en, stock, is_active });
+  const v = (size: string | null, color_en: string | null, stock: number, is_active = true) => ({
+    size,
+    color_en,
+    stock,
+    is_active,
+  });
   it("auto-selects the only colour and leaves size open when there are several", () => {
-    const r = defaultSelection([v("S", "Black", 0), v("M", "Black", 5)], { size: null, color: null });
+    const r = defaultSelection([v("S", "Black", 0), v("M", "Black", 5)], {
+      size: null,
+      color: null,
+    });
     expect(r).toMatchObject({ color: "Black", size: null, sizes: ["S", "M"] });
   });
   it("picks the first in-stock colour when there are several", () => {
-    expect(defaultSelection([v("M", "Red", 0), v("M", "Blue", 3)], { size: null, color: null }).color).toBe("Blue");
+    expect(
+      defaultSelection([v("M", "Red", 0), v("M", "Blue", 3)], { size: null, color: null }).color,
+    ).toBe("Blue");
   });
   it("auto-selects a single size", () => {
     expect(defaultSelection([v("L", "Red", 1)], { size: null, color: null }).size).toBe("L");
   });
   it("the shopper's choice always wins and inactive variants are ignored", () => {
-    const r = defaultSelection([v("M", "Red", 3), v("M", "Blue", 3), v("XL", "Green", 9, false)], { size: "M", color: "Red" });
+    const r = defaultSelection([v("M", "Red", 3), v("M", "Blue", 3), v("XL", "Green", 9, false)], {
+      size: "M",
+      color: "Red",
+    });
     expect(r).toMatchObject({ color: "Red", size: "M", sizes: ["M"] });
   });
   it("returns nothing for a product without variants", () => {
-    expect(defaultSelection([], { size: null, color: null })).toMatchObject({ color: null, size: null });
+    expect(defaultSelection([], { size: null, color: null })).toMatchObject({
+      color: null,
+      size: null,
+    });
   });
 });
 import { findVariant, sizeLabel, sortSizes, type VariantLike } from "@/lib/fashion";
@@ -40,19 +56,40 @@ describe("sizeLabel", () => {
 
 describe("sortSizes", () => {
   it("orders letter sizes without a hardcoded preset, including XS and 4XL", () => {
-    expect(sortSizes(["4XL", "M", "XS", "xl", "S", "XXS"])).toEqual(["XXS", "XS", "S", "M", "xl", "4XL"]);
+    expect(sortSizes(["4XL", "M", "XS", "xl", "S", "XXS"])).toEqual([
+      "XXS",
+      "XS",
+      "S",
+      "M",
+      "xl",
+      "4XL",
+    ]);
   });
   it("puts letters before ages before numbers before free text", () => {
     expect(sortSizes(["One size", "40", "2-3y", "M"])).toEqual(["M", "2-3y", "40", "One size"]);
   });
   it("orders all clothing sizes naturally", () => {
-    expect(sortSizes(["XXXL", "L", "XXL", "S", "XL", "M"])).toEqual(["S", "M", "L", "XL", "XXL", "XXXL"]);
+    expect(sortSizes(["XXXL", "L", "XXL", "S", "XL", "M"])).toEqual([
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL",
+      "XXXL",
+    ]);
   });
   it("orders shoe sizes numerically", () => {
     expect(sortSizes(["44", "36", "40", "46", "38"])).toEqual(["36", "38", "40", "44", "46"]);
   });
   it("orders kids ages from months to years", () => {
-    expect(sortSizes(["10-12y", "1-2y", "0-3m", "6-12m", "2-3y", "8-10y"])).toEqual(["0-3m", "6-12m", "1-2y", "2-3y", "8-10y", "10-12y"]);
+    expect(sortSizes(["10-12y", "1-2y", "0-3m", "6-12m", "2-3y", "8-10y"])).toEqual([
+      "0-3m",
+      "6-12m",
+      "1-2y",
+      "2-3y",
+      "8-10y",
+      "10-12y",
+    ]);
   });
   it("orders unknown numeric sizes numerically", () => {
     expect(sortSizes(["50", "9", "100"])).toEqual(["9", "50", "100"]);
@@ -65,8 +102,15 @@ describe("sortSizes", () => {
 });
 
 describe("findVariant", () => {
-  const v = (id: string, size: string | null, color_en: string | null): VariantLike =>
-    ({ id, size, color_en, color_ar: null, color_hex: null, stock: 1, is_active: true });
+  const v = (id: string, size: string | null, color_en: string | null): VariantLike => ({
+    id,
+    size,
+    color_en,
+    color_ar: null,
+    color_hex: null,
+    stock: 1,
+    is_active: true,
+  });
 
   it("matches color-only variants (no size)", () => {
     const vs = [v("a", null, "Black"), v("b", null, "White")];

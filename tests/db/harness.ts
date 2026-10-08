@@ -8,7 +8,10 @@ import path from "node:path";
 const ROOT = path.resolve(__dirname, "../..");
 const MIGRATIONS = path.join(ROOT, "supabase/migrations");
 
-export const migrationFiles = () => readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
+export const migrationFiles = () =>
+  readdirSync(MIGRATIONS)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
 
 /** Applies migration files (in order) whose version is >= `from` and < `before`. */
 export async function applyMigrations(db: PGlite, opts: { from?: string; before?: string } = {}) {
@@ -32,9 +35,7 @@ export async function freshDb(opts: { before?: string } = {}) {
 }
 
 export type Who =
-  | { role: "anon" }
-  | { role: "authenticated"; id: string }
-  | { role: "service_role" };
+  { role: "anon" } | { role: "authenticated"; id: string } | { role: "service_role" };
 
 export const anon: Who = { role: "anon" };
 export const service: Who = { role: "service_role" };
@@ -43,7 +44,8 @@ export const user = (id: string): Who => ({ role: "authenticated", id });
 /** Runs fn inside a transaction as the given API role with matching JWT claims; rolls back on error. */
 export async function as<T>(db: PGlite, who: Who, fn: (tx: Transaction) => Promise<T>): Promise<T> {
   return db.transaction(async (tx) => {
-    const claims = who.role === "authenticated" ? { sub: who.id, role: who.role } : { role: who.role };
+    const claims =
+      who.role === "authenticated" ? { sub: who.id, role: who.role } : { role: who.role };
     await tx.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claims)]);
     await tx.exec(`set local role ${who.role}`);
     return fn(tx);
@@ -62,11 +64,21 @@ export async function tryAs(db: PGlite, who: Who, fn: (tx: Transaction) => Promi
 
 /** Creates an auth user (plus profile) and optional roles, as the database owner. */
 export async function createUser(db: PGlite, email: string, roles: string[] = []) {
-  const { rows } = await db.query<{ id: string }>(`insert into auth.users(email) values ($1) returning id`, [email]);
+  const { rows } = await db.query<{ id: string }>(
+    `insert into auth.users(email) values ($1) returning id`,
+    [email],
+  );
   const id = rows[0].id;
-  await db.query(`insert into public.profiles(id, full_name, phone, email) values ($1, $2, '01000000000', $3)`, [id, email.split("@")[0], email]);
-  for (const r of roles) await db.query(`insert into public.user_roles(user_id, role) values ($1, $2)`, [id, r]);
-  if (roles.includes("driver")) await db.query(`insert into public.driver_profiles(user_id, status) values ($1, 'available')`, [id]);
+  await db.query(
+    `insert into public.profiles(id, full_name, phone, email) values ($1, $2, '01000000000', $3)`,
+    [id, email.split("@")[0], email],
+  );
+  for (const r of roles)
+    await db.query(`insert into public.user_roles(user_id, role) values ($1, $2)`, [id, r]);
+  if (roles.includes("driver"))
+    await db.query(`insert into public.driver_profiles(user_id, status) values ($1, 'available')`, [
+      id,
+    ]);
   return id;
 }
 
@@ -79,7 +91,10 @@ export async function createAddress(db: PGlite, userId: string) {
 }
 
 /** A product with one variant, as the database owner. */
-export async function createProduct(db: PGlite, opts: { price?: number; stock?: number; variantPrice?: number | null } = {}) {
+export async function createProduct(
+  db: PGlite,
+  opts: { price?: number; stock?: number; variantPrice?: number | null } = {},
+) {
   const sku = `T-${Math.random().toString(36).slice(2, 10)}`;
   const { rows } = await db.query<{ id: string }>(
     `insert into public.products(name_ar, name_en, price, stock, sku) values ('منتج', 'Product', $1, 0, $2) returning id`,
@@ -111,6 +126,10 @@ export async function placeOrder(
   });
 }
 
-export async function one<T = Record<string, unknown>>(db: PGlite, sql: string, params: unknown[] = []) {
+export async function one<T = Record<string, unknown>>(
+  db: PGlite,
+  sql: string,
+  params: unknown[] = [],
+) {
   return (await db.query<T>(sql, params)).rows[0];
 }

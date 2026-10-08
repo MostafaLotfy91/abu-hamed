@@ -46,10 +46,20 @@ describe("effectivePrice", () => {
   const past = "2026-10-07T00:00:00Z";
 
   it("uses the plain price with no discount", () => {
-    expect(effectivePrice({ price: 100 }, now)).toEqual({ current: 100, was: null, pct: 0, flashActive: false });
+    expect(effectivePrice({ price: 100 }, now)).toEqual({
+      current: 100,
+      was: null,
+      pct: 0,
+      flashActive: false,
+    });
   });
   it("uses old_price as the 'was' price", () => {
-    expect(effectivePrice({ price: 75, old_price: 100 }, now)).toEqual({ current: 75, was: 100, pct: 25, flashActive: false });
+    expect(effectivePrice({ price: 75, old_price: 100 }, now)).toEqual({
+      current: 75,
+      was: 100,
+      pct: 25,
+      flashActive: false,
+    });
   });
   it("ignores old_price that is not higher than the price", () => {
     expect(effectivePrice({ price: 100, old_price: 100 }, now).was).toBeNull();
@@ -57,24 +67,51 @@ describe("effectivePrice", () => {
     expect(effectivePrice({ price: 100, old_price: 80 }, now).pct).toBe(0);
   });
   it("uses the flash price while active, with the regular price as 'was'", () => {
-    expect(effectivePrice({ price: 200, flash_price: 150, flash_ends_at: future }, now)).toEqual({ current: 150, was: 200, pct: 25, flashActive: true });
+    expect(effectivePrice({ price: 200, flash_price: 150, flash_ends_at: future }, now)).toEqual({
+      current: 150,
+      was: 200,
+      pct: 25,
+      flashActive: true,
+    });
   });
   it("uses the higher of price and old_price as 'was' during a flash sale", () => {
-    expect(effectivePrice({ price: 200, old_price: 300, flash_price: 150, flash_ends_at: future }, now).was).toBe(300);
-    expect(effectivePrice({ price: 200, old_price: 100, flash_price: 150, flash_ends_at: future }, now).was).toBe(200);
+    expect(
+      effectivePrice({ price: 200, old_price: 300, flash_price: 150, flash_ends_at: future }, now)
+        .was,
+    ).toBe(300);
+    expect(
+      effectivePrice({ price: 200, old_price: 100, flash_price: 150, flash_ends_at: future }, now)
+        .was,
+    ).toBe(200);
   });
   it("ignores an expired flash sale", () => {
-    expect(effectivePrice({ price: 200, flash_price: 150, flash_ends_at: past }, now)).toEqual({ current: 200, was: null, pct: 0, flashActive: false });
+    expect(effectivePrice({ price: 200, flash_price: 150, flash_ends_at: past }, now)).toEqual({
+      current: 200,
+      was: null,
+      pct: 0,
+      flashActive: false,
+    });
   });
   it("treats a flash sale ending exactly now as expired", () => {
-    expect(effectivePrice({ price: 200, flash_price: 150, flash_ends_at: new Date(now).toISOString() }, now).flashActive).toBe(false);
+    expect(
+      effectivePrice(
+        { price: 200, flash_price: 150, flash_ends_at: new Date(now).toISOString() },
+        now,
+      ).flashActive,
+    ).toBe(false);
   });
   it("ignores a flash price without an end date", () => {
-    expect(effectivePrice({ price: 200, flash_price: 150, flash_ends_at: null }, now).flashActive).toBe(false);
-    expect(effectivePrice({ price: 200, flash_price: 150, flash_ends_at: null }, now).current).toBe(200);
+    expect(
+      effectivePrice({ price: 200, flash_price: 150, flash_ends_at: null }, now).flashActive,
+    ).toBe(false);
+    expect(effectivePrice({ price: 200, flash_price: 150, flash_ends_at: null }, now).current).toBe(
+      200,
+    );
   });
   it("ignores an end date without a flash price", () => {
-    expect(effectivePrice({ price: 200, flash_price: null, flash_ends_at: future }, now).current).toBe(200);
+    expect(
+      effectivePrice({ price: 200, flash_price: null, flash_ends_at: future }, now).current,
+    ).toBe(200);
   });
   it("rounds the discount percentage", () => {
     expect(effectivePrice({ price: 200, old_price: 300 }, now).pct).toBe(33);
@@ -82,10 +119,17 @@ describe("effectivePrice", () => {
     expect(effectivePrice({ price: 199, old_price: 200 }, now).pct).toBe(1);
   });
   it("accepts numeric strings", () => {
-    expect(effectivePrice({ price: "80.00", old_price: "100.00" }, now)).toEqual({ current: 80, was: 100, pct: 20, flashActive: false });
+    expect(effectivePrice({ price: "80.00", old_price: "100.00" }, now)).toEqual({
+      current: 80,
+      was: 100,
+      pct: 20,
+      flashActive: false,
+    });
   });
   it("shows no 'was' when the flash price is not a reduction", () => {
-    expect(effectivePrice({ price: 100, flash_price: 120, flash_ends_at: future }, now)).toMatchObject({ current: 120, was: null, pct: 0 });
+    expect(
+      effectivePrice({ price: 100, flash_price: 120, flash_ends_at: future }, now),
+    ).toMatchObject({ current: 120, was: null, pct: 0 });
   });
 });
 

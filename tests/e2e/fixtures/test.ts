@@ -35,23 +35,51 @@ async function installGuards(context: BrowserContext) {
   await alignClock(context);
   // AI is always mocked. Specs override with page.route (page routes win over context routes).
   await context.route("**/api/assistant", (route) =>
-    route.fulfill({ status: 200, contentType: "application/x-ndjson", body: assistantStream([{ type: "text", delta: "(mock)" }, { type: "products", items: [] }]) }),
+    route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      body: assistantStream([
+        { type: "text", delta: "(mock)" },
+        { type: "products", items: [] },
+      ]),
+    }),
   );
   await context.route("**/api/admin-insights", async (route) => {
     const body = (route.request().postDataJSON() ?? {}) as { mode?: string };
-    if (body.mode === "weekly") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ text: "ملخص تجريبي (mock)", created_at: new Date().toISOString(), cached: true }) });
-    return route.fulfill({ status: 200, contentType: "application/x-ndjson", body: insightsStream([{ type: "text", delta: "(mock)" }]) });
+    if (body.mode === "weekly")
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          text: "ملخص تجريبي (mock)",
+          created_at: new Date().toISOString(),
+          cached: true,
+        }),
+      });
+    return route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      body: insightsStream([{ type: "text", delta: "(mock)" }]),
+    });
   });
   // WhatsApp links are only asserted, never opened.
-  await context.route(/^https?:\/\/(wa\.me|api\.whatsapp\.com|web\.whatsapp\.com)\//, (route) => route.abort("blockedbyclient"));
+  await context.route(/^https?:\/\/(wa\.me|api\.whatsapp\.com|web\.whatsapp\.com)\//, (route) =>
+    route.abort("blockedbyclient"),
+  );
   // Map tiles and web fonts: keep tests offline-friendly and deterministic.
-  await context.route(/tile\.openstreetmap\.org/, (route) => route.fulfill({ status: 200, contentType: "image/png", body: ONE_PX_PNG }));
-  await context.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort("blockedbyclient"));
+  await context.route(/tile\.openstreetmap\.org/, (route) =>
+    route.fulfill({ status: 200, contentType: "image/png", body: ONE_PX_PNG }),
+  );
+  await context.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
+    route.abort("blockedbyclient"),
+  );
   // Only the configured Supabase project may be reached (protects against a stray production URL in the app build).
   if (SUPABASE_URL) {
     const allowed = new URL(SUPABASE_URL).host;
     await context.route(/\.supabase\.(co|in)\//, (route) =>
-      new URL(route.request().url()).host === allowed ? route.fallback() : route.abort("blockedbyclient"),
+      new URL(route.request().url()).host === allowed
+        ? route.fallback()
+        : route.abort("blockedbyclient"),
     );
   }
 }

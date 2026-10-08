@@ -30,7 +30,11 @@ async function mockAssistant(page: Page, cat: Catalog) {
 }
 
 const card = (page: Page, cat: Catalog, viewLabel: string) =>
-  page.locator("div").filter({ has: page.getByRole("link", { name: viewLabel }) }).filter({ hasText: cat.product.ar }).last();
+  page
+    .locator("div")
+    .filter({ has: page.getByRole("link", { name: viewLabel }) })
+    .filter({ hasText: cat.product.ar })
+    .last();
 
 test.describe("AI stylist (mocked)", () => {
   test.use({ lang: "ar" });
@@ -65,7 +69,10 @@ test.describe("AI stylist (mocked)", () => {
     await expect(page.getByText(`${s.size}: M`)).toBeVisible();
   });
 
-  test("suggestion chip sends a message and 'view product' opens the product page", async ({ page, catalog }) => {
+  test("suggestion chip sends a message and 'view product' opens the product page", async ({
+    page,
+    catalog,
+  }) => {
     const requests = await mockAssistant(page, catalog);
     await page.goto("/");
     await page.getByRole("button", { name: s.stylist, exact: true }).click();
@@ -78,7 +85,13 @@ test.describe("AI stylist (mocked)", () => {
   });
 
   test("rate-limit response shows a friendly error", async ({ page }) => {
-    await page.route("**/api/assistant", (route) => route.fulfill({ status: 429, contentType: "application/json", body: '{"error":"rate_limited"}' }));
+    await page.route("**/api/assistant", (route) =>
+      route.fulfill({
+        status: 429,
+        contentType: "application/json",
+        body: '{"error":"rate_limited"}',
+      }),
+    );
     await page.goto("/");
     await page.getByRole("button", { name: s.stylist, exact: true }).click();
     await page.getByPlaceholder(s.stylistInput).fill("مرحبا");

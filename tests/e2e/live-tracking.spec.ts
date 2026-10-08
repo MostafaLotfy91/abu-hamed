@@ -9,13 +9,23 @@ test.describe("live order tracking", () => {
   test.use({ lang: "ar" });
   const s = T.ar;
 
-  test("customer order page updates without reload as the driver progresses", async ({ page, browser, catalog, accounts, lang, viewport, isMobile }) => {
+  test("customer order page updates without reload as the driver progresses", async ({
+    page,
+    browser,
+    catalog,
+    accounts,
+    lang,
+    viewport,
+    isMobile,
+  }) => {
     const order = await createAssignedOrder(catalog);
     await assignDriver(order.id, accounts.driver, true); // already accepted -> "Start delivery" is available
 
     // Customer context (the test's own page).
     await login(page, "customer", `/orders/${order.id}`);
-    await expect(page.getByRole("heading", { level: 1, name: `${s.order} #${order.order_number}` })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: `${s.order} #${order.order_number}` }),
+    ).toBeVisible();
     await expect(page.getByText("مباشر", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: s.liveTracking })).toHaveCount(0);
 
@@ -35,12 +45,16 @@ test.describe("live order tracking", () => {
       await card.getByRole("button", { name: s.start }).click();
 
       // Realtime: the customer's page switches to live tracking, then shows the map once a position arrives.
-      await expect(page.getByRole("heading", { name: s.liveTracking })).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByRole("heading", { name: s.liveTracking })).toBeVisible({
+        timeout: 20_000,
+      });
       await expect(page.locator(".leaflet-container")).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText(/آخر تحديث:/)).toBeVisible();
 
       await card.getByRole("button", { name: s.delivered }).click();
-      await expect(page.getByRole("heading", { name: s.liveTracking })).toHaveCount(0, { timeout: 20_000 });
+      await expect(page.getByRole("heading", { name: s.liveTracking })).toHaveCount(0, {
+        timeout: 20_000,
+      });
       // Delivered orders open the return/exchange section.
       await expect(page.getByRole("heading", { name: s.returnExchange })).toBeVisible();
     } finally {

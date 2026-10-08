@@ -31,26 +31,49 @@ function BannerSlider() {
     const i = setInterval(() => api.scrollNext(), 5000);
     return () => clearInterval(i);
   }, [api]);
-  if (isLoading) return <Skeleton className="-mx-3 -mt-4 aspect-[4/5] rounded-none sm:aspect-[16/9] md:-mx-6 md:aspect-[21/9]" />;
+  if (isLoading)
+    return (
+      <Skeleton className="-mx-3 -mt-4 aspect-[4/5] rounded-none sm:aspect-[16/9] md:-mx-6 md:aspect-[21/9]" />
+    );
   if (!data?.length) return null;
   return (
     <div className="relative -mx-3 -mt-4 md:-mx-6">
       <div ref={ref} className="overflow-hidden">
         <div className="flex">
           {data.map((b, i) => (
-            <a key={b.id} href={b.link && isSafeLink(b.link) ? b.link : "#"} className="relative min-w-0 flex-[0_0_100%]">
-              <img src={b.image_url} alt={tx(b, "title")} loading={i === 0 ? "eager" : "lazy"} decoding="async" {...(i === 0 ? { fetchPriority: "high" as const } : {})} className="aspect-[4/5] w-full bg-muted object-cover sm:aspect-[16/9] md:aspect-[21/9]" />
+            <a
+              key={b.id}
+              href={b.link && isSafeLink(b.link) ? b.link : "#"}
+              className="relative min-w-0 flex-[0_0_100%]"
+            >
+              <img
+                src={b.image_url}
+                alt={tx(b, "title")}
+                loading={i === 0 ? "eager" : "lazy"}
+                decoding="async"
+                {...(i === 0 ? { fetchPriority: "high" as const } : {})}
+                className="aspect-[4/5] w-full bg-muted object-cover sm:aspect-[16/9] md:aspect-[21/9]"
+              />
               <div className="absolute inset-0 flex flex-col justify-end gap-2 bg-gradient-to-t from-foreground/60 via-transparent to-transparent p-6 pb-10 text-background md:p-12 md:pb-14">
-                <h2 className="max-w-xl text-3xl font-extrabold leading-tight md:text-5xl">{tx(b, "title")}</h2>
+                <h2 className="max-w-xl text-3xl font-extrabold leading-tight md:text-5xl">
+                  {tx(b, "title")}
+                </h2>
                 <p className="max-w-md text-sm md:text-lg">{tx(b, "subtitle")}</p>
-                <span className="mt-2 inline-flex h-11 w-fit items-center rounded-sm bg-background px-6 text-sm font-bold text-foreground">{t("shop_now")}</span>
+                <span className="mt-2 inline-flex h-11 w-fit items-center rounded-sm bg-background px-6 text-sm font-bold text-foreground">
+                  {t("shop_now")}
+                </span>
               </div>
             </a>
           ))}
         </div>
       </div>
       <div className="absolute inset-x-0 bottom-4 flex justify-center gap-1.5">
-        {data.map((b, i) => <span key={b.id} className={`h-1 rounded-full bg-background transition-all ${i === idx ? "w-5" : "w-1.5 opacity-60"}`} />)}
+        {data.map((b, i) => (
+          <span
+            key={b.id}
+            className={`h-1 rounded-full bg-background transition-all ${i === idx ? "w-5" : "w-1.5 opacity-60"}`}
+          />
+        ))}
       </div>
     </div>
   );
@@ -59,37 +82,94 @@ function BannerSlider() {
 /** Top-level departments; the whole section is hidden when the store has none. */
 function Departments() {
   const { t, tx } = useI18n();
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
   if (error) return <ErrorState onRetry={() => refetch()} />;
   const roots = (data ?? []).filter((c) => !c.parent_id && c.is_active);
   if (!isLoading && !roots.length) return null;
   return (
     <section>
-    <SectionHeader title={t("shop_by_department")} action={<Link to="/categories" className="text-sm font-semibold underline underline-offset-4">{t("see_all")}</Link>} />
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      {isLoading
-        ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4] rounded-md" />)
-        : roots.map((c) => (
-            <Link key={c.id} to="/category/$id" params={{ id: c.id }} className="group relative block aspect-[3/4] overflow-hidden rounded-md bg-muted">
-              {c.image_url && <img src={c.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/70 to-transparent p-3 pt-10 text-sm font-bold text-background md:text-base">{tx(c, "name")}</span>
-            </Link>
-          ))}
-    </div>
+      <SectionHeader
+        title={t("shop_by_department")}
+        action={
+          <Link to="/categories" className="text-sm font-semibold underline underline-offset-4">
+            {t("see_all")}
+          </Link>
+        }
+      />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {isLoading
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-[3/4] rounded-md" />
+            ))
+          : roots.map((c) => (
+              <Link
+                key={c.id}
+                to="/category/$id"
+                params={{ id: c.id }}
+                className="group relative block aspect-[3/4] overflow-hidden rounded-md bg-muted"
+              >
+                {c.image_url && (
+                  <img
+                    src={c.image_url}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  />
+                )}
+                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/70 to-transparent p-3 pt-10 text-sm font-bold text-background md:text-base">
+                  {tx(c, "name")}
+                </span>
+              </Link>
+            ))}
+      </div>
     </section>
   );
 }
 
-function Rail({ title, products, loading, extra }: { title: React.ReactNode; products?: Product[]; loading: boolean; extra?: React.ReactNode }) {
+function Rail({
+  title,
+  products,
+  loading,
+  extra,
+}: {
+  title: React.ReactNode;
+  products?: Product[];
+  loading: boolean;
+  extra?: React.ReactNode;
+}) {
   const { t } = useI18n();
   if (!loading && !products?.length) return null;
   return (
     <section>
-      <SectionHeader title={<span className="flex items-center gap-2">{title}{extra}</span>} action={<Link to="/products" className="text-sm font-semibold underline underline-offset-4">{t("see_all")}</Link>} />
+      <SectionHeader
+        title={
+          <span className="flex items-center gap-2">
+            {title}
+            {extra}
+          </span>
+        }
+        action={
+          <Link to="/products" className="text-sm font-semibold underline underline-offset-4">
+            {t("see_all")}
+          </Link>
+        }
+      />
       <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-2 scrollbar-none md:mx-0 md:px-0">
         {loading
-          ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="w-[44%] shrink-0 sm:w-[30%] lg:w-[23%]"><ProductCardSkeleton /></div>)
-          : products!.map((p) => <div key={p.id} className="w-[44%] shrink-0 snap-start sm:w-[30%] lg:w-[23%]"><ProductCard p={p} /></div>)}
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="w-[44%] shrink-0 sm:w-[30%] lg:w-[23%]">
+                <ProductCardSkeleton />
+              </div>
+            ))
+          : products!.map((p) => (
+              <div key={p.id} className="w-[44%] shrink-0 snap-start sm:w-[30%] lg:w-[23%]">
+                <ProductCard p={p} />
+              </div>
+            ))}
       </div>
     </section>
   );
@@ -103,18 +183,32 @@ function TrustStrip() {
   if (!settings) return null;
   const ar = lang === "ar";
   const fee = Number(settings.delivery_fee ?? 0);
-  const over = settings.free_delivery_threshold != null ? Number(settings.free_delivery_threshold) : null;
+  const over =
+    settings.free_delivery_threshold != null ? Number(settings.free_delivery_threshold) : null;
   const days = Number(settings.return_window_days ?? 0);
   const items = [
-    fee === 0 ? { icon: Truck, label: ar ? "توصيل مجاني" : "Free delivery" }
-      : over != null ? { icon: Truck, label: ar ? `توصيل مجاني فوق ${money(over)}` : `Free delivery over ${money(over)}` } : null,
+    fee === 0
+      ? { icon: Truck, label: ar ? "توصيل مجاني" : "Free delivery" }
+      : over != null
+        ? {
+            icon: Truck,
+            label: ar ? `توصيل مجاني فوق ${money(over)}` : `Free delivery over ${money(over)}`,
+          }
+        : null,
     { icon: Wallet, label: t("trust_cod") },
-    days > 0 ? { icon: RotateCcw, label: ar ? `استرجاع خلال ${days} يوم` : `Returns within ${days} days` } : null,
+    days > 0
+      ? { icon: RotateCcw, label: ar ? `استرجاع خلال ${days} يوم` : `Returns within ${days} days` }
+      : null,
   ].filter((i): i is { icon: typeof Truck; label: string } => !!i);
   return (
-    <section className={`grid ${items.length === 3 ? "grid-cols-3" : items.length === 2 ? "grid-cols-2" : "grid-cols-1"} divide-x divide-border border-y py-4 rtl:divide-x-reverse`}>
+    <section
+      className={`grid ${items.length === 3 ? "grid-cols-3" : items.length === 2 ? "grid-cols-2" : "grid-cols-1"} divide-x divide-border border-y py-4 rtl:divide-x-reverse`}
+    >
       {items.map((i) => (
-        <div key={i.label} className="flex flex-col items-center gap-1.5 px-2 text-center sm:flex-row sm:justify-center sm:gap-2">
+        <div
+          key={i.label}
+          className="flex flex-col items-center gap-1.5 px-2 text-center sm:flex-row sm:justify-center sm:gap-2"
+        >
           <i.icon className="h-5 w-5 shrink-0" strokeWidth={1.5} />
           <span className="text-[11px] font-semibold sm:text-sm">{i.label}</span>
         </div>
@@ -125,10 +219,16 @@ function TrustStrip() {
 
 function Home() {
   const { t, lang } = useI18n();
-  const flash = useQuery({ queryKey: ["home", "flash"], queryFn: () => fetchProductsHome("flash") });
+  const flash = useQuery({
+    queryKey: ["home", "flash"],
+    queryFn: () => fetchProductsHome("flash"),
+  });
   const best = useQuery({ queryKey: ["home", "best"], queryFn: () => fetchProductsHome("best") });
   const fresh = useQuery({ queryKey: ["home", "new"], queryFn: () => fetchProductsHome("new") });
-  const season = useQuery({ queryKey: ["home", "season"], queryFn: () => fetchProductsHome("season") });
+  const season = useQuery({
+    queryKey: ["home", "season"],
+    queryFn: () => fetchProductsHome("season"),
+  });
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const soonest = flash.data?.[0]?.flash_ends_at;
   const loaded = [flash, best, fresh, season, cats].every((q) => q.isSuccess);
@@ -139,18 +239,43 @@ function Home() {
     <div className="space-y-10 md:space-y-14">
       <BannerSlider />
       <TrustStrip />
-      {nothing && <EmptyState title={lang === "ar" ? "المتجر قيد التجهيز" : "The store is being set up"} hint={lang === "ar" ? "ترقبوا منتجاتنا قريباً." : "Products are coming soon."} />}
+      {nothing && (
+        <EmptyState
+          title={lang === "ar" ? "المتجر قيد التجهيز" : "The store is being set up"}
+          hint={lang === "ar" ? "ترقبوا منتجاتنا قريباً." : "Products are coming soon."}
+        />
+      )}
       <Departments />
       <Rail
-        title={<><Zap className="h-5 w-5 fill-deal text-deal" />{t("flash_deals")}</>}
-        extra={soonest ? <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">{t("ends_in")} <Countdown to={soonest} /></span> : null}
+        title={
+          <>
+            <Zap className="h-5 w-5 fill-deal text-deal" />
+            {t("flash_deals")}
+          </>
+        }
+        extra={
+          soonest ? (
+            <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              {t("ends_in")} <Countdown to={soonest} />
+            </span>
+          ) : null
+        }
         products={flash.data}
         loading={flash.isLoading}
       />
       <Rail title={t("new_arrivals")} products={fresh.data} loading={fresh.isLoading} />
       <Rail title={t("best_sellers")} products={best.data} loading={best.isLoading} />
       <Rail title={t("seasonal_collection")} products={season.data} loading={season.isLoading} />
-      {(flash.error || best.error || fresh.error || season.error) && <ErrorState onRetry={() => { flash.refetch(); best.refetch(); fresh.refetch(); season.refetch(); }} />}
+      {(flash.error || best.error || fresh.error || season.error) && (
+        <ErrorState
+          onRetry={() => {
+            flash.refetch();
+            best.refetch();
+            fresh.refetch();
+            season.refetch();
+          }}
+        />
+      )}
     </div>
   );
 }

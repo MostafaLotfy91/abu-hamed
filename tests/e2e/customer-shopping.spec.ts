@@ -20,10 +20,17 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     await expect(page.getByRole("link", { name: catalog.product.ar }).first()).toBeVisible();
   });
 
-  test("categories page lists departments and links to all products of one", async ({ page, catalog }) => {
+  test("categories page lists departments and links to all products of one", async ({
+    page,
+    catalog,
+  }) => {
     await page.goto("/categories");
     await page.getByRole("button", { name: catalog.category.ar }).click();
-    await page.getByRole("link", { name: new RegExp(`${escapeRe(s.allProducts)}.*${escapeRe(catalog.category.ar)}`) }).click();
+    await page
+      .getByRole("link", {
+        name: new RegExp(`${escapeRe(s.allProducts)}.*${escapeRe(catalog.category.ar)}`),
+      })
+      .click();
     await expect(page).toHaveURL(new RegExp(`/category/${catalog.categoryId}$`));
     await expect(page.getByText("1 منتج", { exact: true })).toBeVisible();
   });
@@ -38,10 +45,14 @@ test.describe("customer shopping (Arabic, RTL)", () => {
       await visible(page.getByRole("button", { name: new RegExp(s.filters) })).click();
       const sheet = page.getByRole("dialog");
       // Price inputs are found by label: their placeholder shows the real price range of the listing.
-      await sheet.getByRole("spinbutton", { name: s.min, exact: true }).fill(String(catalog.price + 1000));
+      await sheet
+        .getByRole("spinbutton", { name: s.min, exact: true })
+        .fill(String(catalog.price + 1000));
       await sheet.getByRole("button", { name: /^عرض .* منتج$/ }).click();
     } else {
-      await visible(page.getByRole("spinbutton", { name: s.min, exact: true })).fill(String(catalog.price + 1000));
+      await visible(page.getByRole("spinbutton", { name: s.min, exact: true })).fill(
+        String(catalog.price + 1000),
+      );
     }
     await expect(page.getByRole("heading", { name: s.noProducts })).toBeVisible();
     await page.getByRole("button", { name: s.clearAll }).click();
@@ -60,7 +71,9 @@ test.describe("customer shopping (Arabic, RTL)", () => {
         await sheet.getByRole("button", { name: size, exact: true }).click();
         await sheet.getByRole("button", { name: /^عرض .* منتج$/ }).click();
       } else {
-        await visible(page.locator("aside").getByRole("button", { name: size, exact: true })).click();
+        await visible(
+          page.locator("aside").getByRole("button", { name: size, exact: true }),
+        ).click();
       }
     };
     await pickSize("M");
@@ -68,11 +81,16 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     // Filters live in the URL: a reload keeps them.
     await expect(page).toHaveURL(/[?&]size=M(&|$)/);
     await page.reload();
-    await expect(page.getByRole("button", { name: /^M$/ }).filter({ has: page.locator("svg") })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /^M$/ }).filter({ has: page.locator("svg") }),
+    ).toBeVisible();
     await expect(product).toBeVisible();
   });
 
-  test("search submits to the results page and suggestions open the product", async ({ page, catalog }) => {
+  test("search submits to the results page and suggestions open the product", async ({
+    page,
+    catalog,
+  }) => {
     await page.goto("/");
     const box = visible(page.getByPlaceholder(s.searchPlaceholder));
     await box.fill(catalog.tag);
@@ -80,7 +98,9 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     await expect(page.getByRole("button", { name: catalog.product.ar })).toBeVisible();
     await box.press("Enter");
     await expect(page).toHaveURL(new RegExp(`/products\\?q=${catalog.tag}`));
-    await expect(page.getByRole("heading", { level: 1, name: `${s.resultsFor} "${catalog.tag}"` })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: `${s.resultsFor} "${catalog.tag}"` }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: catalog.product.ar }).first()).toBeVisible();
 
     await box.fill(catalog.tag);
@@ -88,10 +108,16 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     await expect(page).toHaveURL(new RegExp(`/product/${catalog.productId}$`));
   });
 
-  test("product page: colour auto-selected, out-of-stock size disabled, size selectable", async ({ page, catalog }) => {
+  test("product page: colour auto-selected, out-of-stock size disabled, size selectable", async ({
+    page,
+    catalog,
+  }) => {
     await page.goto(`/product/${catalog.productId}`);
     await expect(page.getByRole("heading", { level: 1, name: catalog.product.ar })).toBeVisible();
-    await expect(page.getByRole("button", { name: catalog.color.ar, exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: catalog.color.ar, exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     const sizeS = page.getByRole("button", { name: "S", exact: true });
     const sizeM = page.getByRole("button", { name: "M", exact: true });
     await expect(sizeS).toBeDisabled();
@@ -103,7 +129,11 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     await expect(toast(page, s.addedToCart)).toBeVisible();
   });
 
-  test("wishlist toggle on a product card persists for the signed-in customer", async ({ page, catalog, accounts }) => {
+  test("wishlist toggle on a product card persists for the signed-in customer", async ({
+    page,
+    catalog,
+    accounts,
+  }) => {
     await clearWishlist(accounts.customer, catalog.productId);
     await login(page, "customer", `/category/${catalog.categoryId}`);
     const heart = page.getByRole("button", { name: s.wishlist }).first();
@@ -119,7 +149,11 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     await expect.poll(() => wishlistHas(accounts.customer, catalog.productId)).toBe(false);
   });
 
-  test("cart, coupon and cash-on-delivery checkout end on the order timeline", async ({ page, catalog, accounts }) => {
+  test("cart, coupon and cash-on-delivery checkout end on the order timeline", async ({
+    page,
+    catalog,
+    accounts,
+  }) => {
     await login(page, "customer", `/product/${catalog.productId}`);
     await page.getByRole("button", { name: "M", exact: true }).click();
     await visible(page.getByRole("button", { name: new RegExp(`^${s.addToCart}`) })).click();
@@ -138,7 +172,9 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     // Cash on delivery only: online payment is disabled ("coming soon").
     await expect(page.getByRole("button", { name: s.cod })).toBeEnabled();
     await expect(page.getByRole("button", { name: new RegExp(s.online) })).toBeDisabled();
-    await expect(page.getByRole("button", { name: new RegExp(s.online) })).toContainText(s.comingSoon);
+    await expect(page.getByRole("button", { name: new RegExp(s.online) })).toContainText(
+      s.comingSoon,
+    );
 
     await page.getByPlaceholder(s.coupon).fill(catalog.couponCode);
     await page.getByRole("button", { name: s.apply, exact: true }).click();
@@ -150,7 +186,9 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     await expect(page).toHaveURL(/\/orders\/[0-9a-f-]{36}\?placed=1$/, { timeout: 20_000 });
     await expect(toast(page, s.orderPlaced)).toBeVisible();
     await expect(page.getByRole("status").filter({ hasText: s.orderPlaced })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1, name: new RegExp(`${s.order} #\\d+`) })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: new RegExp(`${s.order} #\\d+`) }),
+    ).toBeVisible();
     for (const label of Object.values(s.timeline).filter((l) => l !== s.timeline.cancelled)) {
       await expect(page.getByRole("listitem").filter({ hasText: label }).first()).toBeVisible();
     }
@@ -187,7 +225,10 @@ test.describe("language toggle", () => {
     await page.goto("/");
     await expectDir(page, "ar");
     // The toggle is named after the language it switches to.
-    await page.getByRole("banner").getByRole("button", { name: T.ar.language, exact: true }).click();
+    await page
+      .getByRole("banner")
+      .getByRole("button", { name: T.ar.language, exact: true })
+      .click();
     await expectDir(page, "en");
     expect(await page.evaluate(() => localStorage.getItem("app.lang"))).toBe("en");
     await page.reload();

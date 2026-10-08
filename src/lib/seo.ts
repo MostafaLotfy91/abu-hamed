@@ -20,11 +20,15 @@ export function storeName(s: StoreSettings | null) {
 
 function storeTagline(s: StoreSettings | null) {
   if (!s) return "";
-  return (s.default_language === "en" ? s.tagline_en || s.tagline_ar : s.tagline_ar || s.tagline_en) ?? "";
+  return (
+    (s.default_language === "en" ? s.tagline_en || s.tagline_ar : s.tagline_ar || s.tagline_en) ??
+    ""
+  );
 }
 
 type Text = string | { ar: string; en: string } | null | undefined;
-const pick = (t: Text, s: StoreSettings | null) => (t == null ? "" : typeof t === "string" ? t : s?.default_language === "en" ? t.en : t.ar);
+const pick = (t: Text, s: StoreSettings | null) =>
+  t == null ? "" : typeof t === "string" ? t : s?.default_language === "en" ? t.en : t.ar;
 
 /** Meta tags for a page: "<page> · <store>" title, description (defaults to the tagline), share image. */
 export function pageHead(
@@ -40,7 +44,12 @@ export function pageHead(
   return {
     meta: [
       ...(title ? [{ title }, { property: "og:title", content: title }] : []),
-      ...(description ? [{ name: "description", content: description }, { property: "og:description", content: description }] : []),
+      ...(description
+        ? [
+            { name: "description", content: description },
+            { property: "og:description", content: description },
+          ]
+        : []),
       ...(image ? [{ property: "og:image", content: image }] : []),
       ...(page.noindex ? [{ name: "robots", content: "noindex" }] : []),
     ],

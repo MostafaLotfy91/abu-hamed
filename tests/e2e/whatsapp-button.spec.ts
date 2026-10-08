@@ -19,19 +19,38 @@ for (const lang of ["ar", "en"] as const) {
       await expect(link).toHaveAttribute("rel", /noopener/);
       const wa = parseWa(await link.getAttribute("href"));
       expect(wa.number).toBe(WA.number);
-      expect(wa.text).toBe(fill(WA.general[lang], { store_name: String(st[`name_${lang}`] || st.name_ar) }));
+      expect(wa.text).toBe(
+        fill(WA.general[lang], { store_name: String(st[`name_${lang}`] || st.name_ar) }),
+      );
     });
 
-    test("product message includes product name, chosen size and colour", async ({ page, catalog }) => {
+    test("product message includes product name, chosen size and colour", async ({
+      page,
+      catalog,
+    }) => {
       await page.goto(`/product/${catalog.productId}`);
       const link = page.getByRole("link", { name: s.waFloat });
       const text = async () => parseWa(await link.getAttribute("href")).text;
       // Before any click the page auto-selects the only colour, and the message already names it.
       // Several sizes exist, so no size is selected yet ("-").
-      await expect(page.getByRole("button", { name: catalog.color[lang], exact: true })).toHaveAttribute("aria-pressed", "true");
-      await expect.poll(text).toBe(fill(WA.product[lang], { product_name: catalog.product[lang], size: "", color: catalog.color[lang] }));
+      await expect(
+        page.getByRole("button", { name: catalog.color[lang], exact: true }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await expect.poll(text).toBe(
+        fill(WA.product[lang], {
+          product_name: catalog.product[lang],
+          size: "",
+          color: catalog.color[lang],
+        }),
+      );
       await page.getByRole("button", { name: "M", exact: true }).click();
-      await expect.poll(text).toBe(fill(WA.product[lang], { product_name: catalog.product[lang], size: "M", color: catalog.color[lang] }));
+      await expect.poll(text).toBe(
+        fill(WA.product[lang], {
+          product_name: catalog.product[lang],
+          size: "M",
+          color: catalog.color[lang],
+        }),
+      );
     });
 
     test("order page message includes the order number", async ({ page, catalog }) => {
@@ -39,7 +58,9 @@ for (const lang of ["ar", "en"] as const) {
       await login(page, "customer", `/orders/${order.id}`);
       const expected = fill(WA.order[lang], { order_number: order.order_number });
       const floating = page.getByRole("link", { name: s.waFloat });
-      await expect.poll(async () => parseWa(await floating.getAttribute("href")).text).toBe(expected);
+      await expect
+        .poll(async () => parseWa(await floating.getAttribute("href")).text)
+        .toBe(expected);
       const inline = page.getByRole("link", { name: s.waOrder });
       expect(parseWa(await inline.getAttribute("href")).text).toBe(expected);
     });

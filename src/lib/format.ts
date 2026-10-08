@@ -7,7 +7,11 @@ export function toAsciiDigits(s: string) {
     .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
 }
 
-export function formatMoney(value: number | string | null | undefined, lang: Lang, symbol: { ar?: string | null; en?: string | null }) {
+export function formatMoney(
+  value: number | string | null | undefined,
+  lang: Lang,
+  symbol: { ar?: string | null; en?: string | null },
+) {
   const n = Number(value ?? 0);
   const num = new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", {
     minimumFractionDigits: n % 1 === 0 ? 0 : 2,
@@ -19,7 +23,9 @@ export function formatMoney(value: number | string | null | undefined, lang: Lan
 
 /** Item counts (always whole pieces), with locale digits. */
 export function formatCount(q: number, lang: Lang) {
-  return new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", { maximumFractionDigits: 0 }).format(q);
+  return new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", {
+    maximumFractionDigits: 0,
+  }).format(q);
 }
 
 type PriceInput = {
@@ -32,7 +38,8 @@ type PriceInput = {
 /** Effective selling price + reference "was" price. Flash price wins while active. */
 export function effectivePrice(p: PriceInput, now = Date.now()) {
   const price = Number(p.price);
-  const flashActive = p.flash_price != null && p.flash_ends_at != null && new Date(p.flash_ends_at).getTime() > now;
+  const flashActive =
+    p.flash_price != null && p.flash_ends_at != null && new Date(p.flash_ends_at).getTime() > now;
   const current = flashActive ? Number(p.flash_price) : price;
   const ref = flashActive ? Math.max(price, Number(p.old_price ?? 0)) : Number(p.old_price ?? 0);
   const was = ref > current ? ref : null;

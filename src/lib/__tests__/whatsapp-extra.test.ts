@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { fillTemplate, isSafeHttpsUrl, isSafeLink, normalizeEgyptPhone, waLink, WA_VARIABLES } from "@/lib/whatsapp";
+import {
+  fillTemplate,
+  isSafeHttpsUrl,
+  isSafeLink,
+  normalizeEgyptPhone,
+  waLink,
+  WA_VARIABLES,
+} from "@/lib/whatsapp";
 
 describe("normalizeEgyptPhone", () => {
   it("accepts all four mobile operator prefixes (010, 011, 012, 015)", () => {
@@ -22,7 +29,8 @@ describe("normalizeEgyptPhone", () => {
     expect(normalizeEgyptPhone("٠١٠١٢٣٤٥٦٧٨")).toBe("201012345678");
   });
   it("rejects invalid operator prefixes", () => {
-    for (const p of ["01312345678", "01412345678", "01612345678", "01912345678"]) expect(normalizeEgyptPhone(p)).toBeNull();
+    for (const p of ["01312345678", "01412345678", "01612345678", "01912345678"])
+      expect(normalizeEgyptPhone(p)).toBeNull();
   });
   it("rejects numbers that are too short or too long", () => {
     expect(normalizeEgyptPhone("0101234567")).toBeNull();
@@ -43,7 +51,14 @@ describe("normalizeEgyptPhone", () => {
 });
 
 describe("fillTemplate", () => {
-  const all = { store_name: "Store", product_name: "Shirt", product_url: "https://s.example/p/1", size: "L", color: "Black", order_number: 42 };
+  const all = {
+    store_name: "Store",
+    product_name: "Shirt",
+    product_url: "https://s.example/p/1",
+    size: "L",
+    color: "Black",
+    order_number: 42,
+  };
 
   it("fills every documented variable", () => {
     const tpl = WA_VARIABLES.join("|");
@@ -62,10 +77,14 @@ describe("fillTemplate", () => {
     expect(fillTemplate("{store_name} - {store_name}", { store_name: "A" })).toBe("A - A");
   });
   it("leaves non-placeholder braces alone", () => {
-    expect(fillTemplate("{ store_name } {} {a-b}", { store_name: "A" })).toBe("{ store_name } {} {a-b}");
+    expect(fillTemplate("{ store_name } {} {a-b}", { store_name: "A" })).toBe(
+      "{ store_name } {} {a-b}",
+    );
   });
   it("does not re-expand placeholders found inside values", () => {
-    expect(fillTemplate("{product_name}", { product_name: "{store_name}", store_name: "X" })).toBe("{store_name}");
+    expect(fillTemplate("{product_name}", { product_name: "{store_name}", store_name: "X" })).toBe(
+      "{store_name}",
+    );
   });
   it("does not treat $ patterns in values specially", () => {
     expect(fillTemplate("{product_name}", { product_name: "$& $1 $$" })).toBe("$& $1 $$");
@@ -97,8 +116,16 @@ describe("isSafeHttpsUrl", () => {
     expect(isSafeHttpsUrl("HTTPS://EXAMPLE.COM")).toBe(true);
   });
   it("rejects script and data schemes in any case or with leading whitespace", () => {
-    for (const u of ["javascript:alert(1)", "JAVASCRIPT:alert(1)", "  javascript:alert(1)", "\tjavascript:alert(1)",
-      "java\tscript:alert(1)", "data:text/html,<script>alert(1)</script>", "vbscript:msgbox(1)", "file:///etc/passwd"]) {
+    for (const u of [
+      "javascript:alert(1)",
+      "JAVASCRIPT:alert(1)",
+      "  javascript:alert(1)",
+      "\tjavascript:alert(1)",
+      "java\tscript:alert(1)",
+      "data:text/html,<script>alert(1)</script>",
+      "vbscript:msgbox(1)",
+      "file:///etc/passwd",
+    ]) {
       expect(isSafeHttpsUrl(u)).toBe(false);
     }
   });
@@ -121,10 +148,18 @@ describe("isSafeLink", () => {
     expect(isSafeLink("  /products  ")).toBe(true);
   });
   it("rejects protocol-relative and backslash tricks", () => {
-    for (const u of ["//evil.com", "/\\evil.com", "\\\\evil.com", "  //evil.com", "\\/evil.com"]) expect(isSafeLink(u)).toBe(false);
+    for (const u of ["//evil.com", "/\\evil.com", "\\\\evil.com", "  //evil.com", "\\/evil.com"])
+      expect(isSafeLink(u)).toBe(false);
   });
   it("rejects dangerous schemes", () => {
-    for (const u of ["javascript:alert(1)", "JaVaScRiPt:alert(1)", " javascript:alert(1)", "data:text/html,x", "vbscript:x", "http://x.com"]) {
+    for (const u of [
+      "javascript:alert(1)",
+      "JaVaScRiPt:alert(1)",
+      " javascript:alert(1)",
+      "data:text/html,x",
+      "vbscript:x",
+      "http://x.com",
+    ]) {
       expect(isSafeLink(u)).toBe(false);
     }
   });

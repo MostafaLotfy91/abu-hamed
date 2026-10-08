@@ -18,7 +18,8 @@ import { useConfirm } from "./ConfirmDialog";
 export type Field = {
   key: string;
   label: string;
-  type?: "text" | "number" | "bool" | "image" | "images" | "select" | "datetime" | "textarea" | "color";
+  type?:
+    "text" | "number" | "bool" | "image" | "images" | "select" | "datetime" | "textarea" | "color";
   options?: { value: string; label: string }[];
   required?: boolean;
   list?: boolean; // show in table
@@ -29,21 +30,59 @@ export type Field = {
 
 type AnyTable = "categories" | "products" | "banners" | "coupons" | "product_variants" | "branches";
 
-export function ImageInput({ value, onChange, folder, label }: { value: string | null; onChange: (v: string | null) => void; folder: string; label?: string }) {
+export function ImageInput({
+  value,
+  onChange,
+  folder,
+  label,
+}: {
+  value: string | null;
+  onChange: (v: string | null) => void;
+  folder: string;
+  label?: string;
+}) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="flex items-center gap-3">
-      {value ? <img src={value} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <div className="h-16 w-16 rounded-lg bg-muted" />}
+      {value ? (
+        <img src={value} alt="" className="h-16 w-16 rounded-lg object-cover" />
+      ) : (
+        <div className="h-16 w-16 rounded-lg bg-muted" />
+      )}
       <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-3 py-2 text-sm">
-        <Upload className="h-4 w-4" />{busy ? "..." : "Upload"}
-        <input type="file" accept={ALLOWED_IMAGE_TYPES.join(",")} hidden aria-label={label ? `${label} — Upload / رفع` : "Upload / رفع"} onChange={async (e) => {
-          const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
-          setBusy(true);
-          try { onChange(await uploadMedia(f, folder)); } catch (err) { toast.error((err as Error).message); }
-          setBusy(false);
-        }} />
+        <Upload className="h-4 w-4" />
+        {busy ? "..." : "Upload"}
+        <input
+          type="file"
+          accept={ALLOWED_IMAGE_TYPES.join(",")}
+          hidden
+          aria-label={label ? `${label} — Upload / رفع` : "Upload / رفع"}
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            setBusy(true);
+            try {
+              onChange(await uploadMedia(f, folder));
+            } catch (err) {
+              toast.error((err as Error).message);
+            }
+            setBusy(false);
+          }}
+        />
       </label>
-      {value && <Button type="button" size="icon" variant="ghost" aria-label="إزالة الصورة / Remove image" title="إزالة الصورة / Remove image" onClick={() => onChange(null)}><X className="h-4 w-4" /></Button>}
+      {value && (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          aria-label="إزالة الصورة / Remove image"
+          title="إزالة الصورة / Remove image"
+          onClick={() => onChange(null)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -55,17 +94,35 @@ function toInputDate(v: unknown) {
 }
 
 export function CrudPage({
-  table, title, fields, order = "created_at", ascending = false, filter, fixed, rowActions, headerExtra, renderCell,
+  table,
+  title,
+  fields,
+  order = "created_at",
+  ascending = false,
+  filter,
+  fixed,
+  rowActions,
+  headerExtra,
+  renderCell,
 }: {
-  table: AnyTable; title: string; fields: Field[]; order?: string; ascending?: boolean;
-  filter?: Record<string, string>; fixed?: Record<string, unknown>;
-  rowActions?: (row: Record<string, unknown>) => ReactNode; headerExtra?: ReactNode;
+  table: AnyTable;
+  title: string;
+  fields: Field[];
+  order?: string;
+  ascending?: boolean;
+  filter?: Record<string, string>;
+  fixed?: Record<string, unknown>;
+  rowActions?: (row: Record<string, unknown>) => ReactNode;
+  headerExtra?: ReactNode;
   renderCell?: (f: Field, row: Record<string, unknown>) => ReactNode | undefined;
 }) {
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
-  useEffect(() => { const id = setTimeout(() => setTerm(search.trim()), 300); return () => clearTimeout(id); }, [search]);
+  useEffect(() => {
+    const id = setTimeout(() => setTerm(search.trim()), 300);
+    return () => clearTimeout(id);
+  }, [search]);
   const hasActive = fields.some((f) => f.key === "is_active");
   const [activeF, setActiveF] = useState<"all" | "on" | "off">("all");
   const [page, setPage] = useState(0);
@@ -94,13 +151,36 @@ export function CrudPage({
   const cur = Math.min(page, pages - 1);
   const listFields = fields.filter((f) => f.list);
   const allOnPage = pageRows.length > 0 && pageRows.every((r) => sel.has(r.id as string));
-  const toggle = (id: string, on: boolean) => setSel((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n; });
+  const toggle = (id: string, on: boolean) =>
+    setSel((s) => {
+      const n = new Set(s);
+      if (on) n.add(id);
+      else n.delete(id);
+      return n;
+    });
   const bulk = async (kind: "on" | "off" | "delete") => {
     const ids = [...sel];
-    if (kind === "delete" && !(await confirm({ title: `حذف ${ids.length} عنصر؟ / Delete ${ids.length} items?`, description: "لا يمكن التراجع / This cannot be undone.", confirmLabel: "حذف / Delete", destructive: true }))) return;
-    const res = kind === "delete" ? await supabase.from(table).delete().in("id", ids) : await supabase.from(table).update({ is_active: kind === "on" } as never).in("id", ids);
+    if (
+      kind === "delete" &&
+      !(await confirm({
+        title: `حذف ${ids.length} عنصر؟ / Delete ${ids.length} items?`,
+        description: "لا يمكن التراجع / This cannot be undone.",
+        confirmLabel: "حذف / Delete",
+        destructive: true,
+      }))
+    )
+      return;
+    const res =
+      kind === "delete"
+        ? await supabase.from(table).delete().in("id", ids)
+        : await supabase
+            .from(table)
+            .update({ is_active: kind === "on" } as never)
+            .in("id", ids);
     if (res.error) return toast.error(res.error.message);
-    toast.success(`✓ ${ids.length}`); setSel(new Set()); q.refetch();
+    toast.success(`✓ ${ids.length}`);
+    setSel(new Set());
+    q.refetch();
   };
 
   const save = async () => {
@@ -115,7 +195,10 @@ export function CrudPage({
       payload[f.key] = v;
     }
     const res = editing.id
-      ? await supabase.from(table).update(payload as never).eq("id", editing.id as string)
+      ? await supabase
+          .from(table)
+          .update(payload as never)
+          .eq("id", editing.id as string)
       : await supabase.from(table).insert(payload as never);
     if (res.error) return toast.error(res.error.message);
     toast.success("✓");
@@ -123,93 +206,300 @@ export function CrudPage({
     q.refetch();
   };
   const del = async (id: string) => {
-    if (!(await confirm({ title: "حذف هذا العنصر؟ / Delete this item?", description: "لا يمكن التراجع / This cannot be undone.", confirmLabel: "حذف / Delete", destructive: true }))) return;
+    if (
+      !(await confirm({
+        title: "حذف هذا العنصر؟ / Delete this item?",
+        description: "لا يمكن التراجع / This cannot be undone.",
+        confirmLabel: "حذف / Delete",
+        destructive: true,
+      }))
+    )
+      return;
     const { error } = await supabase.from(table).delete().eq("id", id);
-    if (error) toast.error(error.message); else q.refetch();
+    if (error) toast.error(error.message);
+    else q.refetch();
   };
-  const blank = () => Object.fromEntries(fields.map((f) => [f.key, f.default ?? (f.type === "bool" ? true : f.type === "images" ? [] : "")]));
+  const blank = () =>
+    Object.fromEntries(
+      fields.map((f) => [
+        f.key,
+        f.default ?? (f.type === "bool" ? true : f.type === "images" ? [] : ""),
+      ]),
+    );
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold tracking-tight">{title}</h1>
         <div className="flex flex-wrap items-center gap-2">
-          {hasActive && <Segmented value={activeF} onChange={(v) => { setActiveF(v); setPage(0); }} options={[{ value: "all", label: "الكل" }, { value: "on", label: "نشط" }, { value: "off", label: "مخفي" }]} />}
-          <Input placeholder="Search / بحث" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="h-9 w-48" />
+          {hasActive && (
+            <Segmented
+              value={activeF}
+              onChange={(v) => {
+                setActiveF(v);
+                setPage(0);
+              }}
+              options={[
+                { value: "all", label: "الكل" },
+                { value: "on", label: "نشط" },
+                { value: "off", label: "مخفي" },
+              ]}
+            />
+          )}
+          <Input
+            placeholder="Search / بحث"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            className="h-9 w-48"
+          />
           {headerExtra}
-          <Button size="sm" onClick={() => setEditing(blank())}><Plus className="h-4 w-4" />Add / إضافة</Button>
+          <Button size="sm" onClick={() => setEditing(blank())}>
+            <Plus className="h-4 w-4" />
+            Add / إضافة
+          </Button>
         </div>
       </div>
       <BulkBar count={sel.size} onClear={() => setSel(new Set())}>
-        {hasActive && <><Button size="sm" variant="outline" onClick={() => bulk("on")}>إظهار / Activate</Button><Button size="sm" variant="outline" onClick={() => bulk("off")}>إخفاء / Hide</Button></>}
-        <Button size="sm" variant="outline" className="text-destructive" onClick={() => bulk("delete")}><Trash2 className="h-4 w-4" />حذف</Button>
+        {hasActive && (
+          <>
+            <Button size="sm" variant="outline" onClick={() => bulk("on")}>
+              إظهار / Activate
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulk("off")}>
+              إخفاء / Hide
+            </Button>
+          </>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-destructive"
+          onClick={() => bulk("delete")}
+        >
+          <Trash2 className="h-4 w-4" />
+          حذف
+        </Button>
       </BulkBar>
       {confirmDialog}
-      {q.isLoading ? <RowSkeleton n={5} /> : q.error ? <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} /> : !pageRows.length ? <EmptyState title={term ? "لا نتائج / No results" : "لا توجد بيانات بعد / Nothing here yet"} /> : (
-        <div className="space-y-2"><div className="overflow-x-auto rounded-md border bg-card">
-          <table className="w-full whitespace-nowrap text-sm">
-            <thead className="sticky top-0 bg-muted/60 text-start text-xs text-muted-foreground"><tr><th className="w-10 p-3"><Check label="select all" checked={allOnPage} onChange={(v) => setSel((s) => { const n = new Set(s); pageRows.forEach((r) => (v ? n.add(r.id as string) : n.delete(r.id as string))); return n; })} /></th>{listFields.map((f) => <th key={f.key} className="p-3 text-start font-semibold">{f.label}</th>)}<th /></tr></thead>
-            <tbody className="divide-y">
-              {pageRows.map((r) => (
-                <tr key={r.id as string} className={sel.has(r.id as string) ? "bg-muted/40" : "hover:bg-muted/30"}>
-                  <td className="p-3"><Check label="select" checked={sel.has(r.id as string)} onChange={(v) => toggle(r.id as string, v)} /></td>
+      {q.isLoading ? (
+        <RowSkeleton n={5} />
+      ) : q.error ? (
+        <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} />
+      ) : !pageRows.length ? (
+        <EmptyState
+          title={term ? "لا نتائج / No results" : "لا توجد بيانات بعد / Nothing here yet"}
+        />
+      ) : (
+        <div className="space-y-2">
+          <div className="overflow-x-auto rounded-md border bg-card">
+            <table className="w-full whitespace-nowrap text-sm">
+              <thead className="sticky top-0 bg-muted/60 text-start text-xs text-muted-foreground">
+                <tr>
+                  <th className="w-10 p-3">
+                    <Check
+                      label="select all"
+                      checked={allOnPage}
+                      onChange={(v) =>
+                        setSel((s) => {
+                          const n = new Set(s);
+                          pageRows.forEach((r) =>
+                            v ? n.add(r.id as string) : n.delete(r.id as string),
+                          );
+                          return n;
+                        })
+                      }
+                    />
+                  </th>
                   {listFields.map((f) => (
-                    <td key={f.key} className="p-3">
-                      {renderCell?.(f, r) ?? (f.type === "image" ? (r[f.key] ? <img src={r[f.key] as string} alt="" className="h-10 w-10 rounded object-cover" /> : null)
-                        : f.type === "images" ? ((r[f.key] as string[])?.[0] ? <img src={(r[f.key] as string[])[0]} alt="" className="h-10 w-10 rounded object-cover" /> : null)
-                        : f.type === "bool" ? (r[f.key] ? "✓" : "—")
-                        : f.type === "select" ? f.options?.find((o) => o.value === r[f.key])?.label ?? "—"
-                        : String(r[f.key] ?? "—"))}
-                    </td>
+                    <th key={f.key} className="p-3 text-start font-semibold">
+                      {f.label}
+                    </th>
                   ))}
-                  <td className="whitespace-nowrap p-2 text-end">
-                    {rowActions?.(r)}
-                    <Button size="icon" variant="ghost" aria-label="تعديل / Edit" title="تعديل / Edit" onClick={() => setEditing({ ...r })}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" aria-label="حذف / Delete" title="حذف / Delete" onClick={() => del(r.id as string)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </td>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div><Pager page={cur} pages={pages} total={total} onPage={setPage} /></div>
+              </thead>
+              <tbody className="divide-y">
+                {pageRows.map((r) => (
+                  <tr
+                    key={r.id as string}
+                    className={sel.has(r.id as string) ? "bg-muted/40" : "hover:bg-muted/30"}
+                  >
+                    <td className="p-3">
+                      <Check
+                        label="select"
+                        checked={sel.has(r.id as string)}
+                        onChange={(v) => toggle(r.id as string, v)}
+                      />
+                    </td>
+                    {listFields.map((f) => (
+                      <td key={f.key} className="p-3">
+                        {renderCell?.(f, r) ??
+                          (f.type === "image" ? (
+                            r[f.key] ? (
+                              <img
+                                src={r[f.key] as string}
+                                alt=""
+                                className="h-10 w-10 rounded object-cover"
+                              />
+                            ) : null
+                          ) : f.type === "images" ? (
+                            (r[f.key] as string[])?.[0] ? (
+                              <img
+                                src={(r[f.key] as string[])[0]}
+                                alt=""
+                                className="h-10 w-10 rounded object-cover"
+                              />
+                            ) : null
+                          ) : f.type === "bool" ? (
+                            r[f.key] ? (
+                              "✓"
+                            ) : (
+                              "—"
+                            )
+                          ) : f.type === "select" ? (
+                            (f.options?.find((o) => o.value === r[f.key])?.label ?? "—")
+                          ) : (
+                            String(r[f.key] ?? "—")
+                          ))}
+                      </td>
+                    ))}
+                    <td className="whitespace-nowrap p-2 text-end">
+                      {rowActions?.(r)}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="تعديل / Edit"
+                        title="تعديل / Edit"
+                        onClick={() => setEditing({ ...r })}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="حذف / Delete"
+                        title="حذف / Delete"
+                        onClick={() => del(r.id as string)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pager page={cur} pages={pages} total={total} onPage={setPage} />
+        </div>
       )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
           {editing && (
             <div className="grid gap-3 sm:grid-cols-2">
-              {fields.filter((f) => !f.show || f.show(editing)).map((f) => {
-                const v = editing[f.key];
-                const set = (nv: unknown) => setEditing({ ...editing, [f.key]: nv });
-                const wide = f.type === "textarea" || f.type === "images";
-                const id = `crud-${table}-${f.key}`;
-                const isImage = f.type === "image" || f.type === "images";
-                return (
-                  <div key={f.key} className={wide ? "sm:col-span-2" : ""}>
-                    <Label className="mb-1 block" htmlFor={isImage ? undefined : id}>{f.label}{f.required && " *"}</Label>
-                    {f.type === "bool" ? <Switch id={id} checked={!!v} onCheckedChange={set} />
-                      : f.type === "textarea" ? <Textarea id={id} value={(v as string) ?? ""} onChange={(e) => set(e.target.value)} />
-                      : f.type === "select" ? (
-                        <select id={id} className="h-9 w-full rounded-md border bg-background px-2" value={(v as string) ?? ""} onChange={(e) => set(e.target.value || null)}>
-                          <option value="">—</option>{f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                        </select>)
-                      : f.type === "image" ? <ImageInput value={(v as string) ?? null} onChange={set} folder={table} label={f.label} />
-                      : f.type === "images" ? (
+              {fields
+                .filter((f) => !f.show || f.show(editing))
+                .map((f) => {
+                  const v = editing[f.key];
+                  const set = (nv: unknown) => setEditing({ ...editing, [f.key]: nv });
+                  const wide = f.type === "textarea" || f.type === "images";
+                  const id = `crud-${table}-${f.key}`;
+                  const isImage = f.type === "image" || f.type === "images";
+                  return (
+                    <div key={f.key} className={wide ? "sm:col-span-2" : ""}>
+                      <Label className="mb-1 block" htmlFor={isImage ? undefined : id}>
+                        {f.label}
+                        {f.required && " *"}
+                      </Label>
+                      {f.type === "bool" ? (
+                        <Switch id={id} checked={!!v} onCheckedChange={set} />
+                      ) : f.type === "textarea" ? (
+                        <Textarea
+                          id={id}
+                          value={(v as string) ?? ""}
+                          onChange={(e) => set(e.target.value)}
+                        />
+                      ) : f.type === "select" ? (
+                        <select
+                          id={id}
+                          className="h-9 w-full rounded-md border bg-background px-2"
+                          value={(v as string) ?? ""}
+                          onChange={(e) => set(e.target.value || null)}
+                        >
+                          <option value="">—</option>
+                          {f.options?.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : f.type === "image" ? (
+                        <ImageInput
+                          value={(v as string) ?? null}
+                          onChange={set}
+                          folder={table}
+                          label={f.label}
+                        />
+                      ) : f.type === "images" ? (
                         <div className="flex flex-wrap gap-2">
                           {((v as string[]) ?? []).map((src, i) => (
-                            <div key={i} className="relative"><img src={src} alt="" className="h-16 w-16 rounded-lg object-cover" />
-                              <button type="button" aria-label={`إزالة الصورة ${i + 1} / Remove image ${i + 1}`} className="absolute -end-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground" onClick={() => set((v as string[]).filter((_, j) => j !== i))}><X className="h-3 w-3" /></button></div>
+                            <div key={i} className="relative">
+                              <img src={src} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                              <button
+                                type="button"
+                                aria-label={`إزالة الصورة ${i + 1} / Remove image ${i + 1}`}
+                                className="absolute -end-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground"
+                                onClick={() => set((v as string[]).filter((_, j) => j !== i))}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
                           ))}
-                          <ImageInput value={null} onChange={(u) => u && set([...((v as string[]) ?? []), u])} folder={table} label={f.label} />
-                        </div>)
-                      : f.type === "datetime" ? <Input id={id} type="datetime-local" value={toInputDate(v)} onChange={(e) => set(e.target.value)} />
-                      : f.type === "color" ? <Input id={id} type="color" value={(v as string) || "#000000"} onChange={(e) => set(e.target.value)} />
-                      : <Input id={id} type={f.type === "number" ? "number" : "text"} step="any" value={(v as string | number) ?? ""} onChange={(e) => set(e.target.value)} />}
-                  </div>
-                );
-              })}
-              <div className="flex gap-2 sm:col-span-2"><Button onClick={save}>Save / حفظ</Button><Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button></div>
+                          <ImageInput
+                            value={null}
+                            onChange={(u) => u && set([...((v as string[]) ?? []), u])}
+                            folder={table}
+                            label={f.label}
+                          />
+                        </div>
+                      ) : f.type === "datetime" ? (
+                        <Input
+                          id={id}
+                          type="datetime-local"
+                          value={toInputDate(v)}
+                          onChange={(e) => set(e.target.value)}
+                        />
+                      ) : f.type === "color" ? (
+                        <Input
+                          id={id}
+                          type="color"
+                          value={(v as string) || "#000000"}
+                          onChange={(e) => set(e.target.value)}
+                        />
+                      ) : (
+                        <Input
+                          id={id}
+                          type={f.type === "number" ? "number" : "text"}
+                          step="any"
+                          value={(v as string | number) ?? ""}
+                          onChange={(e) => set(e.target.value)}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              <div className="flex gap-2 sm:col-span-2">
+                <Button onClick={save}>Save / حفظ</Button>
+                <Button variant="ghost" onClick={() => setEditing(null)}>
+                  Cancel
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

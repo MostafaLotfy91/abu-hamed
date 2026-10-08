@@ -25,7 +25,8 @@ test.describe("access control", () => {
   test("customer opening /admin gets the access-denied screen, no admin UI", async ({ page }) => {
     await login(page, "customer", "/admin");
     await expect(page.getByRole("heading", { name: s.noAccess })).toBeVisible();
-    for (const label of adminNav) await expect(page.getByRole("link", { name: label, exact: true })).toHaveCount(0);
+    for (const label of adminNav)
+      await expect(page.getByRole("link", { name: label, exact: true })).toHaveCount(0);
     await page.goto("/admin/products");
     await expect(page.getByRole("heading", { name: s.noAccess })).toBeVisible();
     await expect(page.getByRole("button", { name: "Add / إضافة" })).toHaveCount(0);
@@ -40,7 +41,8 @@ test.describe("access control", () => {
   test("driver cannot open /admin", async ({ page }) => {
     await login(page, "driver", "/admin");
     await expect(page.getByRole("heading", { name: s.noAccess })).toBeVisible();
-    for (const label of adminNav) await expect(page.getByRole("link", { name: label, exact: true })).toHaveCount(0);
+    for (const label of adminNav)
+      await expect(page.getByRole("link", { name: label, exact: true })).toHaveCount(0);
   });
 
   test("customer does not see the admin or driver shortcuts in the header", async ({ page }) => {

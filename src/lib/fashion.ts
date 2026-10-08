@@ -44,31 +44,51 @@ function sizeRank(s: string): [number, number] {
 /** Sort sizes in their natural order (letters, ages, numbers, then alphabetical). */
 export function sortSizes(sizes: string[]) {
   return [...sizes].sort((a, b) => {
-    const [ga, va] = sizeRank(a), [gb, vb] = sizeRank(b);
+    const [ga, va] = sizeRank(a),
+      [gb, vb] = sizeRank(b);
     return ga - gb || va - vb || a.localeCompare(b, undefined, { numeric: true });
   });
 }
 
-export type VariantLike = { id: string; size: string | null; color_en: string | null; color_ar: string | null; color_hex: string | null; stock: number; is_active: boolean };
+export type VariantLike = {
+  id: string;
+  size: string | null;
+  color_en: string | null;
+  color_ar: string | null;
+  color_hex: string | null;
+  stock: number;
+  is_active: boolean;
+};
 
 /**
  * The colour/size a product page shows as selected: the shopper's choice, else the only option,
  * else (colour only) the first colour that has stock. Shared by the page and the WhatsApp message.
  */
-export function defaultSelection<V extends Pick<VariantLike, "size" | "color_en" | "stock" | "is_active">>(
-  allVariants: V[],
-  chosen: { size: string | null; color: string | null },
-) {
+export function defaultSelection<
+  V extends Pick<VariantLike, "size" | "color_en" | "stock" | "is_active">,
+>(allVariants: V[], chosen: { size: string | null; color: string | null }) {
   const variants = allVariants.filter((v) => v.is_active);
-  const sizes = sortSizes(Array.from(new Set(variants.map((v) => v.size).filter(Boolean) as string[])));
-  const colors = Array.from(new Map(variants.filter((v) => v.color_en).map((v) => [v.color_en!, v])).values());
-  const color = chosen.color ?? (colors.length === 1 ? colors[0].color_en
-    : colors.find((c) => variants.some((v) => v.color_en === c.color_en && v.stock > 0))?.color_en ?? null);
+  const sizes = sortSizes(
+    Array.from(new Set(variants.map((v) => v.size).filter(Boolean) as string[])),
+  );
+  const colors = Array.from(
+    new Map(variants.filter((v) => v.color_en).map((v) => [v.color_en!, v])).values(),
+  );
+  const color =
+    chosen.color ??
+    (colors.length === 1
+      ? colors[0].color_en
+      : (colors.find((c) => variants.some((v) => v.color_en === c.color_en && v.stock > 0))
+          ?.color_en ?? null));
   const size = chosen.size ?? (sizes.length === 1 ? sizes[0] : null);
   return { sizes, colors, color, size };
 }
 
 /** Picks a variant from size+color, falling back sensibly when one axis is absent. */
-export function findVariant<V extends VariantLike>(variants: V[], size: string | null, color: string | null) {
+export function findVariant<V extends VariantLike>(
+  variants: V[],
+  size: string | null,
+  color: string | null,
+) {
   return variants.find((v) => (v.size ?? null) === size && (v.color_en ?? null) === color) ?? null;
 }

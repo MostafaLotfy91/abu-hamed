@@ -25,21 +25,33 @@ export function WeeklyPanel({ ar }: { ar: boolean }) {
       setBusy(false);
     }
   };
-  useEffect(() => { load(false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load(false);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          {data && `${ar ? "آخر تحديث" : "Updated"}: ${new Date(data.created_at).toLocaleString(ar ? "ar-EG" : "en-US")}`}
+          {data &&
+            `${ar ? "آخر تحديث" : "Updated"}: ${new Date(data.created_at).toLocaleString(ar ? "ar-EG" : "en-US")}`}
         </p>
         <Button size="sm" variant="outline" disabled={busy} onClick={() => load(true)}>
-          <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />{ar ? "تحديث" : "Refresh"}
+          <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+          {ar ? "تحديث" : "Refresh"}
         </Button>
       </div>
-      {error && <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
-      {busy && !data ? <Skeleton className="h-48" /> : data && (
-        <div className="prose prose-sm max-w-none rounded-2xl bg-muted p-4"><ReactMarkdown>{data.text}</ReactMarkdown></div>
+      {error && (
+        <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</p>
+      )}
+      {busy && !data ? (
+        <Skeleton className="h-48" />
+      ) : (
+        data && (
+          <div className="prose prose-sm max-w-none rounded-2xl bg-muted p-4">
+            <ReactMarkdown>{data.text}</ReactMarkdown>
+          </div>
+        )
       )}
     </div>
   );

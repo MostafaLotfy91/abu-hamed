@@ -13,7 +13,13 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { SettingsProvider, settingsQuery, themeVars, useSettings, type StoreSettings } from "@/lib/store-settings";
+import {
+  SettingsProvider,
+  settingsQuery,
+  themeVars,
+  useSettings,
+  type StoreSettings,
+} from "@/lib/store-settings";
 import { pageHead, storeName } from "@/lib/seo";
 import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
@@ -26,9 +32,14 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">الصفحة غير موجودة · Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">
+          الصفحة غير موجودة · Page not found
+        </h2>
         <div className="mt-6">
-          <Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
             الرئيسية · Home
           </Link>
         </div>
@@ -47,12 +58,23 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">حدث خطأ · Something went wrong</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          حدث خطأ · Something went wrong
+        </h1>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button onClick={() => { router.invalidate(); reset(); }} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+          <button
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
             حاول مرة أخرى · Try again
           </button>
-          <a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground">
+          <a
+            href="/"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground"
+          >
             الرئيسية · Home
           </a>
         </div>
@@ -77,17 +99,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: loaderData?.settings?.primary_color ?? "#111111" },
-      ...(storeName(loaderData?.settings ?? null) ? [{ property: "og:site_name", content: storeName(loaderData?.settings ?? null) }] : []),
+      ...(storeName(loaderData?.settings ?? null)
+        ? [{ property: "og:site_name", content: storeName(loaderData?.settings ?? null) }]
+        : []),
       ...pageHead(matches).meta,
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      ...(import.meta.env.VITE_SUPABASE_URL ? [{ rel: "preconnect", href: import.meta.env.VITE_SUPABASE_URL as string, crossOrigin: "anonymous" as const }] : []),
+      ...(import.meta.env.VITE_SUPABASE_URL
+        ? [
+            {
+              rel: "preconnect",
+              href: import.meta.env.VITE_SUPABASE_URL as string,
+              crossOrigin: "anonymous" as const,
+            },
+          ]
+        : []),
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap",
+      },
       { rel: "stylesheet", href: appCss },
-      loaderData?.settings?.logo_url ? { rel: "icon", href: loaderData.settings.logo_url } : { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      ...(loaderData?.settings?.logo_url ? [{ rel: "apple-touch-icon", href: loaderData.settings.logo_url }] : []),
+      loaderData?.settings?.logo_url
+        ? { rel: "icon", href: loaderData.settings.logo_url }
+        : { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      ...(loaderData?.settings?.logo_url
+        ? [{ rel: "apple-touch-icon", href: loaderData.settings.logo_url }]
+        : []),
     ],
   }),
   shellComponent: RootShell,
@@ -100,7 +139,11 @@ function RootShell({ children }: { children: ReactNode }) {
   const settings = Route.useLoaderData()?.settings ?? null;
   const lang = settings?.default_language === "en" ? "en" : "ar";
   return (
-    <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} style={themeVars(settings) as React.CSSProperties}>
+    <html
+      lang={lang}
+      dir={lang === "ar" ? "rtl" : "ltr"}
+      style={themeVars(settings) as React.CSSProperties}
+    >
       <head>
         <HeadContent />
       </head>
@@ -114,7 +157,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function LangFromSettings({ children }: { children: ReactNode }) {
   const { settings } = useSettings();
-  return <I18nProvider defaultLang={settings?.default_language === "en" ? "en" : "ar"}>{children}</I18nProvider>;
+  return (
+    <I18nProvider defaultLang={settings?.default_language === "en" ? "en" : "ar"}>
+      {children}
+    </I18nProvider>
+  );
 }
 
 function Chrome() {

@@ -23,20 +23,27 @@ assertAllowed(url, "TEST_DATABASE_URL", "db");
 const apply = process.argv.includes("--apply");
 
 const DIR = "supabase/migrations";
-const files = readdirSync(DIR).filter((f) => f.endsWith(".sql")).sort();
+const files = readdirSync(DIR)
+  .filter((f) => f.endsWith(".sql"))
+  .sort();
 const version = (f) => f.split("_")[0];
 
 // Schema markers for migrations whose effect can be checked directly.
 const MARKERS = {
-  "20261007120000": `select to_regclass('public.coupon_redemptions') is not null as ok`,
-  "20261007130000": `select exists(select 1 from pg_proc where proname = 'grant_admin_by_email') as ok`,
-  "20261008100000": `select to_regclass('public.products_name_ar_trgm_idx') is not null as ok`,
+  20261007120000: `select to_regclass('public.coupon_redemptions') is not null as ok`,
+  20261007130000: `select exists(select 1 from pg_proc where proname = 'grant_admin_by_email') as ok`,
+  20261008100000: `select to_regclass('public.products_name_ar_trgm_idx') is not null as ok`,
 };
 
 const sql = postgres(url, { max: 1, ssl: isLocalUrl(url) ? false : "require", onnotice: () => {} });
 try {
-  const [{ has }] = await sql`select to_regclass('supabase_migrations.schema_migrations') is not null as has`;
-  const recorded = new Set(has ? (await sql`select version from supabase_migrations.schema_migrations`).map((r) => r.version) : []);
+  const [{ has }] =
+    await sql`select to_regclass('supabase_migrations.schema_migrations') is not null as has`;
+  const recorded = new Set(
+    has
+      ? (await sql`select version from supabase_migrations.schema_migrations`).map((r) => r.version)
+      : [],
+  );
   const status = [];
   for (const f of files) {
     const v = version(f);
@@ -48,19 +55,29 @@ try {
   for (const s of status) console.log(`${s.applied ? "applied " : "PENDING "} ${s.f}`);
 
   // Pre-flight checks for the order-integrity migration.
-  const dupes = await sql`select upper(code) c, count(*)::int n from public.coupons group by 1 having count(*) > 1`;
-  const negStock = await sql`select (select count(*) from public.products where stock < 0)::int + (select count(*) from public.product_variants where stock < 0)::int as n`;
-  console.log(`pre-flight: coupon codes differing only by case: ${dupes.length}; rows with negative stock (will be set to 0): ${negStock[0].n}`);
+  const dupes =
+    await sql`select upper(code) c, count(*)::int n from public.coupons group by 1 having count(*) > 1`;
+  const negStock =
+    await sql`select (select count(*) from public.products where stock < 0)::int + (select count(*) from public.product_variants where stock < 0)::int as n`;
+  console.log(
+    `pre-flight: coupon codes differing only by case: ${dupes.length}; rows with negative stock (will be set to 0): ${negStock[0].n}`,
+  );
 
   const pending = status.filter((s) => !s.applied);
   // Never apply a later migration while an earlier one is missing.
   const firstGap = status.findIndex((s) => !s.applied);
   if (firstGap >= 0 && status.slice(firstGap).some((s) => s.applied)) {
-    console.error("A migration is pending before one that is already applied; refusing to guess. Review manually.");
+    console.error(
+      "A migration is pending before one that is already applied; refusing to guess. Review manually.",
+    );
     process.exit(1);
   }
   if (!apply) {
-    console.log(pending.length ? `dry run: ${pending.length} pending. Re-run with --apply.` : "nothing pending.");
+    console.log(
+      pending.length
+        ? `dry run: ${pending.length} pending. Re-run with --apply.`
+        : "nothing pending.",
+    );
     process.exit(0);
   }
   if (dupes.length) {

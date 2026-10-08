@@ -19,7 +19,9 @@ export function measureSkew(): Promise<number> {
       if (!date) return 0;
       const skew = Date.now() - new Date(date).getTime();
       if (Math.abs(skew) > 2 * 60_000) {
-        console.warn(`[e2e] This machine's clock is off by ${Math.round(skew / 60_000)} min vs the Supabase server; browser clocks are corrected for the tests. Fix the system time (automatic sync).`);
+        console.warn(
+          `[e2e] This machine's clock is off by ${Math.round(skew / 60_000)} min vs the Supabase server; browser clocks are corrected for the tests. Fix the system time (automatic sync).`,
+        );
       }
       return skew;
     } catch {
@@ -32,5 +34,6 @@ export function measureSkew(): Promise<number> {
 /** Puts the browser context on server time when the machine clock is off by more than two minutes. */
 export async function alignClock(context: BrowserContext) {
   const skew = await measureSkew();
-  if (Math.abs(skew) > 2 * 60_000) await context.clock.install({ time: new Date(Date.now() - skew) });
+  if (Math.abs(skew) > 2 * 60_000)
+    await context.clock.install({ time: new Date(Date.now() - skew) });
 }
