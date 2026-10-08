@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCategories, profilesQuery } from "@/lib/queries";
 import { CrudPage } from "@/components/admin/CrudPage";
+import { useBi } from "@/lib/bilingual";
 
 export const Route = createFileRoute("/_authenticated/admin/categories")({ component: Page });
 
 function Page() {
+  const bi = useBi();
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const profiles = useQuery(profilesQuery);
   const options = (cats.data ?? []).map((c) => ({
@@ -20,7 +22,7 @@ function Page() {
   return (
     <CrudPage
       table="categories"
-      title="الأقسام / Categories"
+      title={bi("الأقسام / Categories")}
       order="sort_order"
       ascending
       fields={[

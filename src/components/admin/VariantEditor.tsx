@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useBi } from "@/lib/bilingual";
+import { useI18n } from "@/lib/i18n";
 
 type PaletteColor = { ar: string; en: string; hex: string };
 
@@ -23,6 +25,13 @@ export function VariantEditor({
   sku: string | null;
   sizes: string[] | null;
 }) {
+  const bi = useBi();
+  const { lang } = useI18n();
+  const colorName = (ar?: string | null, en?: string | null) =>
+    (lang === "ar" ? ar || en : en || ar) ?? "";
+  // "S / أسود": size and colour in the admin language, appended to each field label.
+  const vname = (v: { size: string | null; color_ar: string | null; color_en: string | null }) =>
+    [v.size, colorName(v.color_ar, v.color_en)].filter(Boolean).join(" / ");
   const qc = useQueryClient();
   const key = ["admin", "variants", productId];
   const q = useQuery({
@@ -58,7 +67,7 @@ export function VariantEditor({
         "اكتب اسم اللون بالعربي والإنجليزي / Enter the colour name in Arabic and English",
       );
     if (palette.some((x) => x.en.toLowerCase() === c.en.toLowerCase()))
-      return toast.error("اللون موجود / Colour already exists");
+      return toast.error(bi("اللون موجود / Colour already exists"));
     setCustom([...custom, c]);
     setColors([...colors, c.en]);
     setDraft({ ar: "", en: "", hex: "#000000" });
@@ -116,10 +125,10 @@ export function VariantEditor({
   return (
     <div className="space-y-4">
       <div className="space-y-3 rounded-2xl bg-secondary p-3">
-        <p className="text-sm font-bold">إضافة مجمعة / Bulk add</p>
+        <p className="text-sm font-bold">{bi("إضافة مجمعة / Bulk add")}</p>
         {!!sizeSet.length && (
           <div>
-            <Label id="variant-sizes-label">المقاسات / Sizes</Label>
+            <Label id="variant-sizes-label">{bi("المقاسات / Sizes")}</Label>
             <div
               role="group"
               aria-labelledby="variant-sizes-label"
@@ -147,7 +156,7 @@ export function VariantEditor({
           </div>
         )}
         <div>
-          <Label id="variant-colors-label">الألوان / Colors</Label>
+          <Label id="variant-colors-label">{bi("الألوان / Colors")}</Label>
           <div
             role="group"
             aria-labelledby="variant-colors-label"
@@ -157,8 +166,8 @@ export function VariantEditor({
               <button
                 key={c.en}
                 type="button"
-                title={`${c.ar} / ${c.en}`}
-                aria-label={`${c.ar} / ${c.en}`}
+                title={colorName(c.ar, c.en)}
+                aria-label={colorName(c.ar, c.en)}
                 aria-pressed={colors.includes(c.en)}
                 onClick={() => setColors(toggle(colors, c.en))}
                 className={`h-7 w-7 rounded-full border-2 p-0.5 ${colors.includes(c.en) ? "border-primary" : "border-transparent"}`}
@@ -171,13 +180,13 @@ export function VariantEditor({
             ))}
             {!palette.length && (
               <span className="text-xs text-muted-foreground">
-                لا توجد ألوان بعد — أضف لوناً / No colours yet — add one
+                {bi("لا توجد ألوان بعد — أضف لوناً / No colours yet — add one")}
               </span>
             )}
           </div>
           <div className="mt-2 flex flex-wrap items-end gap-2">
             <Input
-              aria-label="اسم اللون (عربي) / Colour name (Arabic)"
+              aria-label={bi("اسم اللون (عربي) / Colour name (Arabic)")}
               placeholder="اسم اللون"
               className="h-9 w-28"
               value={draft.ar}
@@ -192,20 +201,20 @@ export function VariantEditor({
               onChange={(e) => setDraft({ ...draft, en: e.target.value })}
             />
             <Input
-              aria-label="درجة اللون / Swatch"
+              aria-label={bi("درجة اللون / Swatch")}
               type="color"
               className="h-9 w-12 p-1"
               value={draft.hex}
               onChange={(e) => setDraft({ ...draft, hex: e.target.value })}
             />
             <Button type="button" size="sm" variant="outline" onClick={addColor}>
-              إضافة لون / Add colour
+              {bi("إضافة لون / Add colour")}
             </Button>
           </div>
         </div>
         <div className="flex items-end gap-2">
           <div>
-            <Label htmlFor="variant-bulk-stock">Stock / المخزون لكل اختيار</Label>
+            <Label htmlFor="variant-bulk-stock">{bi("Stock / المخزون لكل اختيار")}</Label>
             <Input
               id="variant-bulk-stock"
               type="number"
@@ -216,7 +225,7 @@ export function VariantEditor({
             />
           </div>
           <Button size="sm" onClick={generate} disabled={busy}>
-            Generate / توليد
+            {bi("Generate / توليد")}
           </Button>
         </div>
       </div>
@@ -263,7 +272,7 @@ export function VariantEditor({
                 </td>
                 <td>
                   <Input
-                    aria-label={`المخزون / Stock ${[v.size, v.color_en].filter(Boolean).join(" / ")}`}
+                    aria-label={`${bi("المخزون / Stock")} ${vname(v)}`}
                     type="number"
                     min={0}
                     className="h-8 w-20"
@@ -276,7 +285,7 @@ export function VariantEditor({
                 </td>
                 <td>
                   <Input
-                    aria-label={`سعر خاص / Price override ${[v.size, v.color_en].filter(Boolean).join(" / ")}`}
+                    aria-label={`${bi("سعر خاص / Price override")} ${vname(v)}`}
                     type="number"
                     step="any"
                     placeholder="—"
@@ -289,7 +298,7 @@ export function VariantEditor({
                 </td>
                 <td className="text-center">
                   <Switch
-                    aria-label={`نشط / Active ${[v.size, v.color_en].filter(Boolean).join(" / ")}`}
+                    aria-label={`${bi("نشط / Active")} ${vname(v)}`}
                     checked={v.is_active}
                     onCheckedChange={(c) => update(v.id, { is_active: c })}
                   />
@@ -298,8 +307,8 @@ export function VariantEditor({
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label={`حذف / Delete ${[v.size, v.color_en].filter(Boolean).join(" / ")}`}
-                    title="حذف / Delete"
+                    aria-label={`${bi("حذف / Delete")} ${vname(v)}`}
+                    title={bi("حذف / Delete")}
                     onClick={() => del(v.id)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -310,7 +319,7 @@ export function VariantEditor({
             {q.isLoading && (
               <tr>
                 <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                  جاري التحميل… / Loading…
+                  {bi("جاري التحميل… / Loading…")}
                 </td>
               </tr>
             )}
@@ -319,7 +328,7 @@ export function VariantEditor({
                 <td colSpan={7} className="p-4 text-center text-destructive">
                   {(q.error as Error).message}{" "}
                   <Button size="sm" variant="outline" onClick={() => q.refetch()}>
-                    إعادة المحاولة / Retry
+                    {bi("إعادة المحاولة / Retry")}
                   </Button>
                 </td>
               </tr>
@@ -327,7 +336,7 @@ export function VariantEditor({
             {q.isSuccess && !q.data?.length && (
               <tr>
                 <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                  لا توجد اختيارات — المنتج يباع بمخزونه العام / No variants
+                  {bi("لا توجد اختيارات — المنتج يباع بمخزونه العام / No variants")}
                 </td>
               </tr>
             )}

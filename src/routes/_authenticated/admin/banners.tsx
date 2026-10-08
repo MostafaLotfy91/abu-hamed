@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CrudPage } from "@/components/admin/CrudPage";
+import { useBi } from "@/lib/bilingual";
 
 export const Route = createFileRoute("/_authenticated/admin/banners")({ component: Page });
 
 function Page() {
+  const bi = useBi();
   return (
     <CrudPage
       table="banners"
-      title="البانرات / Banners"
+      title={bi("البانرات / Banners")}
       order="sort_order"
       ascending
       fields={[

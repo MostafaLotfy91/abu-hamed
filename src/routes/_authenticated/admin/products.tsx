@@ -10,6 +10,7 @@ import { CrudPage } from "@/components/admin/CrudPage";
 import { VariantEditor } from "@/components/admin/VariantEditor";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useBi } from "@/lib/bilingual";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({ component: Page });
 
@@ -30,6 +31,7 @@ function ImportLink() {
 type VariantTarget = { id: string; name: string; sku: string | null; sizes: string[] | null };
 
 function Page() {
+  const bi = useBi();
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const [variantsFor, setVariantsFor] = useState<VariantTarget | null>(null);
   const options = (cats.data ?? []).map((c) => ({ value: c.id, label: c.name_ar }));
@@ -43,13 +45,13 @@ function Page() {
     <>
       <CrudPage
         table="products"
-        title="المنتجات / Products"
+        title={bi("المنتجات / Products")}
         headerExtra={<ImportLink />}
         rowActions={(r) => (
           <Button
             size="icon"
             variant="ghost"
-            title="Sizes & colors / المقاسات والألوان"
+            title={bi("Sizes & colors / المقاسات والألوان")}
             onClick={() =>
               setVariantsFor({
                 id: r.id as string,

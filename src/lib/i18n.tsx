@@ -217,7 +217,7 @@ type Ctx = {
   tx: <T extends Record<string, unknown>>(obj: T | null | undefined, field: string) => string;
 };
 
-const I18nContext = createContext<Ctx | null>(null);
+export const I18nContext = createContext<Ctx | null>(null);
 const LS_KEY = "app.lang";
 
 function readSavedLang(): Lang | null {

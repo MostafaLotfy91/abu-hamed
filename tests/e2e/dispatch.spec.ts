@@ -206,13 +206,11 @@ test.describe("dispatch (admin)", () => {
       await login(page, "admin", "/admin/settings");
       const timeout = page.getByLabel(/مهلة رد المندوب/);
       await timeout.fill("5");
-      await page.getByRole("button", { name: "Save / حفظ" }).click();
-      await expect(
-        toast(page, "مهلة رد المندوب (ثانية) / Driver answer time (s): 30–1800"),
-      ).toBeVisible();
+      await page.getByRole("button", { name: "حفظ" }).click();
+      await expect(toast(page, "مهلة رد المندوب (ثانية): 30–1800")).toBeVisible();
       await timeout.fill("90");
       await page.getByLabel(/يبدأ التوزيع عند/).selectOption("confirmed");
-      await page.getByRole("button", { name: "Save / حفظ" }).click();
+      await page.getByRole("button", { name: "حفظ" }).click();
       await expect(toast(page, "✓")).toBeVisible();
       await expect
         .poll(async () => {

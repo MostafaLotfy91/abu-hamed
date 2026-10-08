@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useBi } from "@/lib/bilingual";
 
 type Props = {
   s: StoreSettings;
@@ -41,6 +42,7 @@ const SAMPLE = {
 
 /** WhatsApp fields (saved with the main Save button) + social links manager (saved per row). */
 export function ContactSocialSettings({ s, set }: Props) {
+  const bi = useBi();
   const [phone, setPhone] = useState(s.whatsapp_number ?? "");
   const phoneOk = phone === "" || !!normalizeEgyptPhone(phone);
   const sample = { ...SAMPLE, store_name: s.name_ar };
@@ -49,9 +51,9 @@ export function ContactSocialSettings({ s, set }: Props) {
   return (
     <section className="space-y-4 rounded-2xl bg-card p-4 shadow-card">
       <div className="flex items-center justify-between">
-        <h2 className="font-bold">التواصل وواتساب / Contact & WhatsApp</h2>
+        <h2 className="font-bold">{bi("التواصل وواتساب / Contact & WhatsApp")}</h2>
         <div className="flex items-center gap-2 text-sm">
-          <span id="wa-enabled-label">تفعيل / Enabled</span>
+          <span id="wa-enabled-label">{bi("تفعيل / Enabled")}</span>
           <Switch
             aria-labelledby="wa-enabled-label"
             checked={s.whatsapp_enabled}
@@ -61,7 +63,7 @@ export function ContactSocialSettings({ s, set }: Props) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <Label htmlFor="settings-whatsapp_number">رقم واتساب / WhatsApp number</Label>
+          <Label htmlFor="settings-whatsapp_number">{bi("رقم واتساب / WhatsApp number")}</Label>
           <Input
             id="settings-whatsapp_number"
             dir="ltr"
@@ -78,7 +80,7 @@ export function ContactSocialSettings({ s, set }: Props) {
           />
           {!phoneOk ? (
             <p className="mt-1 text-xs text-destructive">
-              رقم مصري غير صحيح / Invalid Egyptian number
+              {bi("رقم مصري غير صحيح / Invalid Egyptian number")}
             </p>
           ) : (
             s.whatsapp_number && (
@@ -97,7 +99,7 @@ export function ContactSocialSettings({ s, set }: Props) {
               window.open(waLink(s.whatsapp_number!, general), "_blank", "noopener,noreferrer")
             }
           >
-            اختبار / Test
+            {bi("اختبار / Test")}
           </Button>
         </div>
       </div>
@@ -112,7 +114,7 @@ export function ContactSocialSettings({ s, set }: Props) {
             return (
               <div key={l}>
                 <Label htmlFor={`settings-${String(key)}`}>
-                  {label} ({l.toUpperCase()})
+                  {bi(label)} ({l.toUpperCase()})
                 </Label>
                 <Textarea
                   id={`settings-${String(key)}`}
@@ -138,6 +140,7 @@ export function ContactSocialSettings({ s, set }: Props) {
 }
 
 function SocialManager() {
+  const bi = useBi();
   const qc = useQueryClient();
   const { data = [] } = useQuery(socialLinksQuery);
   const [drag, setDrag] = useState<number | null>(null);
@@ -176,7 +179,7 @@ function SocialManager() {
       let u = patch.url.trim();
       if (u && !/^[a-z]+:\/\//i.test(u)) u = `https://${u}`;
       u = u.replace(/^http:\/\//i, "https://");
-      if (!isSafeHttpsUrl(u)) return toast.error("رابط غير صحيح / Invalid URL");
+      if (!isSafeHttpsUrl(u)) return toast.error(bi("رابط غير صحيح / Invalid URL"));
       // Saving a real link turns it on so it shows on the store right away.
       patch = { ...patch, url: u, is_active: true };
     }
@@ -209,10 +212,10 @@ function SocialManager() {
   return (
     <div className="space-y-2 border-t pt-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold">روابط التواصل / Social links</h3>
+        <h3 className="font-bold">{bi("روابط التواصل / Social links")}</h3>
         <Button size="sm" variant="outline" onClick={add}>
           <Plus className="h-4 w-4" />
-          إضافة / Add
+          {bi("إضافة / Add")}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
@@ -230,7 +233,7 @@ function SocialManager() {
         >
           <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" />
           <select
-            aria-label={`المنصة / Platform ${i + 1}`}
+            aria-label={`${bi("المنصة / Platform")} ${i + 1}`}
             className="h-9 rounded-md border bg-background px-2 text-sm"
             value={l.platform}
             onChange={(e) => update(l.id, { platform: e.target.value as Platform })}
@@ -243,7 +246,7 @@ function SocialManager() {
           </select>
           <Input
             key={l.url}
-            aria-label={`الرابط / Link ${i + 1}`}
+            aria-label={`${bi("الرابط / Link")} ${i + 1}`}
             dir="ltr"
             className="min-w-[180px] flex-1"
             defaultValue={l.url}
@@ -251,7 +254,7 @@ function SocialManager() {
             onBlur={(e) => e.target.value.trim() !== l.url && update(l.id, { url: e.target.value })}
           />
           <Switch
-            aria-label={`إظهار / Visible ${i + 1}`}
+            aria-label={`${bi("إظهار / Visible")} ${i + 1}`}
             checked={l.is_active}
             onCheckedChange={(v) => update(l.id, { is_active: v })}
           />
@@ -259,8 +262,8 @@ function SocialManager() {
             size="icon"
             variant="ghost"
             onClick={() => remove(l.id)}
-            aria-label={`حذف / Delete ${i + 1}`}
-            title="حذف / Delete"
+            aria-label={`${bi("حذف / Delete")} ${i + 1}`}
+            title={bi("حذف / Delete")}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

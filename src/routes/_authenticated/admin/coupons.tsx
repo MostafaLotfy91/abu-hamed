@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CrudPage } from "@/components/admin/CrudPage";
+import { useBi } from "@/lib/bilingual";
 
 export const Route = createFileRoute("/_authenticated/admin/coupons")({ component: Page });
 
 function Page() {
+  const bi = useBi();
   return (
     <CrudPage
       table="coupons"
-      title="الكوبونات / Coupons"
+      title={bi("الكوبونات / Coupons")}
       fields={[
         { key: "code", label: "Code", required: true, list: true },
         {

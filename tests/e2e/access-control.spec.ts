@@ -29,7 +29,7 @@ test.describe("access control", () => {
       await expect(page.getByRole("link", { name: label, exact: true })).toHaveCount(0);
     await page.goto("/admin/products");
     await expect(page.getByRole("heading", { name: s.noAccess })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add / إضافة" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "إضافة" })).toHaveCount(0);
   });
 
   test("customer opening /driver gets the drivers-only screen", async ({ page }) => {

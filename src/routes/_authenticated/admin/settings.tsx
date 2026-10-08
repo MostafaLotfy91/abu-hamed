@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ContactSocialSettings } from "@/components/admin/ContactSocialSettings";
+import { useBi } from "@/lib/bilingual";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({ component: Page });
 
@@ -45,6 +46,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Page() {
+  const bi = useBi();
   const qc = useQueryClient();
   const q = useQuery(settingsQuery);
   const [s, setS] = useState<StoreSettings | null>(null);
@@ -57,7 +59,7 @@ function Page() {
   const set = <K extends keyof StoreSettings>(k: K, v: StoreSettings[K]) => setS({ ...s, [k]: v });
   const txt = (k: keyof StoreSettings, label: string, type = "text") => (
     <div>
-      <Label htmlFor={`settings-${String(k)}`}>{label}</Label>
+      <Label htmlFor={`settings-${String(k)}`}>{bi(label)}</Label>
       <Input
         id={`settings-${String(k)}`}
         type={type}
@@ -86,7 +88,7 @@ function Page() {
       const v = Number(s[k]);
       return !Number.isInteger(v) || v < min || v > max;
     });
-    if (bad) return toast.error(`${bad[3]}: ${bad[1]}–${bad[2]}`);
+    if (bad) return toast.error(`${bi(bad[3])}: ${bad[1]}–${bad[2]}`);
     const { id: _id, updated_at: _u, ...rest } = s;
     const { error } = await supabase.from("store_settings").update(rest).eq("id", 1);
     if (error) return toast.error(error.message);
@@ -97,10 +99,10 @@ function Page() {
   return (
     <div className="max-w-4xl space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold">إعدادات المتجر / Store settings</h1>
-        <Button onClick={save}>Save / حفظ</Button>
+        <h1 className="text-xl font-extrabold">{bi("إعدادات المتجر / Store settings")}</h1>
+        <Button onClick={save}>{bi("Save / حفظ")}</Button>
       </div>
-      <Section title="الهوية / Branding">
+      <Section title={bi("الهوية / Branding")}>
         {txt("name_ar", "اسم المتجر")}
         {txt("name_en", "Store name (EN)")}
         {txt("tagline_ar", "الشعار النصي")}
@@ -149,12 +151,12 @@ function Page() {
           </select>
         </div>
       </Section>
-      <Section title="العملة / Currency">
+      <Section title={bi("العملة / Currency")}>
         {txt("currency_code", "Code (EGP, SAR...)")}
         {txt("currency_symbol_ar", "الرمز (عربي)")}
         {txt("currency_symbol_en", "Symbol (EN)")}
       </Section>
-      <Section title="التوصيل / Delivery">
+      <Section title={bi("التوصيل / Delivery")}>
         {txt("delivery_fee", "Delivery fee", "number")}
         {txt("free_delivery_threshold", "Free delivery over", "number")}
         {txt("min_order_amount", "Minimum order", "number")}
@@ -195,11 +197,11 @@ function Page() {
           />
         </div>
       </Section>
-      <Section title="التوزيع التلقائي / Auto dispatch">
+      <Section title={bi("التوزيع التلقائي / Auto dispatch")}>
         <div className="flex items-center justify-between rounded-xl border p-3 sm:col-span-2">
           <span>
             <span id="feature-auto_dispatch_enabled" className="block text-sm font-semibold">
-              توزيع الطلبات تلقائياً على المناديب / Offer orders to drivers automatically
+              {bi("توزيع الطلبات تلقائياً على المناديب / Offer orders to drivers automatically")}
             </span>
             <span className="block text-xs text-muted-foreground">
               {features.delivery_tracking
@@ -226,7 +228,7 @@ function Page() {
         </div>
         <div>
           <Label htmlFor="settings-dispatch_trigger_status">
-            يبدأ التوزيع عند / Start dispatching when the order is
+            {bi("يبدأ التوزيع عند / Start dispatching when the order is")}
           </Label>
           <select
             id="settings-dispatch_trigger_status"
@@ -234,14 +236,14 @@ function Page() {
             value={s.dispatch_trigger_status}
             onChange={(e) => set("dispatch_trigger_status", e.target.value)}
           >
-            <option value="confirmed">مؤكد / Confirmed</option>
-            <option value="preparing">قيد التجهيز / Preparing</option>
+            <option value="confirmed">{bi("مؤكد / Confirmed")}</option>
+            <option value="preparing">{bi("قيد التجهيز / Preparing")}</option>
           </select>
         </div>
         {DISPATCH_LIMITS.map(([k, min, max, label]) => (
           <div key={k}>
             <Label htmlFor={`settings-${k}`}>
-              {label} ({min}–{max})
+              {bi(label)} ({min}–{max})
             </Label>
             <Input
               id={`settings-${k}`}
@@ -258,12 +260,12 @@ function Page() {
           </div>
         ))}
       </Section>
-      <Section title="التواصل / Contact">
+      <Section title={bi("التواصل / Contact")}>
         {txt("contact_phone", "Phone")}
         {txt("email", "Email")}
       </Section>
       <ContactSocialSettings s={s} set={set} />
-      <Section title="المزايا / Feature flags">
+      <Section title={bi("المزايا / Feature flags")}>
         {FLAGS.map((f) => (
           <div key={f} className="flex items-center justify-between rounded-xl border p-3">
             <span id={`feature-${f}`} className="text-sm font-semibold">

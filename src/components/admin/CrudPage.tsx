@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { RowSkeleton, EmptyState, ErrorState } from "@/components/store/states";
 import { BulkBar, Check, PAGE, Pager, Segmented } from "./TableKit";
 import { useConfirm } from "./ConfirmDialog";
+import { useBi } from "@/lib/bilingual";
 
 export type Field = {
   key: string;
@@ -41,6 +42,7 @@ export function ImageInput({
   folder: string;
   label?: string;
 }) {
+  const bi = useBi();
   const [busy, setBusy] = useState(false);
   return (
     <div className="flex items-center gap-3">
@@ -51,12 +53,12 @@ export function ImageInput({
       )}
       <label className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-3 py-2 text-sm">
         <Upload className="h-4 w-4" />
-        {busy ? "..." : "Upload"}
+        {busy ? "..." : bi("Upload / رفع")}
         <input
           type="file"
           accept={ALLOWED_IMAGE_TYPES.join(",")}
           hidden
-          aria-label={label ? `${label} — Upload / رفع` : "Upload / رفع"}
+          aria-label={label ? `${label} — ${bi("Upload / رفع")}` : bi("Upload / رفع")}
           onChange={async (e) => {
             const f = e.target.files?.[0];
             e.target.value = "";
@@ -76,8 +78,8 @@ export function ImageInput({
           type="button"
           size="icon"
           variant="ghost"
-          aria-label="إزالة الصورة / Remove image"
-          title="إزالة الصورة / Remove image"
+          aria-label={bi("إزالة الصورة / Remove image")}
+          title={bi("إزالة الصورة / Remove image")}
           onClick={() => onChange(null)}
         >
           <X className="h-4 w-4" />
@@ -116,6 +118,7 @@ export function CrudPage({
   headerExtra?: ReactNode;
   renderCell?: (f: Field, row: Record<string, unknown>) => ReactNode | undefined;
 }) {
+  const bi = useBi();
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
@@ -196,7 +199,7 @@ export function CrudPage({
         v === ""
       )
         v = null;
-      if (f.required && (v == null || v === "")) return toast.error(`${f.label} *`);
+      if (f.required && (v == null || v === "")) return toast.error(`${bi(f.label)} *`);
       payload[f.key] = v;
     }
     const res = editing.id
@@ -235,7 +238,7 @@ export function CrudPage({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+        <h1 className="text-xl font-bold tracking-tight">{bi(title)}</h1>
         <div className="flex flex-wrap items-center gap-2">
           {hasActive && (
             <Segmented
@@ -252,7 +255,7 @@ export function CrudPage({
             />
           )}
           <Input
-            placeholder="Search / بحث"
+            placeholder={bi("Search / بحث")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -263,7 +266,7 @@ export function CrudPage({
           {headerExtra}
           <Button size="sm" onClick={() => setEditing(blank())}>
             <Plus className="h-4 w-4" />
-            Add / إضافة
+            {bi("Add / إضافة")}
           </Button>
         </div>
       </div>
@@ -271,10 +274,10 @@ export function CrudPage({
         {hasActive && (
           <>
             <Button size="sm" variant="outline" onClick={() => bulk("on")}>
-              إظهار / Activate
+              {bi("إظهار / Activate")}
             </Button>
             <Button size="sm" variant="outline" onClick={() => bulk("off")}>
-              إخفاء / Hide
+              {bi("إخفاء / Hide")}
             </Button>
           </>
         )}
@@ -320,7 +323,7 @@ export function CrudPage({
                   </th>
                   {listFields.map((f) => (
                     <th key={f.key} className="p-3 text-start font-semibold">
-                      {f.label}
+                      {bi(f.label)}
                     </th>
                   ))}
                   <th />
@@ -376,8 +379,8 @@ export function CrudPage({
                       <Button
                         size="icon"
                         variant="ghost"
-                        aria-label="تعديل / Edit"
-                        title="تعديل / Edit"
+                        aria-label={bi("تعديل / Edit")}
+                        title={bi("تعديل / Edit")}
                         onClick={() => setEditing({ ...r })}
                       >
                         <Pencil className="h-4 w-4" />
@@ -385,8 +388,8 @@ export function CrudPage({
                       <Button
                         size="icon"
                         variant="ghost"
-                        aria-label="حذف / Delete"
-                        title="حذف / Delete"
+                        aria-label={bi("حذف / Delete")}
+                        title={bi("حذف / Delete")}
                         onClick={() => del(r.id as string)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -404,7 +407,7 @@ export function CrudPage({
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+            <DialogTitle>{bi(title)}</DialogTitle>
           </DialogHeader>
           {editing && (
             <div className="grid gap-3 sm:grid-cols-2">
@@ -419,7 +422,7 @@ export function CrudPage({
                   return (
                     <div key={f.key} className={wide ? "sm:col-span-2" : ""}>
                       <Label className="mb-1 block" htmlFor={isImage ? undefined : id}>
-                        {f.label}
+                        {bi(f.label)}
                         {f.required && " *"}
                       </Label>
                       {f.type === "bool" ? (
@@ -440,7 +443,7 @@ export function CrudPage({
                           <option value="">—</option>
                           {f.options?.map((o) => (
                             <option key={o.value} value={o.value}>
-                              {o.label}
+                              {bi(o.label)}
                             </option>
                           ))}
                         </select>
@@ -449,7 +452,7 @@ export function CrudPage({
                           value={(v as string) ?? null}
                           onChange={set}
                           folder={table}
-                          label={f.label}
+                          label={bi(f.label)}
                         />
                       ) : f.type === "images" ? (
                         <div className="flex flex-wrap gap-2">
@@ -458,7 +461,7 @@ export function CrudPage({
                               <img src={src} alt="" className="h-16 w-16 rounded-lg object-cover" />
                               <button
                                 type="button"
-                                aria-label={`إزالة الصورة ${i + 1} / Remove image ${i + 1}`}
+                                aria-label={bi(`إزالة الصورة ${i + 1} / Remove image ${i + 1}`)}
                                 className="absolute -end-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground"
                                 onClick={() => set((v as string[]).filter((_, j) => j !== i))}
                               >
@@ -470,7 +473,7 @@ export function CrudPage({
                             value={null}
                             onChange={(u) => u && set([...((v as string[]) ?? []), u])}
                             folder={table}
-                            label={f.label}
+                            label={bi(f.label)}
                           />
                         </div>
                       ) : f.type === "datetime" ? (
@@ -500,7 +503,7 @@ export function CrudPage({
                   );
                 })}
               <div className="flex gap-2 sm:col-span-2">
-                <Button onClick={save}>Save / حفظ</Button>
+                <Button onClick={save}>{bi("Save / حفظ")}</Button>
                 <Button variant="ghost" onClick={() => setEditing(null)}>
                   Cancel
                 </Button>

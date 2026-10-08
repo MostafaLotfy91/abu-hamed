@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useBi } from "@/lib/bilingual";
 
 type Opts = { title: string; description?: string; confirmLabel?: string; destructive?: boolean };
 
@@ -17,6 +18,7 @@ type Opts = { title: string; description?: string; confirmLabel?: string; destru
  * const [confirm, dialog] = useConfirm(); ... if (!(await confirm({ title: "..." }))) return; ... render {dialog}
  */
 export function useConfirm(): [(o: Opts) => Promise<boolean>, ReactNode] {
+  const bi = useBi();
   const [opts, setOpts] = useState<Opts | null>(null);
   const resolver = useRef<((v: boolean) => void) | null>(null);
   const confirm = useCallback(
@@ -41,11 +43,13 @@ export function useConfirm(): [(o: Opts) => Promise<boolean>, ReactNode] {
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{opts?.title}</AlertDialogTitle>
-          {opts?.description && <AlertDialogDescription>{opts.description}</AlertDialogDescription>}
+          <AlertDialogTitle>{bi(opts?.title ?? "")}</AlertDialogTitle>
+          {opts?.description && (
+            <AlertDialogDescription>{bi(opts.description)}</AlertDialogDescription>
+          )}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => close(false)}>إلغاء / Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => close(false)}>{bi("إلغاء / Cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => close(true)}
             className={
@@ -54,7 +58,7 @@ export function useConfirm(): [(o: Opts) => Promise<boolean>, ReactNode] {
                 : undefined
             }
           >
-            {opts?.confirmLabel ?? "تأكيد / Confirm"}
+            {bi(opts?.confirmLabel ?? "تأكيد / Confirm")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -23,9 +23,9 @@ import {
 
 test.skip(!E2E_READY, SKIP_REASON);
 
-/** CrudPage table row containing text; its icon buttons are named "تعديل / Edit" and "حذف / Delete". */
+/** CrudPage table row containing text; its icon buttons are named "تعديل" and "حذف". */
 const row = (page: Page, text: string) => page.locator("tbody tr").filter({ hasText: text });
-const rowButton = (page: Page, text: string, name: "تعديل / Edit" | "حذف / Delete") =>
+const rowButton = (page: Page, text: string, name: "تعديل" | "حذف") =>
   row(page, text).getByRole("button", { name });
 
 test.describe("admin", () => {
@@ -53,22 +53,20 @@ test.describe("admin", () => {
     const name = `منتج أدمن ${catalog.tag}`;
     const sku = `E2E-${catalog.tag}-ADM`;
     await login(page, "admin", "/admin/products");
-    await expect(page.getByRole("heading", { name: "المنتجات / Products" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "المنتجات" })).toBeVisible();
 
     // Create
-    await page.getByRole("button", { name: "Add / إضافة" }).click();
+    await page.getByRole("button", { name: "إضافة" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("الاسم (عربي) *", { exact: true }).fill(name);
     await dialog.getByLabel("Name (EN) *", { exact: true }).fill(`E2E Admin ${catalog.tag}`);
-    await dialog
-      .getByLabel("Category / القسم", { exact: true })
-      .selectOption({ label: catalog.category.ar });
+    await dialog.getByLabel("القسم", { exact: true }).selectOption({ label: catalog.category.ar });
     await dialog.getByLabel("SKU", { exact: true }).fill(sku);
-    await dialog.getByLabel("Price / السعر *", { exact: true }).fill("250");
+    await dialog.getByLabel("السعر *", { exact: true }).fill("250");
     // Image upload: generated PNG -> compressed to WebP in the browser -> store-media bucket.
     await dialog.locator('input[type="file"]').first().setInputFiles(pngFile());
     await expect(dialog.locator('img[src*="store-media"]')).toHaveCount(1, { timeout: 30_000 });
-    await dialog.getByRole("button", { name: "Save / حفظ" }).click();
+    await dialog.getByRole("button", { name: "حفظ" }).click();
     await expect(toast(page, "✓")).toBeVisible();
     await expect(dialog).toBeHidden();
 
@@ -79,28 +77,26 @@ test.describe("admin", () => {
     expect(created!.images[0]).toContain("store-media");
 
     // Read + update
-    await page.getByPlaceholder("Search / بحث").fill(sku);
+    await page.getByPlaceholder("بحث").fill(sku);
     await expect(row(page, name)).toHaveCount(1);
-    await rowButton(page, name, "تعديل / Edit").click();
-    await dialog.getByLabel("Price / السعر *", { exact: true }).fill("275");
-    await dialog.getByRole("button", { name: "Save / حفظ" }).click();
+    await rowButton(page, name, "تعديل").click();
+    await dialog.getByLabel("السعر *", { exact: true }).fill("275");
+    await dialog.getByRole("button", { name: "حفظ" }).click();
     await expect(dialog).toBeHidden();
     await expect.poll(async () => Number((await findProductBySku(sku))?.price)).toBe(275);
 
     // Variants (VariantEditor): S + M in Black, 7 each, then S stock -> 0.
-    await row(page, name)
-      .getByRole("button", { name: "Sizes & colors / المقاسات والألوان" })
-      .click();
+    await row(page, name).getByRole("button", { name: "المقاسات والألوان" }).click();
     const variants = page.getByRole("dialog", { name: `${name} — المقاسات والألوان` });
     await variants.getByRole("button", { name: "S", exact: true }).click();
     await variants.getByRole("button", { name: "M", exact: true }).click();
-    await variants.getByRole("button", { name: "أسود / Black" }).click();
-    await variants.getByLabel("Stock / المخزون لكل اختيار", { exact: true }).fill("7");
-    await variants.getByRole("button", { name: "Generate / توليد" }).click();
+    await variants.getByRole("button", { name: "أسود" }).click();
+    await variants.getByLabel("المخزون لكل اختيار", { exact: true }).fill("7");
+    await variants.getByRole("button", { name: "توليد" }).click();
     await expect(toast(page, "+2")).toBeVisible();
     await expect(variants.locator("tbody tr")).toHaveCount(2);
     const sStock = variants.getByRole("spinbutton", {
-      name: "المخزون / Stock S / Black",
+      name: "المخزون S / أسود",
       exact: true,
     });
     await sStock.fill("0");
@@ -123,9 +119,9 @@ test.describe("admin", () => {
 
     // Delete
     await page.goto("/admin/products");
-    await page.getByPlaceholder("Search / بحث").fill(sku);
-    await rowButton(page, name, "حذف / Delete").click();
-    await confirmDialog(page, "حذف / Delete");
+    await page.getByPlaceholder("بحث").fill(sku);
+    await rowButton(page, name, "حذف").click();
+    await confirmDialog(page, "حذف");
     await expect(row(page, name)).toHaveCount(0);
     await expect.poll(() => findProductBySku(sku)).toBeNull();
   });
@@ -180,7 +176,7 @@ test.describe("admin", () => {
         name: new RegExp(`التراجع عن آخر استيراد \\(${file.replace(/\./g, "\\.")}\\)`),
       })
       .click();
-    await confirmDialog(page, "تراجع / Undo");
+    await confirmDialog(page, "تراجع");
     await expect(toast(page, /تم إخفاء \d+ منتج/)).toBeVisible();
     await expect.poll(async () => (await findProductBySku(code))?.is_active).toBe(false);
     await expect.poll(async () => (await lastImportJob(file))?.status).toBe("undone");
@@ -274,18 +270,18 @@ test.describe("admin", () => {
   test("coupons: create and delete", async ({ page, catalog }) => {
     const code = `E2EC${catalog.tag}`;
     await login(page, "admin", "/admin/coupons");
-    await page.getByRole("button", { name: "Add / إضافة" }).click();
+    await page.getByRole("button", { name: "إضافة" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Code *", { exact: true }).fill(code);
     await expect(dialog.getByLabel("Type *", { exact: true })).toHaveValue("percent");
     await dialog.getByLabel("Value *", { exact: true }).fill("15");
-    await dialog.getByRole("button", { name: "Save / حفظ" }).click();
+    await dialog.getByRole("button", { name: "حفظ" }).click();
     await expect(dialog).toBeHidden();
     await expect(row(page, code)).toHaveCount(1);
     expect(await findCoupon(code)).toMatchObject({ code, discount_type: "percent" });
 
-    await rowButton(page, code, "حذف / Delete").click();
-    await confirmDialog(page, "حذف / Delete");
+    await rowButton(page, code, "حذف").click();
+    await confirmDialog(page, "حذف");
     await expect(row(page, code)).toHaveCount(0);
     await expect.poll(() => findCoupon(code)).toBeNull();
   });
@@ -297,7 +293,7 @@ test.describe("admin", () => {
     const titleAr = `بانر ${catalog.tag}`;
     const titleEn = `E2E Banner ${catalog.tag}`;
     await login(page, "admin", "/admin/banners");
-    await page.getByRole("button", { name: "Add / إضافة" }).click();
+    await page.getByRole("button", { name: "إضافة" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.locator('input[type="file"]').setInputFiles(pngFile("banner.png"));
     await expect(dialog.locator('img[src*="store-media"]')).toHaveCount(1, { timeout: 30_000 });
@@ -306,13 +302,13 @@ test.describe("admin", () => {
     const link = dialog.getByLabel("Link (e.g. /products)", { exact: true });
 
     await link.fill("javascript:alert(1)");
-    await dialog.getByRole("button", { name: "Save / حفظ" }).click();
+    await dialog.getByRole("button", { name: "حفظ" }).click();
     await expect(toast(page, /banners_link_safe_chk|check constraint/)).toBeVisible();
     await expect(dialog).toBeVisible();
     expect(await findBanner(titleEn)).toBeNull();
 
     await link.fill("/products");
-    await dialog.getByRole("button", { name: "Save / حفظ" }).click();
+    await dialog.getByRole("button", { name: "حفظ" }).click();
     await expect(dialog).toBeHidden();
     await expect.poll(async () => (await findBanner(titleEn))?.link).toBe("/products");
 
@@ -331,12 +327,10 @@ test.describe("admin", () => {
     const newName = `متجر اختبار ${catalog.tag}`;
     try {
       await login(page, "admin", "/admin/settings");
-      await expect(
-        page.getByRole("heading", { name: "إعدادات المتجر / Store settings" }),
-      ).toBeVisible();
+      await expect(page.getByRole("heading", { name: "إعدادات المتجر" })).toBeVisible();
       await page.getByLabel("اسم المتجر", { exact: true }).fill(newName);
       await page.getByLabel("Primary", { exact: true }).fill("#123456");
-      await page.getByRole("button", { name: "Save / حفظ" }).click();
+      await page.getByRole("button", { name: "حفظ" }).click();
       await expect(toast(page, "✓")).toBeVisible();
 
       await page.goto("/");
@@ -360,25 +354,25 @@ test.describe("admin", () => {
     const url = `https://social.example.com/e2e-${catalog.tag}`;
     try {
       await login(page, "admin", "/admin/settings");
-      const wa = page.getByLabel("رقم واتساب / WhatsApp number", { exact: true });
+      const wa = page.getByLabel("رقم واتساب", { exact: true });
       await wa.fill("123");
-      await expect(page.getByText("رقم مصري غير صحيح / Invalid Egyptian number")).toBeVisible();
+      await expect(page.getByText("رقم مصري غير صحيح")).toBeVisible();
       await wa.fill("01098765432");
       await expect(page.getByText("→ 201098765432")).toBeVisible();
-      await page.getByRole("button", { name: "Save / حفظ" }).click();
+      await page.getByRole("button", { name: "حفظ" }).click();
       await expect(toast(page, "✓")).toBeVisible();
       await expect.poll(async () => (await readSettings()).whatsapp_number).toBe("201098765432");
 
       // Social links are saved per row.
-      await page.getByRole("button", { name: "إضافة / Add" }).click();
+      await page.getByRole("button", { name: "إضافة" }).click();
       const social = page.locator('div[draggable="true"]').last();
-      const input = social.getByRole("textbox", { name: /^الرابط \/ Link/ });
+      const input = social.getByRole("textbox", { name: /^الرابط/ });
       await input.fill("javascript:alert(1)");
       await input.press("Enter");
-      await expect(toast(page, "رابط غير صحيح / Invalid URL")).toBeVisible();
+      await expect(toast(page, "رابط غير صحيح")).toBeVisible();
       await input.fill(url);
       await input.press("Enter");
-      await expect(social.getByRole("switch", { name: /^إظهار \/ Visible/ })).toBeChecked();
+      await expect(social.getByRole("switch", { name: /^إظهار/ })).toBeChecked();
       await expect.poll(() => socialLinkSaved(url)).toBe(true);
 
       await page.goto("/");

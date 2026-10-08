@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useBi } from "@/lib/bilingual";
 
 type Job = {
   id: string;
@@ -27,6 +28,7 @@ const LABEL: Record<string, string> = {
 };
 
 export function ImportHistory() {
+  const bi = useBi();
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["import_jobs"],
@@ -62,7 +64,8 @@ export function ImportHistory() {
   if (q.isLoading) return <RowSkeleton n={3} />;
   if (q.error)
     return <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} />;
-  if (!q.data?.length) return <EmptyState title="لا توجد عمليات استيراد بعد / No imports yet" />;
+  if (!q.data?.length)
+    return <EmptyState title={bi("لا توجد عمليات استيراد بعد / No imports yet")} />;
   return (
     <div className="space-y-3">
       {confirmDialog}
