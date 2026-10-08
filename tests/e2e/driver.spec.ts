@@ -18,7 +18,8 @@ test.describe("driver app", () => {
   }) => {
     const order = await createAssignedOrder(catalog);
     await login(page, "driver", "/driver");
-    await expect(page.getByText("تطبيق المندوب").first()).toBeVisible();
+    // The site header also has a (phone-hidden) "تطبيق المندوب" shortcut; the app's own title is the h1.
+    await expect(page.getByRole("heading", { level: 1, name: "تطبيق المندوب" })).toBeVisible();
     await expect(page.getByText("حالتي")).toBeVisible();
 
     const card = page.locator("article").filter({ hasText: `#${order.order_number}` });

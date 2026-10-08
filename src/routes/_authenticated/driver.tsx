@@ -173,10 +173,10 @@ function DriverApp() {
   return (
     <div className="mx-auto min-h-screen max-w-lg bg-background pb-10">
       <header className="sticky top-0 z-10 flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
-        <div className="flex items-center gap-2 font-extrabold">
+        <h1 className="flex items-center gap-2 text-base font-extrabold">
           <Bike className="h-5 w-5" />
           {ar ? "تطبيق المندوب" : "Driver"}
-        </div>
+        </h1>
         <div className="flex items-center gap-1">
           <Button
             size="sm"
