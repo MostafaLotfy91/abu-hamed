@@ -5,6 +5,7 @@ import { Heart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { pageHead } from "@/lib/seo";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { effectivePrice } from "@/lib/format";
@@ -14,6 +15,7 @@ import { fetchCategories, profilesQuery } from "@/lib/queries";
 import { ProductGallery } from "@/components/store/ProductGallery";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SizeGuide } from "@/components/store/SizeGuide";
+import { WhatsAppInlineIcon } from "@/components/store/WhatsAppButton";
 import { PRODUCT_FIELDS, type Product } from "@/lib/queries";
 import { useMoney } from "@/components/store/use-money";
 import { ProductCard, ProductImage } from "@/components/store/ProductCard";
@@ -28,14 +30,20 @@ import { cn } from "@/lib/utils";
 import { usePublishWaContext } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/product/$id")({
-  head: () => ({
-    meta: [
-      { title: "تفاصيل المنتج · Product" },
-      { name: "description", content: "المقاسات والألوان والسعر والتقييمات. Sizes, colors, price and reviews." },
-      { property: "og:title", content: "تفاصيل المنتج · Product" },
-      { property: "og:description", content: "Sizes, colors, price and reviews." }, { property: "og:type", content: "product" }, { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  // Just enough of the product for the <head> (title, description, share image) in the server HTML.
+  loader: async ({ params }) => {
+    const { data } = await supabase.from("products").select("name_ar,name_en,description_ar,description_en,images").eq("id", params.id).eq("is_active", true).maybeSingle();
+    return { seo: data ?? null };
+  },
+  head: ({ matches, loaderData }) => {
+    const p = loaderData?.seo;
+    const h = pageHead(matches, {
+      title: p ? { ar: p.name_ar, en: p.name_en } : { ar: "منتج", en: "Product" },
+      description: p ? { ar: p.description_ar ?? p.name_ar, en: p.description_en ?? p.name_en } : null,
+      image: p?.images?.[0] ?? null,
+    });
+    return { meta: [...h.meta, { property: "og:type", content: "product" }] };
+  },
   component: ProductPage,
 });
 
@@ -259,6 +267,7 @@ function ProductPage() {
 
       {stock > 0 && (
         <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t bg-background/95 p-3 backdrop-blur md:hidden">
+          <WhatsAppInlineIcon />
           <div className="min-w-0">
             <p className="truncate text-xs text-muted-foreground">{[pickedSize && sizeLabel(pickedSize, lang), needColor && tx(colors.find((c) => c.color_en === pickedColor) ?? null, "color")].filter(Boolean).join(" · ") || name}</p>
             <p className="font-bold">{money(pricing.current)}</p>

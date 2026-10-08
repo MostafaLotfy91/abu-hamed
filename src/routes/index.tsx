@@ -12,19 +12,11 @@ import { ProductCard } from "@/components/store/ProductCard";
 import { SectionHeader } from "@/components/store/SiteShell";
 import { Countdown } from "@/components/store/Countdown";
 import { EmptyState, ErrorState, ProductCardSkeleton } from "@/components/store/states";
+import { pageHead } from "@/lib/seo";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "تسوق الأزياء أونلاين · Fashion mall" },
-      { name: "description", content: "ملابس رجالي وحريمي وأطفال، أحذية، عبايات، جلابيب، عطور وإكسسوارات بتوصيل سريع. Fashion for the whole family." },
-      { property: "og:title", content: "تسوق الأزياء أونلاين · Fashion mall" },
-      { property: "og:description", content: "ملابس، أحذية، عبايات، عطور وإكسسوارات لكل العيلة." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: ({ matches }) => pageHead(matches),
   component: Home,
 });
 
@@ -158,7 +150,7 @@ function Home() {
       <Rail title={t("new_arrivals")} products={fresh.data} loading={fresh.isLoading} />
       <Rail title={t("best_sellers")} products={best.data} loading={best.isLoading} />
       <Rail title={t("seasonal_collection")} products={season.data} loading={season.isLoading} />
-      {(flash.error || best.error) && <ErrorState onRetry={() => { flash.refetch(); best.refetch(); fresh.refetch(); }} />}
+      {(flash.error || best.error || fresh.error || season.error) && <ErrorState onRetry={() => { flash.refetch(); best.refetch(); fresh.refetch(); season.refetch(); }} />}
     </div>
   );
 }

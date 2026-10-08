@@ -146,8 +146,10 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     await expect(page.locator("aside").getByText(s.discount, { exact: true })).toBeVisible();
 
     await visible(page.getByRole("button", { name: s.placeOrder })).click();
-    await expect(page).toHaveURL(/\/orders\/[0-9a-f-]{36}$/, { timeout: 20_000 });
+    // The order page opens with ?placed=1, which shows the confirmation banner.
+    await expect(page).toHaveURL(/\/orders\/[0-9a-f-]{36}\?placed=1$/, { timeout: 20_000 });
     await expect(toast(page, s.orderPlaced)).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: s.orderPlaced })).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: new RegExp(`${s.order} #\\d+`) })).toBeVisible();
     for (const label of Object.values(s.timeline).filter((l) => l !== s.timeline.cancelled)) {
       await expect(page.getByRole("listitem").filter({ hasText: label }).first()).toBeVisible();
@@ -184,7 +186,8 @@ test.describe("language toggle", () => {
   test("header toggle switches to English/LTR and persists across reloads", async ({ page }) => {
     await page.goto("/");
     await expectDir(page, "ar");
-    await page.getByRole("button", { name: "language" }).click();
+    // The toggle is named after the language it switches to.
+    await page.getByRole("banner").getByRole("button", { name: T.ar.language, exact: true }).click();
     await expectDir(page, "en");
     expect(await page.evaluate(() => localStorage.getItem("app.lang"))).toBe("en");
     await page.reload();

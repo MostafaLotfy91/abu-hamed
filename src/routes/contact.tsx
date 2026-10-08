@@ -3,17 +3,11 @@ import { Mail, Phone } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/store-settings";
 import { SocialIcons } from "@/lib/social";
+import { pageHead } from "@/lib/seo";
 import { WhatsAppIcon, useWhatsAppLink } from "@/components/store/WhatsAppButton";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title: "تواصل معنا · Contact us" },
-      { name: "description", content: "تواصل معنا عبر واتساب أو الهاتف أو وسائل التواصل. Reach us on WhatsApp, phone or social media." },
-      { property: "og:title", content: "تواصل معنا · Contact us" },
-      { property: "og:description", content: "Reach us on WhatsApp, phone or social media." },
-    ],
-  }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "تواصل معنا", en: "Contact us" } }),
   component: ContactPage,
 });
 

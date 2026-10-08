@@ -1,7 +1,10 @@
 import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures/test";
 import { ACCOUNTS, E2E_READY, SKIP_REASON } from "./fixtures/env";
-import { T, acceptNextDialog, login, parseWa, pngFile, toast, xlsxFile } from "./fixtures/helpers";
+import { T, login, parseWa, pngFile, toast, xlsxFile } from "./fixtures/helpers";
+
+/** Confirms the in-app AlertDialog used for destructive admin actions. */
+const confirmDialog = (page: Page, label: string) => page.getByRole("alertdialog").getByRole("button", { name: label }).click();
 import {
   WA, createPendingOrder, findBanner, findCoupon, findProductBySku, getOrder, lastImportJob, readSettings, updateSettings, variantsOf,
 } from "./fixtures/seed";
@@ -85,8 +88,8 @@ test.describe("admin", () => {
     // Delete
     await page.goto("/admin/products");
     await page.getByPlaceholder("Search / بحث").fill(sku);
-    acceptNextDialog(page);
     await rowButton(page, name, "حذف / Delete").click();
+    await confirmDialog(page, "حذف / Delete");
     await expect(row(page, name)).toHaveCount(0);
     await expect.poll(() => findProductBySku(sku)).toBeNull();
   });
@@ -117,8 +120,8 @@ test.describe("admin", () => {
     // Undo the last import from the history tab.
     await page.getByRole("tab", { name: "السجل" }).click();
     await expect(page.getByRole("row").filter({ hasText: file })).toContainText("مكتمل");
-    acceptNextDialog(page);
     await page.getByRole("button", { name: new RegExp(`التراجع عن آخر استيراد \\(${file.replace(/\./g, "\\.")}\\)`) }).click();
+    await confirmDialog(page, "تراجع / Undo");
     await expect(toast(page, /تم إخفاء \d+ منتج/)).toBeVisible();
     await expect.poll(async () => (await findProductBySku(code))?.is_active).toBe(false);
     await expect.poll(async () => (await lastImportJob(file))?.status).toBe("undone");
@@ -166,9 +169,10 @@ test.describe("admin", () => {
     await statusBtn(T.ar.timeline.preparing).click();
     await expect.poll(async () => (await getOrder(order.id)).status).toBe("preparing");
 
-    // Skipping out_for_delivery is rejected by the orders_guard trigger.
-    await statusBtn(T.ar.timeline.delivered).click();
-    await expect(toast(page, /invalid_transition/)).toBeVisible();
+    // Only moves the order flow allows are offered: from "preparing" there is no "delivered" button
+    // (the orders_guard trigger would reject it anyway).
+    await expect(statusBtn(T.ar.timeline.delivered)).toHaveCount(0);
+    await expect(statusBtn(T.ar.timeline.pending)).toHaveCount(0);
     expect((await getOrder(order.id)).status).toBe("preparing");
 
     await statusBtn(T.ar.timeline.out_for_delivery).click();
@@ -190,8 +194,8 @@ test.describe("admin", () => {
     await expect(row(page, code)).toHaveCount(1);
     expect(await findCoupon(code)).toMatchObject({ code, discount_type: "percent" });
 
-    acceptNextDialog(page);
     await rowButton(page, code, "حذف / Delete").click();
+    await confirmDialog(page, "حذف / Delete");
     await expect(row(page, code)).toHaveCount(0);
     await expect.poll(() => findCoupon(code)).toBeNull();
   });

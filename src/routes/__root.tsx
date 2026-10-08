@@ -13,7 +13,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { SettingsProvider, useSettings } from "@/lib/store-settings";
+import { SettingsProvider, settingsQuery, themeVars, useSettings, type StoreSettings } from "@/lib/store-settings";
+import { pageHead, storeName } from "@/lib/seo";
 import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart";
@@ -61,12 +62,23 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  // Store settings are loaded on the server so the first HTML already has the store's name, colours and meta.
+  loader: async ({ context }): Promise<{ settings: StoreSettings | null }> => {
+    try {
+      return { settings: (await context.queryClient.ensureQueryData(settingsQuery)) ?? null };
+    } catch {
+      return { settings: null };
+    }
+  },
+  head: ({ loaderData, matches }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "theme-color", content: loaderData?.settings?.primary_color ?? "#111111" },
+      ...(storeName(loaderData?.settings ?? null) ? [{ property: "og:site_name", content: storeName(loaderData?.settings ?? null) }] : []),
+      ...pageHead(matches).meta,
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -74,7 +86,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" },
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      loaderData?.settings?.logo_url ? { rel: "icon", href: loaderData.settings.logo_url } : { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      ...(loaderData?.settings?.logo_url ? [{ rel: "apple-touch-icon", href: loaderData.settings.logo_url }] : []),
     ],
   }),
   shellComponent: RootShell,
@@ -84,8 +97,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const settings = Route.useLoaderData()?.settings ?? null;
+  const lang = settings?.default_language === "en" ? "en" : "ar";
   return (
-    <html lang="ar" dir="rtl">
+    <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} style={themeVars(settings) as React.CSSProperties}>
       <head>
         <HeadContent />
       </head>
@@ -114,9 +129,10 @@ function Chrome() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { settings } = Route.useLoaderData();
   return (
     <QueryClientProvider client={queryClient}>
-      <SettingsProvider>
+      <SettingsProvider initial={settings}>
         <LangFromSettings>
           <AuthProvider>
             <CartProvider>

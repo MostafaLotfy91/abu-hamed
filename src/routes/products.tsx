@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { parseListSearch, toListSearch, type ListState } from "@/lib/catalog";
+import { pageHead } from "@/lib/seo";
 import { ProductListing } from "@/components/store/ProductListing";
 
 type ProductsSearch = { q?: string } & Partial<Record<string, unknown>>;
@@ -12,17 +13,7 @@ export const Route = createFileRoute("/products")({
     ...s,
     q: typeof s.q === "string" && s.q.trim() ? s.q : undefined,
   }),
-  head: () => ({
-    meta: [
-      { title: "كل المنتجات · All products" },
-      {
-        name: "description",
-        content: "تصفح وابحث في كل منتجات المتجر. Browse and search all products.",
-      },
-      { property: "og:title", content: "كل المنتجات · All products" },
-      { property: "og:description", content: "Browse and search all products." },
-    ],
-  }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "كل المنتجات", en: "All products" } }),
   component: ProductsPage,
 });
 

@@ -40,19 +40,35 @@ export function WhatsAppButton() {
   const link = useWhatsAppLink();
   if (!link || path.startsWith("/admin") || path.startsWith("/driver")) return null;
   const onProduct = ctx?.kind === "product";
+  // Pages with a sticky action bar on mobile (product, cart, checkout): keep the bar and totals clear.
+  const hideOnMobile = onProduct || path === "/cart" || path === "/checkout";
   return (
     <a href={link.href} target="_blank" rel="noopener noreferrer"
       aria-label={lang === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
-      className={cn("group fixed start-4 z-40 md:bottom-6", onProduct ? "bottom-44" : "bottom-20")}>
+      // On mobile product pages the sticky add-to-cart bar carries its own WhatsApp button instead.
+      className={cn("group fixed bottom-20 start-4 z-40 md:bottom-6", hideOnMobile && "hidden md:block")}>
       <span className="absolute inset-0 animate-ping rounded-full bg-whatsapp opacity-30" />
-      <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg">
-        <WhatsAppIcon />
+      <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg md:h-14 md:w-14">
+        <WhatsAppIcon className="h-6 w-6 md:h-7 md:w-7" />
       </span>
       {link.hours && (
         <span className="pointer-events-none absolute bottom-full start-0 mb-2 hidden w-max max-w-[220px] rounded-lg bg-foreground px-3 py-1.5 text-xs text-background shadow group-hover:block">
           {link.hours}
         </span>
       )}
+    </a>
+  );
+}
+
+/** Compact WhatsApp link for the mobile product sticky bar (same accessible name as the floating button). */
+export function WhatsAppInlineIcon() {
+  const { lang } = useI18n();
+  const link = useWhatsAppLink();
+  if (!link) return null;
+  return (
+    <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={lang === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border text-whatsapp">
+      <WhatsAppIcon className="h-6 w-6" />
     </a>
   );
 }

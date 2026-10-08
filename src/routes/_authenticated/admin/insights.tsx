@@ -6,10 +6,11 @@ import { EmptyState } from "@/components/store/states";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AskPanel } from "@/components/admin/insights/AskPanel";
 import { WeeklyPanel } from "@/components/admin/insights/WeeklyPanel";
+import { pageHead } from "@/lib/seo";
 import { AlertsPanel, ReturnsPanel } from "@/components/admin/insights/StockPanels";
 
 export const Route = createFileRoute("/_authenticated/admin/insights")({
-  head: () => ({ meta: [{ title: "التحليلات الذكية · AI insights" }, { name: "robots", content: "noindex" }] }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "التحليلات الذكية", en: "AI insights" }, noindex: true }),
   component: InsightsPage,
 });
 

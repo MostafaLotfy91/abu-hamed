@@ -52,7 +52,7 @@ export function AssistantProductCard({ p, sym, onNavigate }: Props) {
   return (
     <div className="space-y-2 rounded-xl border bg-card p-2">
       <div className="flex items-center gap-2">
-        {p.image ? <img src={p.image} alt="" className="h-14 w-14 rounded-lg object-cover" /> : <div className="h-14 w-14 rounded-lg bg-muted" />}
+        {p.image ? <img src={p.image} alt="" width={56} height={56} loading="lazy" className="h-14 w-14 rounded-lg object-cover" /> : <div className="h-14 w-14 rounded-lg bg-muted" />}
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{ar ? p.name_ar : p.name_en}</div>
           <div className="text-xs text-muted-foreground">{formatMoney(variant?.price ?? p.price, lang, sym)}</div>

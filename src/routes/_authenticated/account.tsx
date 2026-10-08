@@ -9,14 +9,15 @@ import { useAuth } from "@/lib/auth";
 import type { Product } from "@/lib/queries";
 import { AddressForm, addressLine, type Address } from "@/components/store/AddressForm";
 import { ProductCard } from "@/components/store/ProductCard";
-import { EmptyState, ProductGridSkeleton, RowSkeleton } from "@/components/store/states";
+import { EmptyState, ErrorState, ProductGridSkeleton, RowSkeleton } from "@/components/store/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { pageHead } from "@/lib/seo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/account")({
-  head: () => ({ meta: [{ title: "حسابي · My account" }, { name: "description", content: "Profile, addresses and wishlist" }, { property: "og:title", content: "My account" }, { property: "og:description", content: "Profile, addresses and wishlist" }] }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "حسابي", en: "My account" }, noindex: true }),
   component: Account,
 });
 
@@ -48,7 +49,7 @@ function Profile() {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const q = useQuery({ queryKey: ["profile", user?.id], queryFn: async () => (await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle()).data });
+  const q = useQuery({ queryKey: ["profile", user?.id], queryFn: async () => { const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle(); if (error) throw error; return data; } });
   useEffect(() => { if (q.data) { setName(q.data.full_name ?? ""); setPhone(q.data.phone ?? ""); } }, [q.data]);
   const save = async () => {
     const { error } = await supabase.from("profiles").upsert({ id: user!.id, full_name: name.slice(0, 100), phone: phone.slice(0, 30), email: user!.email });
@@ -56,8 +57,8 @@ function Profile() {
   };
   return (
     <div className="space-y-3 rounded-3xl bg-card p-4 shadow-card">
-      <div><Label>{t("full_name")}</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-      <div><Label>{t("phone")}</Label><Input dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+      <div><Label htmlFor="profile-name">{t("full_name")}</Label><Input id="profile-name" autoComplete="name" className="h-11" value={name} onChange={(e) => setName(e.target.value)} /></div>
+      <div><Label htmlFor="profile-phone">{t("phone")}</Label><Input id="profile-phone" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" className="h-11" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
       <Button onClick={save}>{t("save")}</Button>
     </div>
   );
@@ -66,8 +67,9 @@ function Profile() {
 function Addresses() {
   const { t } = useI18n();
   const [editing, setEditing] = useState<Address | "new" | null>(null);
-  const q = useQuery({ queryKey: ["addresses"], queryFn: async () => (await supabase.from("addresses").select("*").order("created_at", { ascending: false })).data ?? [] });
+  const q = useQuery({ queryKey: ["addresses"], queryFn: async () => { const { data, error } = await supabase.from("addresses").select("*").order("created_at", { ascending: false }); if (error) throw error; return data ?? []; } });
   if (q.isLoading) return <RowSkeleton />;
+  if (q.error) return <ErrorState onRetry={() => q.refetch()} />;
   return (
     <div className="space-y-3">
       {editing ? (
@@ -95,9 +97,15 @@ function Wishlist() {
   const { t } = useI18n();
   const q = useQuery({
     queryKey: ["wishlist"],
-    queryFn: async () => (await supabase.from("wishlist").select("products(*)").order("created_at", { ascending: false })).data?.map((r) => r.products).filter(Boolean) as Product[],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("wishlist").select("products(*)").order("created_at", { ascending: false });
+      if (error) throw error;
+      // Products that were deactivated since being saved are not shown.
+      return (data ?? []).map((r) => r.products).filter((p) => p && (p as Product).is_active) as Product[];
+    },
   });
   if (q.isLoading) return <ProductGridSkeleton n={4} />;
+  if (q.error) return <ErrorState onRetry={() => q.refetch()} />;
   if (!q.data?.length) return <EmptyState icon={<Heart className="h-8 w-8" />} title={t("wishlist_empty")} />;
   return <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{q.data.map((p) => <ProductCard key={p.id} p={p} />)}</div>;
 }

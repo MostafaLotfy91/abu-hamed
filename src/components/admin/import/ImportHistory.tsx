@@ -1,4 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { EmptyState, ErrorState, RowSkeleton } from "@/components/store/states";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,17 +20,22 @@ export function ImportHistory() {
       return data as unknown as Job[];
     },
   });
+  const [confirm, confirmDialog] = useConfirm();
   const last = q.data?.find((j) => j.status === "completed" || j.status === "failed");
   const undo = async (id: string) => {
-    if (!confirm("سيتم إخفاء كل المنتجات التي أُنشئت في هذا الاستيراد. متابعة؟")) return;
+    if (!(await confirm({ title: "التراجع عن هذا الاستيراد؟ / Undo this import?", description: "سيتم إخفاء كل المنتجات التي أُنشئت فيه. / All products it created will be hidden.", confirmLabel: "تراجع / Undo", destructive: true }))) return;
     const { data, error } = await supabase.rpc("admin_undo_import" as any, { _job_id: id } as any);
     if (error) return toast.error(error.message);
     toast.success(`تم إخفاء ${data} منتج`);
     qc.invalidateQueries({ queryKey: ["import_jobs"] });
     qc.invalidateQueries({ queryKey: ["admin"] });
   };
+  if (q.isLoading) return <RowSkeleton n={3} />;
+  if (q.error) return <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} />;
+  if (!q.data?.length) return <EmptyState title="لا توجد عمليات استيراد بعد / No imports yet" />;
   return (
     <div className="space-y-3">
+      {confirmDialog}
       {last && <Button variant="outline" onClick={() => undo(last.id)}><Undo2 className="h-4 w-4" />التراجع عن آخر استيراد ({last.file_name})</Button>}
       <div className="overflow-auto rounded-xl border">
         <table className="w-full text-sm">

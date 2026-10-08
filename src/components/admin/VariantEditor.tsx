@@ -128,7 +128,9 @@ export function VariantEditor({ productId, sku, sizes: preset }: { productId: st
                 <td><Button size="icon" variant="ghost" aria-label={`حذف / Delete ${[v.size, v.color_en].filter(Boolean).join(" / ")}`} title="حذف / Delete" onClick={() => del(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
               </tr>
             ))}
-            {!q.data?.length && <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">لا توجد اختيارات — المنتج يباع بمخزونه العام / No variants</td></tr>}
+            {q.isLoading && <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">جاري التحميل… / Loading…</td></tr>}
+            {q.error && <tr><td colSpan={7} className="p-4 text-center text-destructive">{(q.error as Error).message} <Button size="sm" variant="outline" onClick={() => q.refetch()}>إعادة المحاولة / Retry</Button></td></tr>}
+            {q.isSuccess && !q.data?.length && <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">لا توجد اختيارات — المنتج يباع بمخزونه العام / No variants</td></tr>}
           </tbody>
         </table>
       </div>

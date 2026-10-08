@@ -19,7 +19,7 @@ const bodySchema = z.object({
 });
 
 const COLS =
-  "id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,stock,images,gender,season,size_type,category_id,product_variants(id,size,color_ar,color_en,color_hex,price,stock,is_active)";
+  "id,name_ar,name_en,brand,price,old_price,flash_price,flash_ends_at,stock,images,thumbnails,gender,season,size_type,category_id,product_variants(id,size,color_ar,color_en,color_hex,price,stock,is_active)";
 
 function toProduct(r: any): AssistantProduct {
   const base = effectivePrice(r).current;
@@ -29,7 +29,7 @@ function toProduct(r: any): AssistantProduct {
     .map((v: any) => ({ id: v.id, size: v.size, color_ar: v.color_ar, color_en: v.color_en, color_hex: v.color_hex, price: v.price != null ? Number(v.price) : base, stock: Number(v.stock) }));
   const has_variants = all.length > 0;
   return {
-    id: r.id, name_ar: r.name_ar, name_en: r.name_en, price: base, image: r.images?.[0] ?? null,
+    id: r.id, name_ar: r.name_ar, name_en: r.name_en, price: base, image: r.thumbnails?.[0] ?? r.images?.[0] ?? null,
     has_variants, variants, size_type: r.size_type ?? null, stock: Number(r.stock),
     in_stock: has_variants ? variants.length > 0 : Number(r.stock) > 0,
   };

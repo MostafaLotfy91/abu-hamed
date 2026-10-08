@@ -30,7 +30,8 @@ export function ShoppingAssistant() {
   // Suggestion chips are the store's own top-level departments (no hardcoded catalogue phrases).
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, staleTime: 5 * 60_000 });
   const chips = (cats.data ?? []).filter((c) => !c.parent_id && c.is_active).slice(0, 4).map((c) => (ar ? c.name_ar : c.name_en));
-  const onProduct = useRouterState({ select: (s) => s.location.pathname.startsWith("/product/") });
+  // Hidden on mobile where a sticky action bar would be covered (product, cart, checkout).
+  const onProduct = useRouterState({ select: (s) => s.location.pathname.startsWith("/product/") || s.location.pathname === "/cart" || s.location.pathname === "/checkout" });
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -104,7 +105,7 @@ export function ShoppingAssistant() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className={`fixed ${onProduct ? "bottom-44" : "bottom-20"} end-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6`}
+          className={`fixed bottom-20 end-4 z-40 ${onProduct ? "hidden md:flex" : "flex"} h-12 w-12 md:bottom-6 md:h-14 md:w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:bottom-6`}
           aria-label={ar ? "الستايلست" : "Stylist"}
         >
           <Shirt className="h-6 w-6" />

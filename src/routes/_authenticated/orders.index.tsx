@@ -7,10 +7,11 @@ import { useI18n } from "@/lib/i18n";
 import { useMoney } from "@/components/store/use-money";
 import { StatusBadge } from "@/components/store/OrderTimeline";
 import { EmptyState, ErrorState, RowSkeleton } from "@/components/store/states";
+import { pageHead } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/orders/")({
-  head: () => ({ meta: [{ title: "طلباتي · My orders" }, { name: "description", content: "Order history" }, { property: "og:title", content: "My orders" }, { property: "og:description", content: "Order history" }] }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "طلباتي", en: "My orders" }, noindex: true }),
   component: Orders,
 });
 

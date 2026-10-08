@@ -10,6 +10,7 @@ import { test as base, expect, type BrowserContext } from "@playwright/test";
 import { SUPABASE_URL, runTag } from "./env";
 import { cleanupTag, createCatalog, ensureAccounts, type AccountIds, type Catalog } from "./seed";
 import { assistantStream, insightsStream, ONE_PX_PNG } from "./mocks";
+import { alignClock } from "./clock";
 
 export type Lang = "ar" | "en";
 
@@ -31,6 +32,7 @@ export function setInitialLang(l: Lang) {
 }
 
 async function installGuards(context: BrowserContext) {
+  await alignClock(context);
   // AI is always mocked. Specs override with page.route (page routes win over context routes).
   await context.route("**/api/assistant", (route) =>
     route.fulfill({ status: 200, contentType: "application/x-ndjson", body: assistantStream([{ type: "text", delta: "(mock)" }, { type: "products", items: [] }]) }),

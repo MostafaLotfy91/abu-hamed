@@ -29,7 +29,7 @@ export function SearchBox() {
     enabled: debounced.length >= 1,
     queryFn: async () => {
       const s = debounced.replace(/[%,()]/g, " ");
-      const { data } = await supabase.from("products").select("id,name_ar,name_en,images").eq("is_active", true)
+      const { data } = await supabase.from("products").select("id,name_ar,name_en,images,thumbnails").eq("is_active", true)
         .or(`name_ar.ilike.%${s}%,name_en.ilike.%${s}%,brand.ilike.%${s}%`).limit(6);
       return data ?? [];
     },
@@ -64,7 +64,7 @@ export function SearchBox() {
             suggestions.map((s) => (
               <button key={s.id} onClick={() => { setOpen(false); setQ(""); nav({ to: "/product/$id", params: { id: s.id } }); }}
                 className="flex w-full items-center gap-3 px-3 py-2 text-start text-sm hover:bg-accent">
-                {s.images?.[0] && <img src={s.images[0]} alt="" className="h-8 w-8 rounded-md object-cover" />}
+                {(s.thumbnails?.[0] ?? s.images?.[0]) && <img src={s.thumbnails?.[0] ?? s.images?.[0]} alt="" width={32} height={32} loading="lazy" className="h-8 w-8 rounded-md object-cover" />}
                 {tx(s, "name")}
               </button>
             ))

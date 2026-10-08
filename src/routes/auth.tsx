@@ -10,18 +10,12 @@ import { StoreLogo } from "@/components/store/SiteShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { pageHead } from "@/lib/seo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: z.object({ redirect: z.string().optional() }),
-  head: () => ({
-    meta: [
-      { title: "تسجيل الدخول · Sign in" },
-      { name: "description", content: "سجل دخولك أو أنشئ حساب جديد. Sign in or create an account." },
-      { property: "og:title", content: "تسجيل الدخول · Sign in" },
-      { property: "og:description", content: "Sign in or create an account." },
-    ],
-  }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "تسجيل الدخول", en: "Sign in" }, noindex: true }),
   component: AuthPage,
 });
 
@@ -106,10 +100,10 @@ function AuthPage() {
           <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="email">{t("email")}</TabsTrigger><TabsTrigger value="phone">{t("phone")}</TabsTrigger></TabsList>
           <TabsContent value="email">
             <form onSubmit={emailSubmit} className="space-y-3 pt-2">
-              {mode === "up" && <div><Label>{t("full_name")}</Label><Input value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} /></div>}
-              <div><Label>{t("email")}</Label><Input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-              <div><Label>{t("password")}</Label><Input type="password" dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} /></div>
-              <Button type="submit" className="w-full" disabled={busy}>{mode === "in" ? t("sign_in") : t("sign_up")}</Button>
+              {mode === "up" && <div><Label htmlFor="auth-name">{t("full_name")}</Label><Input id="auth-name" autoComplete="name" className="h-11" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} /></div>}
+              <div><Label htmlFor="auth-email">{t("email")}</Label><Input id="auth-email" type="email" inputMode="email" autoComplete="email" dir="ltr" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+              <div><Label htmlFor="auth-password">{t("password")}</Label><Input id="auth-password" type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} dir="ltr" className="h-11" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} /></div>
+              <Button type="submit" className="h-11 w-full" disabled={busy}>{mode === "in" ? t("sign_in") : t("sign_up")}</Button>
             </form>
             <button className="mt-3 w-full text-center text-sm font-semibold text-primary" onClick={() => setMode(mode === "in" ? "up" : "in")}>
               {mode === "in" ? t("sign_up") : t("sign_in")}
@@ -117,9 +111,9 @@ function AuthPage() {
           </TabsContent>
           <TabsContent value="phone">
             <form onSubmit={phoneSubmit} className="space-y-3 pt-2">
-              <div><Label>{t("phone")}</Label><Input type="tel" dir="ltr" placeholder="+20..." value={phone} onChange={(e) => setPhone(e.target.value)} required disabled={otpSent} /></div>
-              {otpSent && <div><Label>{t("otp_code")}</Label><Input dir="ltr" inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value)} required maxLength={6} /></div>}
-              <Button type="submit" className="w-full" disabled={busy}>{otpSent ? t("verify") : t("send_code")}</Button>
+              <div><Label htmlFor="auth-phone">{t("phone")}</Label><Input id="auth-phone" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" className="h-11" placeholder="+20..." value={phone} onChange={(e) => setPhone(e.target.value)} required disabled={otpSent} /></div>
+              {otpSent && <div><Label htmlFor="auth-otp">{t("otp_code")}</Label><Input id="auth-otp" dir="ltr" inputMode="numeric" autoComplete="one-time-code" className="h-11" value={otp} onChange={(e) => setOtp(e.target.value)} required maxLength={6} /></div>}
+              <Button type="submit" className="h-11 w-full" disabled={busy}>{otpSent ? t("verify") : t("send_code")}</Button>
             </form>
           </TabsContent>
         </Tabs>

@@ -20,7 +20,7 @@ export function AddressForm({ initial, onDone, onCancel }: { initial?: Address |
   });
   const [busy, setBusy] = useState(false);
   const field = (k: keyof typeof f, label: DictKey, req = false, type = "text") => (
-    <div><Label>{t(label)}{req && " *"}</Label><Input type={type} value={f[k]} required={req} maxLength={200} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>
+    <div><Label htmlFor={`addr-${String(k)}`}>{t(label)}{req && " *"}</Label><Input id={`addr-${String(k)}`} type={type} inputMode={type === "tel" ? "tel" : undefined} dir={type === "tel" ? "ltr" : undefined} className="h-11" value={f[k]} required={req} maxLength={200} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>
   );
   const save = async (e: React.FormEvent) => {
     e.preventDefault();

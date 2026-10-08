@@ -2,10 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-// Table query: supabase.from(t).select().order().limit() -> one row.
+// Table query (server-side paging): supabase.from(t).select("*", { count }).order()[.eq/.or]().range() -> one row.
 vi.mock("@/integrations/supabase/client", () => {
   const rows = [{ id: "1", code: "SALE", value: 10, image_url: null, is_active: true }];
-  const chain = { select: () => chain, order: () => chain, eq: () => chain, limit: async () => ({ data: rows, error: null }) };
+  const chain = { select: () => chain, order: () => chain, eq: () => chain, or: () => chain, range: async () => ({ data: rows, error: null, count: rows.length }) };
   return { supabase: { from: () => chain } };
 });
 

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { WhatsAppOrderButton } from "@/components/store/WhatsAppButton";
 import { usePublishWaContext } from "@/lib/whatsapp";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +19,7 @@ import { ProductImage } from "@/components/store/ProductCard";
 import { Button } from "@/components/ui/button";
 import { useLatestLocation } from "@/lib/drivers";
 import { LiveMap } from "@/components/store/LiveMap";
+import { pageHead } from "@/lib/seo";
 import { useSettings } from "@/lib/store-settings";
 
 function LiveTracking({ orderId }: { orderId: string }) {
@@ -51,7 +52,9 @@ function LiveTracking({ orderId }: { orderId: string }) {
 }
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
-  head: () => ({ meta: [{ title: "تفاصيل الطلب · Order details" }, { name: "description", content: "Order details and live status" }, { property: "og:title", content: "Order details" }, { property: "og:description", content: "Live order status" }] }),
+  // ?placed=1 right after checkout shows the confirmation banner.
+  validateSearch: (s: Record<string, unknown>): { placed?: 1 } => (s.placed === 1 || s.placed === "1" ? { placed: 1 } : {}),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "تفاصيل الطلب", en: "Order details" }, noindex: true }),
   component: OrderDetail,
 });
 
@@ -79,6 +82,7 @@ export function useOrder(id: string) {
 
 function OrderDetail() {
   const { id } = Route.useParams();
+  const { placed } = Route.useSearch();
   const { t, tx, lang } = useI18n();
   const money = useMoney();
   const q = useOrder(id);
@@ -98,6 +102,15 @@ function OrderDetail() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
       <div className="space-y-4">
+        {placed && (
+          <section role="status" className="rounded-3xl border border-success/30 bg-success/10 p-4">
+            <p className="text-lg font-extrabold">{t("order_placed")} #{o.order_number}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {lang === "ar" ? "هنراجع طلبك ونأكده قريباً، وتقدر تتابع حالته من هنا. الدفع عند الاستلام." : "We'll review and confirm your order shortly; track its status here. Payment is cash on delivery."}
+            </p>
+            <Link to="/products" className="mt-3 inline-flex h-10 items-center rounded-md border bg-background px-4 text-sm font-semibold">{lang === "ar" ? "متابعة التسوق" : "Continue shopping"}</Link>
+          </section>
+        )}
         <section className="rounded-3xl bg-card p-4 shadow-card">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h1 className="text-xl font-extrabold">{t("order")} #{o.order_number}</h1>

@@ -55,11 +55,11 @@ export default defineConfig({
       },
     },
   ],
-  // Opt-in: E2E_WEB_SERVER=1 starts `vite dev --mode test`, so Vite loads .env.test (VITE_SUPABASE_* must point at
-  // the local/staging project). Only allowed for a local base URL.
+  // Opt-in: E2E_WEB_SERVER=1 starts the app via scripts/dev-with-env-test.mjs, which puts .env.test in the server's
+  // environment (ranked above .env) after the allowlist check. Only allowed for a local base URL.
   webServer: startServer && isLocalUrl(BASE_URL)
     ? {
-        command: `npx vite dev --mode test --port ${port} --strictPort`,
+        command: `node scripts/dev-with-env-test.mjs ${port}`,
         url: BASE_URL,
         reuseExistingServer: true,
         timeout: 180_000,

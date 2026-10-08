@@ -1,7 +1,9 @@
 import { useCallback } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { pageHead } from "@/lib/seo";
 import { parseListSearch, profileOf, toListSearch, type ListState } from "@/lib/catalog";
 import { descendantIds, fetchCategories, profilesQuery } from "@/lib/queries";
 import { ProductListing } from "@/components/store/ProductListing";
@@ -10,14 +12,15 @@ import { ProductGridSkeleton, ErrorState, EmptyState } from "@/components/store/
 export const Route = createFileRoute("/category/$id")({
   // Listing filters live in the URL so reloads and shared links keep them (see parseListSearch).
   validateSearch: (s: Record<string, unknown>): Partial<Record<string, unknown>> => s,
-  head: () => ({
-    meta: [
-      { title: "قسم المنتجات · Category" },
-      { name: "description", content: "منتجات القسم. Products in this category." },
-      { property: "og:title", content: "قسم المنتجات · Category" },
-      { property: "og:description", content: "Products in this category." },
-    ],
-  }),
+  loader: async ({ params }) => {
+    const { data } = await supabase.from("categories").select("name_ar,name_en,image_url").eq("id", params.id).maybeSingle();
+    return { seo: data ?? null };
+  },
+  head: ({ matches, loaderData }) =>
+    pageHead(matches, {
+      title: loaderData?.seo ? { ar: loaderData.seo.name_ar, en: loaderData.seo.name_en } : { ar: "قسم", en: "Category" },
+      image: loaderData?.seo?.image_url ?? null,
+    }),
   component: CategoryPage,
 });
 
@@ -44,14 +47,14 @@ function CategoryPage() {
   const kids = all.filter((c) => c.parent_id === id && c.is_active);
   return (
     <div className="space-y-4">
-      <nav className="flex flex-wrap gap-1 text-xs text-muted-foreground">
-        <Link to="/categories">{t("categories")}</Link>
-        {chain.map((c) => <span key={c.id}> / <Link to="/category/$id" params={{ id: c.id }}>{tx(c, "name")}</Link></span>)}
+      <nav aria-label={t("categories")} className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <Link to="/categories" className="inline-flex min-h-8 items-center hover:text-foreground">{t("categories")}</Link>
+        {chain.map((c) => <span key={c.id} className="inline-flex items-center gap-1"><span aria-hidden>/</span><Link to="/category/$id" params={{ id: c.id }} className="inline-flex min-h-8 items-center hover:text-foreground">{tx(c, "name")}</Link></span>)}
       </nav>
       {kids.length > 0 && (
         <div className="-mx-3 flex gap-2 overflow-x-auto px-3 scrollbar-none">
           {kids.map((k) => (
-            <Link key={k.id} to="/category/$id" params={{ id: k.id }} className="shrink-0 rounded-full border bg-card px-4 py-1.5 text-sm font-semibold hover:border-primary">{tx(k, "name")}</Link>
+            <Link key={k.id} to="/category/$id" params={{ id: k.id }} className="inline-flex h-10 shrink-0 items-center rounded-full border bg-card px-4 text-sm font-semibold hover:border-primary">{tx(k, "name")}</Link>
           ))}
         </div>
       )}

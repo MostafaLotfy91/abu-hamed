@@ -14,26 +14,11 @@ import { addressLine } from "@/components/store/AddressForm";
 import { EmptyState, RowSkeleton } from "@/components/store/states";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/driver")({
-  head: () => ({
-    meta: [
-      { title: "تطبيق المندوب · Driver app" },
-      { name: "description", content: "Assigned deliveries, navigation and live status for store drivers." },
-      { property: "og:title", content: "Driver app" },
-      { property: "og:description", content: "Assigned deliveries and live status for drivers." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "theme-color", content: "#0f8a5f" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "robots", content: "noindex" },
-    ],
-    links: [
-      { rel: "manifest", href: "/driver.webmanifest" },
-      { rel: "apple-touch-icon", href: "/driver-icon-192.png" },
-    ],
-  }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "تطبيق المندوب", en: "Driver app" }, noindex: true }),
   component: DriverApp,
 });
 

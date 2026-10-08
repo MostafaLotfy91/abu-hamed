@@ -10,7 +10,7 @@ They create users, orders, products and temporarily change `store_settings`, so 
 npx supabase start                    # needs Docker; a fresh stack applies every file in supabase/migrations
 node scripts/make-env-test.mjs        # writes .env.test from `supabase status` (localhost only, keys not printed)
 npx playwright install chromium       # once
-npx playwright test                   # E2E_WEB_SERVER=1 in .env.test starts `vite dev --mode test` for you
+npx playwright test                   # E2E_WEB_SERVER=1 in .env.test starts the app for you
 npx supabase stop                     # when done
 ```
 
@@ -64,7 +64,7 @@ npx playwright test
    E2E_DRIVER_PASSWORD=<at least 6 chars>
 
    # Optional
-   # E2E_WEB_SERVER=1          # let Playwright start `vite dev --mode test` (Vite then loads .env.test)
+   # E2E_WEB_SERVER=1          # let Playwright start the app via scripts/dev-with-env-test.mjs
    # E2E_WORKERS=1             # default 1: specs share one DB and one store_settings row
    # E2E_ALLOW_REMOTE=staging  # REQUIRED to target a non-localhost app/Supabase (staging only)
    ```
@@ -73,7 +73,7 @@ npx playwright test
 
 5. The app must point at the same Supabase as the seed. Either run it yourself with the test env:
    ```bash
-   npx vite dev --mode test      # loads .env.test (values there override .env)
+   node scripts/dev-with-env-test.mjs   # .env.test values in the environment (ranked above .env)
    ```
    or set `E2E_WEB_SERVER=1` and let Playwright start it.
 

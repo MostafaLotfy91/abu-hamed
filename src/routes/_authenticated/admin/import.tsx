@@ -4,10 +4,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/store/states";
 import { ImportWizard } from "@/components/admin/import/ImportWizard";
 import { BulkImages } from "@/components/admin/import/BulkImages";
+import { pageHead } from "@/lib/seo";
 import { ImportHistory } from "@/components/admin/import/ImportHistory";
 
 export const Route = createFileRoute("/_authenticated/admin/import")({
-  head: () => ({ meta: [{ title: "استيراد المنتجات · Product import" }, { name: "robots", content: "noindex" }] }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "استيراد المنتجات", en: "Product import" }, noindex: true }),
   component: Page,
 });
 

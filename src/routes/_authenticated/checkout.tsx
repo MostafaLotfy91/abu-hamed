@@ -16,10 +16,11 @@ import { useMoney } from "@/components/store/use-money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/checkout")({
-  head: () => ({ meta: [{ title: "إتمام الطلب · Checkout" }, { name: "description", content: "Checkout" }, { property: "og:title", content: "Checkout" }, { property: "og:description", content: "Complete your order" }] }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "إتمام الطلب", en: "Checkout" }, noindex: true }),
   component: Checkout,
 });
 
@@ -91,7 +92,7 @@ function Checkout() {
     cart.clear();
     qc.invalidateQueries({ queryKey: ["orders"] });
     toast.success(t("order_placed"));
-    nav({ to: "/orders/$id", params: { id: data as string } });
+    nav({ to: "/orders/$id", params: { id: data as string }, search: { placed: 1 } });
   };
 
   return (

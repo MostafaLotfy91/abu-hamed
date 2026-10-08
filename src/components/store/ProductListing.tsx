@@ -196,7 +196,7 @@ export function ProductListing({
             }}
           >
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 lg:hidden">
+              <Button variant="outline" className="h-10 gap-1 lg:hidden">
                 <SlidersHorizontal className="h-4 w-4" />
                 {t("filters")}
                 {chips.length > 0 && ` (${chips.length})`}
@@ -238,7 +238,7 @@ export function ProductListing({
           value={f.sort ?? "newest"}
           onValueChange={(v) => setF({ ...f, sort: v as ListState["sort"] })}
         >
-          <SelectTrigger className="h-9 w-44" aria-label={t("sort")}>
+          <SelectTrigger className="h-10 w-44" aria-label={t("sort")}>
             <SelectValue placeholder={t("sort")} />
           </SelectTrigger>
           <SelectContent>

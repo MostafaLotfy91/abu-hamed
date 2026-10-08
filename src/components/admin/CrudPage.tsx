@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, type ReactNode } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RowSkeleton, EmptyState, ErrorState } from "@/components/store/states";
-import { BulkBar, Check, Pager, paginate, Segmented } from "./TableKit";
+import { BulkBar, Check, PAGE, Pager, Segmented } from "./TableKit";
+import { useConfirm } from "./ConfirmDialog";
 
 export type Field = {
   key: string;
@@ -63,30 +64,40 @@ export function CrudPage({
 }) {
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const [search, setSearch] = useState("");
-  const q = useQuery({
-    queryKey: ["admin", table, filter],
-    queryFn: async () => {
-      let qq = supabase.from(table).select("*").order(order, { ascending });
-      for (const [k, v] of Object.entries(filter ?? {})) qq = qq.eq(k, v);
-      const { data, error } = await qq.limit(1000);
-      if (error) throw error;
-      return data as Record<string, unknown>[];
-    },
-  });
+  const [term, setTerm] = useState("");
+  useEffect(() => { const id = setTimeout(() => setTerm(search.trim()), 300); return () => clearTimeout(id); }, [search]);
   const hasActive = fields.some((f) => f.key === "is_active");
   const [activeF, setActiveF] = useState<"all" | "on" | "off">("all");
   const [page, setPage] = useState(0);
   const [sel, setSel] = useState<Set<string>>(new Set());
-  const rows = (q.data ?? [])
-    .filter((r) => !search || JSON.stringify(r).toLowerCase().includes(search.toLowerCase()))
-    .filter((r) => activeF === "all" || !!r.is_active === (activeF === "on"));
-  const { pageRows, pages, page: cur } = paginate(rows, page);
+  const [confirm, confirmDialog] = useConfirm();
+  // Server-side paging and search (text columns, case-insensitive), so large tables load one page at a time.
+  const searchKeys = fields.filter((f) => !f.type || f.type === "text").map((f) => f.key);
+  const q = useQuery({
+    queryKey: ["admin", table, filter, page, term, activeF],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      let qq = supabase.from(table).select("*", { count: "exact" }).order(order, { ascending });
+      for (const [k, v] of Object.entries(filter ?? {})) qq = qq.eq(k, v);
+      if (hasActive && activeF !== "all") qq = qq.eq("is_active", activeF === "on");
+      // Characters that would break the PostgREST or() filter or act as wildcards.
+      const s = term.replace(/[%,()*\\]/g, " ").trim();
+      if (s && searchKeys.length) qq = qq.or(searchKeys.map((k) => `${k}.ilike.%${s}%`).join(","));
+      const { data, error, count } = await qq.range(page * PAGE, page * PAGE + PAGE - 1);
+      if (error) throw error;
+      return { rows: (data ?? []) as Record<string, unknown>[], total: count ?? 0 };
+    },
+  });
+  const pageRows = q.data?.rows ?? [];
+  const total = q.data?.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  const cur = Math.min(page, pages - 1);
   const listFields = fields.filter((f) => f.list);
   const allOnPage = pageRows.length > 0 && pageRows.every((r) => sel.has(r.id as string));
   const toggle = (id: string, on: boolean) => setSel((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n; });
   const bulk = async (kind: "on" | "off" | "delete") => {
     const ids = [...sel];
-    if (kind === "delete" && !confirm(`Delete ${ids.length}? / حذف ${ids.length}؟`)) return;
+    if (kind === "delete" && !(await confirm({ title: `حذف ${ids.length} عنصر؟ / Delete ${ids.length} items?`, description: "لا يمكن التراجع / This cannot be undone.", confirmLabel: "حذف / Delete", destructive: true }))) return;
     const res = kind === "delete" ? await supabase.from(table).delete().in("id", ids) : await supabase.from(table).update({ is_active: kind === "on" } as never).in("id", ids);
     if (res.error) return toast.error(res.error.message);
     toast.success(`✓ ${ids.length}`); setSel(new Set()); q.refetch();
@@ -112,7 +123,7 @@ export function CrudPage({
     q.refetch();
   };
   const del = async (id: string) => {
-    if (!confirm("Delete?")) return;
+    if (!(await confirm({ title: "حذف هذا العنصر؟ / Delete this item?", description: "لا يمكن التراجع / This cannot be undone.", confirmLabel: "حذف / Delete", destructive: true }))) return;
     const { error } = await supabase.from(table).delete().eq("id", id);
     if (error) toast.error(error.message); else q.refetch();
   };
@@ -133,9 +144,10 @@ export function CrudPage({
         {hasActive && <><Button size="sm" variant="outline" onClick={() => bulk("on")}>إظهار / Activate</Button><Button size="sm" variant="outline" onClick={() => bulk("off")}>إخفاء / Hide</Button></>}
         <Button size="sm" variant="outline" className="text-destructive" onClick={() => bulk("delete")}><Trash2 className="h-4 w-4" />حذف</Button>
       </BulkBar>
-      {q.isLoading ? <RowSkeleton n={5} /> : q.error ? <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} /> : !rows.length ? <EmptyState title="—" /> : (
+      {confirmDialog}
+      {q.isLoading ? <RowSkeleton n={5} /> : q.error ? <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} /> : !pageRows.length ? <EmptyState title={term ? "لا نتائج / No results" : "لا توجد بيانات بعد / Nothing here yet"} /> : (
         <div className="space-y-2"><div className="overflow-x-auto rounded-md border bg-card">
-          <table className="w-full text-sm">
+          <table className="w-full whitespace-nowrap text-sm">
             <thead className="sticky top-0 bg-muted/60 text-start text-xs text-muted-foreground"><tr><th className="w-10 p-3"><Check label="select all" checked={allOnPage} onChange={(v) => setSel((s) => { const n = new Set(s); pageRows.forEach((r) => (v ? n.add(r.id as string) : n.delete(r.id as string))); return n; })} /></th>{listFields.map((f) => <th key={f.key} className="p-3 text-start font-semibold">{f.label}</th>)}<th /></tr></thead>
             <tbody className="divide-y">
               {pageRows.map((r) => (
@@ -159,7 +171,7 @@ export function CrudPage({
               ))}
             </tbody>
           </table>
-        </div><Pager page={cur} pages={pages} total={rows.length} onPage={setPage} /></div>
+        </div><Pager page={cur} pages={pages} total={total} onPage={setPage} /></div>
       )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>

@@ -6,6 +6,15 @@ export const ORDER_FLOW = ["pending", "confirmed", "preparing", "out_for_deliver
 export const ALL_STATUSES = [...ORDER_FLOW, "cancelled"] as const;
 export const statusKey = (s: string) => `status_${s}` as DictKey;
 
+/** Allowed next statuses; mirrors the orders_guard trigger (delivered and cancelled are final). */
+export const NEXT_STATUSES: Record<string, readonly string[]> = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["preparing", "out_for_delivery", "cancelled"],
+  preparing: ["out_for_delivery", "cancelled"],
+  out_for_delivery: ["delivered", "cancelled"],
+};
+export const canMoveTo = (from: string, to: string) => (NEXT_STATUSES[from] ?? []).includes(to);
+
 export function StatusBadge({ status }: { status: string }) {
   const { t } = useI18n();
   const tone = status === "delivered" ? "bg-success/15 text-success" : status === "cancelled" ? "bg-destructive/10 text-destructive" : status === "pending" ? "bg-brand-secondary/25 text-brand-secondary-foreground" : "bg-primary-soft text-primary";

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { LOW_STOCK } from "@/lib/fashion";
 import { restockQty } from "@/lib/insights-types";
-import { RowSkeleton } from "@/components/store/states";
+import { ErrorState, RowSkeleton } from "@/components/store/states";
 import { runInsight } from "./api";
 import { DataView } from "./DataView";
 
@@ -12,6 +12,7 @@ export function AlertsPanel({ ar }: { ar: boolean }) {
   const low = useQuery({ queryKey: ["insight", "low"], queryFn: () => runInsight("stock_by_variant", { days: PERIOD, limit: 30, sort: "low_stock" }) });
   const fast = useQuery({ queryKey: ["insight", "fast"], queryFn: () => runInsight("stock_by_variant", { days: PERIOD, limit: 30, sort: "fast_selling" }) });
   if (low.isLoading || fast.isLoading) return <RowSkeleton n={4} />;
+  if (low.error || fast.error) return <ErrorState onRetry={() => { low.refetch(); fast.refetch(); }} message={((low.error ?? fast.error) as Error).message} />;
   const lowRows = (low.data ?? []).filter((r) => Number(r.stock) <= LOW_STOCK);
   const fastRows = (fast.data ?? []).filter((r) => Number(r.sold) > 0);
   const restock = [...(fast.data ?? []), ...lowRows]
@@ -34,6 +35,7 @@ export function ReturnsPanel({ ar }: { ar: boolean }) {
   const byProduct = useQuery({ queryKey: ["insight", "rr_p"], queryFn: () => runInsight("return_rate", { days: 90, by: "product", limit: 20 }) });
   const byCat = useQuery({ queryKey: ["insight", "rr_c"], queryFn: () => runInsight("return_rate", { days: 90, by: "category", limit: 20 }) });
   if (byProduct.isLoading || byCat.isLoading) return <RowSkeleton n={4} />;
+  if (byProduct.error || byCat.error) return <ErrorState onRetry={() => { byProduct.refetch(); byCat.refetch(); }} message={((byProduct.error ?? byCat.error) as Error).message} />;
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">{ar ? "آخر ٩٠ يوم. اسأل المحلل «أنهي منتجات مرتجعاتها عالية وليه؟» للأسباب المحتملة." : "Last 90 days. Ask the analyst for likely reasons."}</p>

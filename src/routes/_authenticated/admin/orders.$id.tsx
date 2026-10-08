@@ -7,7 +7,8 @@ import { useSettings } from "@/lib/store-settings";
 import { formatCount } from "@/lib/format";
 import { useOrder } from "../orders.$id";
 import { useMoney } from "@/components/store/use-money";
-import { ALL_STATUSES, OrderTimeline, StatusBadge, statusKey } from "@/components/store/OrderTimeline";
+import { ALL_STATUSES, OrderTimeline, StatusBadge, canMoveTo, statusKey } from "@/components/store/OrderTimeline";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { addressLine } from "@/components/store/AddressForm";
 import { ErrorState, RowSkeleton } from "@/components/store/states";
 import { Button } from "@/components/ui/button";
@@ -58,11 +59,13 @@ function Page() {
   const { settings } = useSettings();
   const money = useMoney();
   const q = useOrder(id);
+  const [confirm, confirmDialog] = useConfirm();
   if (q.isLoading) return <RowSkeleton n={4} />;
   if (q.error || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
   const o = q.data;
   const a = o.address as Record<string, string>;
   const setStatus = async (s: string) => {
+    if (s === "cancelled" && !(await confirm({ title: lang === "ar" ? "إلغاء هذا الطلب؟" : "Cancel this order?", description: lang === "ar" ? "يرجع المخزون والكوبون تلقائياً، ولا يمكن إعادة فتح الطلب." : "Stock and coupon use are restored; the order can't be reopened.", destructive: true }))) return;
     const { error } = await supabase.from("orders").update({ status: s }).eq("id", id);
     if (error) toast.error(error.message); else q.refetch();
   };
@@ -111,8 +114,10 @@ function Page() {
       <aside className="no-print h-fit space-y-4 rounded-2xl bg-card p-4 shadow-card">
         <Button className="w-full gap-1" variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />{lang === "ar" ? "طباعة الفاتورة" : "Print invoice"}</Button>
         <div className="grid grid-cols-2 gap-2">
-          {ALL_STATUSES.map((s) => (
-            <Button key={s} size="sm" variant={o.status === s ? "default" : "outline"} onClick={() => setStatus(s)} disabled={o.status === s}>{t(statusKey(s))}</Button>
+          {confirmDialog}
+          {/* Current status plus the moves the order flow allows (delivered/cancelled are final). */}
+          {ALL_STATUSES.filter((s) => s === o.status || canMoveTo(o.status, s)).map((s) => (
+            <Button key={s} size="sm" variant={o.status === s ? "default" : "outline"} className={s === "cancelled" && o.status !== s ? "text-destructive" : undefined} onClick={() => setStatus(s)} disabled={o.status === s}>{t(statusKey(s))}</Button>
           ))}
         </div>
         <DriverAssign orderId={o.id} driverId={o.driver_id} status={o.status} onDone={() => q.refetch()} />

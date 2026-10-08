@@ -8,10 +8,11 @@ import { StoreLogo } from "@/components/store/SiteShell";
 import { EmptyState } from "@/components/store/states";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin")({
-  head: () => ({ meta: [{ title: "لوحة التحكم · Admin" }, { name: "robots", content: "noindex" }] }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "لوحة التحكم", en: "Admin" }, noindex: true }),
   component: AdminLayout,
 });
 

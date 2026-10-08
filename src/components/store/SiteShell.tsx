@@ -27,13 +27,15 @@ export function StoreLogo() {
   const { tx } = useI18n();
   const name = tx(settings as Record<string, unknown> | null, "name");
   return (
-    <Link to="/" className="flex shrink-0 items-center gap-2">
+    // Logo keeps its own proportions (wide wordmarks or square marks); the name shows when there is no logo,
+    // and next to the logo from tablet width up.
+    <Link to="/" aria-label={name} className="flex min-h-11 shrink-0 items-center gap-2">
       {settings?.logo_url ? (
-        <img src={settings.logo_url} alt={name} className="h-9 w-9 rounded-lg object-contain" />
+        <img src={settings.logo_url} alt="" width={160} height={44} className="h-9 w-auto max-w-[120px] object-contain md:h-11 md:max-w-[160px]" />
       ) : (
-        <span className="text-xl font-extrabold tracking-tight sm:hidden">{name.slice(0, 1) || "•"}</span>
+        <span className="max-w-[40vw] truncate text-lg font-extrabold tracking-tight sm:hidden">{name}</span>
       )}
-      <span className="hidden text-xl font-extrabold tracking-tight sm:inline">{name}</span>
+      <span className="hidden max-w-[16rem] truncate whitespace-nowrap text-xl font-extrabold tracking-tight sm:inline">{name}</span>
     </Link>
   );
 }
@@ -67,7 +69,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               <Link to="/driver"><Bike className="h-4 w-4" /><span className="hidden sm:inline">{lang === "ar" ? "تطبيق المندوب" : "Driver app"}</span></Link>
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={toggle} className="gap-1 px-2" aria-label="language">
+          <Button variant="ghost" size="sm" onClick={toggle} className="h-11 min-w-11 gap-1 px-2" aria-label={lang === "ar" ? "English" : "العربية"}>
             <Languages className="h-4 w-4" /><span className="hidden sm:inline">{t("language")}</span>
           </Button>
           <button onClick={() => cart.setDrawerOpen(true)} className="relative hidden h-10 w-10 items-center justify-center rounded-full hover:bg-muted md:flex" aria-label={t("cart")}>

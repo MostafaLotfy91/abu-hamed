@@ -6,17 +6,11 @@ import { useI18n } from "@/lib/i18n";
 import { fetchCategories } from "@/lib/queries";
 import { ErrorState, EmptyState } from "@/components/store/states";
 import { Skeleton } from "@/components/ui/skeleton";
+import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/categories")({
-  head: () => ({
-    meta: [
-      { title: "الأقسام · Categories" },
-      { name: "description", content: "تصفح كل أقسام المتجر. Browse all store departments." },
-      { property: "og:title", content: "الأقسام · Categories" },
-      { property: "og:description", content: "Browse all store departments." },
-    ],
-  }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "الأقسام", en: "Categories" } }),
   component: CategoriesPage,
 });
 

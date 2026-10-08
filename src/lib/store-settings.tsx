@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -35,9 +35,20 @@ function readableOn(hex: string) {
   return lum > 0.62 ? "oklch(0.2 0.02 160)" : "oklch(0.99 0 0)";
 }
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const { data, isLoading } = useQuery(settingsQuery);
-  const [themeReady, setThemeReady] = useState(false);
+/** CSS custom properties for the store colours (also rendered inline on <html> by the server). */
+export function themeVars(s: Pick<StoreSettings, "primary_color" | "secondary_color"> | null): Record<string, string> {
+  const v: Record<string, string> = {};
+  if (s?.primary_color) { v["--primary"] = s.primary_color; v["--primary-foreground"] = readableOn(s.primary_color); }
+  if (s?.secondary_color) { v["--brand-secondary"] = s.secondary_color; v["--brand-secondary-foreground"] = readableOn(s.secondary_color); }
+  return v;
+}
+
+/**
+ * Provides store settings. `initial` comes from the root route loader (server-rendered), so the first paint already
+ * has the store's name, logo and colours; nothing waits on a client fetch.
+ */
+export function SettingsProvider({ children, initial }: { children: ReactNode; initial?: StoreSettings | null }) {
+  const { data, isLoading } = useQuery({ ...settingsQuery, ...(initial ? { initialData: initial } : {}) });
 
   useEffect(() => {
     if (isLoading) return;
@@ -50,15 +61,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       root.setProperty("--brand-secondary", data.secondary_color);
       root.setProperty("--brand-secondary-foreground", readableOn(data.secondary_color));
     }
-    if (data) document.title = data.name_ar || data.name_en || document.title;
-    setThemeReady(true);
   }, [data, isLoading]);
 
   return (
     <SettingsContext.Provider
       value={{ settings: data ?? null, loading: isLoading, features: ((data?.features ?? {}) as FeatureFlags) }}
     >
-      {themeReady ? children : <div className="min-h-screen bg-card" aria-busy="true" />}
+      {children}
     </SettingsContext.Provider>
   );
 }

@@ -2,17 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { useCart } from "@/lib/cart";
 import { CartLines, CartTotals } from "@/components/store/CartContents";
+import { pageHead } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/cart")({
-  head: () => ({
-    meta: [
-      { title: "سلة المشتريات · Cart" },
-      { name: "description", content: "راجع منتجاتك قبل إتمام الطلب. Review your cart before checkout." },
-      { property: "og:title", content: "سلة المشتريات · Cart" },
-      { property: "og:description", content: "Review your cart before checkout." },
-    ],
-  }),
+  head: ({ matches }) => pageHead(matches, { title: { ar: "سلة المشتريات", en: "Cart" }, noindex: true }),
   component: CartPage,
 });
 

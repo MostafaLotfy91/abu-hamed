@@ -16,8 +16,9 @@ const pill = (on: boolean) =>
     "rounded-full border px-3 py-1 text-sm transition",
     on ? "border-foreground bg-foreground text-background" : "bg-card hover:border-foreground",
   );
+// Isolated so a count never runs into Latin labels in RTL ("EDP (2)", not "EDP2").
 const Count = ({ n }: { n: number }) => (
-  <span className="ms-1 text-xs opacity-60 tabular-nums">{n}</span>
+  <bdi className="ms-1.5 text-xs opacity-60 tabular-nums">({n})</bdi>
 );
 
 function Section({ label, children }: { label: string; children: ReactNode }) {
@@ -213,7 +214,7 @@ export function FilterPanel({
               type="number"
               inputMode="decimal"
               aria-label={t("min")}
-              placeholder={o.price.min != null ? String(Math.floor(o.price.min)) : t("min")}
+              placeholder={o.price.min != null ? `${t("min")} ${Math.floor(o.price.min)}` : t("min")}
               value={v.minPrice ?? ""}
               onChange={(e) => set({ minPrice: num(e.target.value) })}
             />
@@ -221,7 +222,7 @@ export function FilterPanel({
               type="number"
               inputMode="decimal"
               aria-label={t("max")}
-              placeholder={o.price.max != null ? String(Math.ceil(o.price.max)) : t("max")}
+              placeholder={o.price.max != null ? `${t("max")} ${Math.ceil(o.price.max)}` : t("max")}
               value={v.maxPrice ?? ""}
               onChange={(e) => set({ maxPrice: num(e.target.value) })}
             />

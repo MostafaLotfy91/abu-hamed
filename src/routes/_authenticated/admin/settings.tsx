@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { settingsQuery, type StoreSettings } from "@/lib/store-settings";
 import { ImageInput } from "@/components/admin/CrudPage";
-import { RowSkeleton } from "@/components/store/states";
+import { ErrorState, RowSkeleton } from "@/components/store/states";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ function Page() {
   const q = useQuery(settingsQuery);
   const [s, setS] = useState<StoreSettings | null>(null);
   useEffect(() => { if (q.data) setS(q.data); }, [q.data]);
+  if (q.error) return <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} />;
   if (!s) return <RowSkeleton n={6} />;
   const set = <K extends keyof StoreSettings>(k: K, v: StoreSettings[K]) => setS({ ...s, [k]: v });
   const txt = (k: keyof StoreSettings, label: string, type = "text") => (
@@ -73,7 +74,7 @@ function Page() {
       <ContactSocialSettings s={s} set={set} />
       <Section title="المزايا / Feature flags">
         {FLAGS.map((f) => (
-          <div key={f} className="flex items-center justify-between rounded-xl border p-3"><span className="text-sm font-semibold">{f}</span><Switch checked={!!features[f]} onCheckedChange={async (v) => {
+          <div key={f} className="flex items-center justify-between rounded-xl border p-3"><span id={`feature-${f}`} className="text-sm font-semibold">{f}</span><Switch aria-labelledby={`feature-${f}`} checked={!!features[f]} onCheckedChange={async (v) => {
             const next = { ...features, [f]: v };
             set("features", next);
             const { error } = await supabase.from("store_settings").update({ features: next }).eq("id", 1);

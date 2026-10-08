@@ -29,7 +29,11 @@ export function ReturnSection({ orderId, status, deliveredAt, items }: { orderId
   const left = returnDaysLeft(deliveredAt, windowDays);
   const reqs = useQuery({
     queryKey: ["returns", orderId],
-    queryFn: async () => (await supabase.from("return_requests").select("*").eq("order_id", orderId).order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("return_requests").select("*").eq("order_id", orderId).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
   const [open, setOpen] = useState(false);
   const [itemId, setItemId] = useState<string>("");
@@ -78,16 +82,16 @@ export function ReturnSection({ orderId, status, deliveredAt, items }: { orderId
                     <button key={k} type="button" onClick={() => setKind(k)} className={`rounded-xl border p-2 text-sm font-semibold ${kind === k ? "border-primary bg-primary-soft text-primary" : ""}`}>{t(k)}</button>
                   ))}
                 </div>
-                <div><Label>{t("items")}</Label>
-                  <select className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+                <div><Label htmlFor="rr-item">{t("items")}</Label>
+                  <select id="rr-item" className="mt-1 h-11 w-full rounded-md border bg-background px-2 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
                     <option value="">{t("whole_order")}</option>
                     {items.map((i) => <option key={i.id} value={i.id}>{itemName(i.id)}</option>)}
                   </select>
                 </div>
-                <div><Label>{t("reason")} *</Label><Input value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} /></div>
-                {kind === "exchange" && <div><Label>{t("exchange_pref")}</Label><Input value={pref} maxLength={200} onChange={(e) => setPref(e.target.value)} /></div>}
-                <div><Label>{t("notes")}</Label><Textarea value={details} maxLength={1000} rows={2} onChange={(e) => setDetails(e.target.value)} /></div>
-                <Button className="w-full" disabled={busy} onClick={submit}>{t("submit")}</Button>
+                <div><Label htmlFor="rr-reason">{t("reason")} *</Label><Input id="rr-reason" className="h-11" value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} /></div>
+                {kind === "exchange" && <div><Label htmlFor="rr-pref">{t("exchange_pref")}</Label><Input id="rr-pref" className="h-11" value={pref} maxLength={200} onChange={(e) => setPref(e.target.value)} /></div>}
+                <div><Label htmlFor="rr-notes">{t("notes")}</Label><Textarea id="rr-notes" value={details} maxLength={1000} rows={2} onChange={(e) => setDetails(e.target.value)} /></div>
+                <Button className="h-11 w-full" disabled={busy} onClick={submit}>{t("submit")}</Button>
               </div>
             </DialogContent>
           </Dialog>

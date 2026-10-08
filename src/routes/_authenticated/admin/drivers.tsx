@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { DriverStatusBadge, useDrivers } from "@/lib/drivers";
-import { EmptyState, RowSkeleton } from "@/components/store/states";
+import { EmptyState, ErrorState, RowSkeleton } from "@/components/store/states";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/admin/drivers")({ componen
 function Page() {
   const { lang } = useI18n();
   const ar = lang === "ar";
+  const [confirm, confirmDialog] = useConfirm();
   const q = useDrivers();
   const [email, setEmail] = useState("");
   const add = async (e: React.FormEvent) => {
@@ -23,7 +25,7 @@ function Page() {
     else { setEmail(""); toast.success(ar ? "تمت إضافة المندوب" : "Driver added"); q.refetch(); }
   };
   const remove = async (id: string) => {
-    if (!confirm(ar ? "إزالة هذا المندوب؟" : "Remove this driver?")) return;
+    if (!(await confirm({ title: ar ? "إزالة هذا المندوب؟" : "Remove this driver?", confirmLabel: ar ? "إزالة" : "Remove", destructive: true }))) return;
     const { error } = await supabase.rpc("admin_remove_driver", { _user_id: id });
     if (error) toast.error(error.message); else q.refetch();
   };
@@ -33,13 +35,14 @@ function Page() {
   };
   return (
     <div className="space-y-4">
+      {confirmDialog}
       <h1 className="text-2xl font-extrabold">{ar ? "المندوبين" : "Drivers"}</h1>
       <form onSubmit={add} className="flex max-w-md gap-2">
         <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={ar ? "بريد حساب المندوب" : "Driver account email"} />
         <Button type="submit">{ar ? "إضافة" : "Add"}</Button>
       </form>
       <p className="text-xs text-muted-foreground">{ar ? "يفتح المندوب التطبيق من /driver ويمكنه تثبيته على الهاتف." : "Drivers open the app at /driver and can install it on their phone."}</p>
-      {q.isLoading ? <RowSkeleton n={3} /> : !q.data?.length ? <EmptyState title={ar ? "لا يوجد مندوبين" : "No drivers yet"} /> : (
+      {q.isLoading ? <RowSkeleton n={3} /> : q.error ? <ErrorState onRetry={() => q.refetch()} message={(q.error as Error).message} /> : !q.data?.length ? <EmptyState title={ar ? "لا يوجد مندوبين" : "No drivers yet"} /> : (
         <div className="divide-y rounded-2xl bg-card shadow-card">
           {q.data.map((d) => (
             <div key={d.user_id} className="flex flex-wrap items-center gap-3 p-4">
