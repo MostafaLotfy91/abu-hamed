@@ -277,6 +277,18 @@ export type Database = {
         };
         Relationships: [];
       };
+      driver_dispatch_state: {
+        Row: {
+          active_orders: number;
+          current_offer_id: string | null;
+          driver_id: string;
+          last_offered_at: string | null;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       driver_locations: {
         Row: {
           accuracy: number | null;
@@ -394,6 +406,35 @@ export type Database = {
           variants_created?: number;
           variants_updated?: number;
         };
+        Relationships: [];
+      };
+      order_dispatch_events: {
+        Row: {
+          actor: string | null;
+          created_at: string;
+          driver_id: string | null;
+          event: string;
+          id: number;
+          note: string | null;
+          offer_id: string | null;
+          order_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      order_dispatch_offers: {
+        Row: {
+          driver_id: string;
+          expires_at: string;
+          id: string;
+          offered_at: string;
+          order_id: string;
+          responded_at: string | null;
+          status: string;
+        };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       order_items: {
@@ -523,6 +564,7 @@ export type Database = {
           delivery_slot: string;
           discount: number;
           driver_accepted_at: string | null;
+          dispatch_status: string;
           driver_id: string | null;
           id: string;
           notes: string | null;
@@ -544,6 +586,7 @@ export type Database = {
           delivery_slot?: string;
           discount?: number;
           driver_accepted_at?: string | null;
+          dispatch_status?: string;
           driver_id?: string | null;
           id?: string;
           notes?: string | null;
@@ -565,6 +608,7 @@ export type Database = {
           delivery_slot?: string;
           discount?: number;
           driver_accepted_at?: string | null;
+          dispatch_status?: string;
           driver_id?: string | null;
           id?: string;
           notes?: string | null;
@@ -965,11 +1009,15 @@ export type Database = {
           default_language: string;
           delivery_fee: number;
           delivery_slots: Json;
+          dispatch_alert_after_minutes: number;
+          dispatch_trigger_status: string;
+          driver_accept_timeout_seconds: number;
           email: string | null;
           features: Json;
           free_delivery_threshold: number | null;
           id: number;
           logo_url: string | null;
+          max_active_orders_per_driver: number;
           min_order_amount: number;
           name_ar: string;
           name_en: string;
@@ -1000,11 +1048,15 @@ export type Database = {
           default_language?: string;
           delivery_fee?: number;
           delivery_slots?: Json;
+          dispatch_alert_after_minutes?: number;
+          dispatch_trigger_status?: string;
+          driver_accept_timeout_seconds?: number;
           email?: string | null;
           features?: Json;
           free_delivery_threshold?: number | null;
           id?: number;
           logo_url?: string | null;
+          max_active_orders_per_driver?: number;
           min_order_amount?: number;
           name_ar?: string;
           name_en?: string;
@@ -1035,11 +1087,15 @@ export type Database = {
           default_language?: string;
           delivery_fee?: number;
           delivery_slots?: Json;
+          dispatch_alert_after_minutes?: number;
+          dispatch_trigger_status?: string;
+          driver_accept_timeout_seconds?: number;
           email?: string | null;
           features?: Json;
           free_delivery_threshold?: number | null;
           id?: number;
           logo_url?: string | null;
+          max_active_orders_per_driver?: number;
           min_order_amount?: number;
           name_ar?: string;
           name_en?: string;
@@ -1142,6 +1198,26 @@ export type Database = {
         Returns: Database["public"]["Tables"]["products"]["Row"][];
       };
       category_profile: { Args: { _category_id: string }; Returns: string };
+      dispatch_order: { Args: { _order_id: string }; Returns: string };
+      driver_my_offers: {
+        Args: never;
+        Returns: {
+          offer_id: string;
+          order_id: string;
+          order_number: number;
+          area: string | null;
+          city: string | null;
+          total: number;
+          payment_method: string;
+          cod_amount: number;
+          items: number;
+          offered_at: string;
+          expires_at: string;
+          server_now: string;
+        }[];
+      };
+      driver_respond_to_offer: { Args: { _offer_id: string; _accept: boolean }; Returns: string };
+      expire_stale_offers: { Args: never; Returns: number };
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined };
       driver_order_customers: {
         Args: never;

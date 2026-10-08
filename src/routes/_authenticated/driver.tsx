@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bike,
   CheckCircle2,
@@ -10,6 +10,8 @@ import {
   Package,
   Phone,
   Radio,
+  Sun,
+  Volume2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +27,18 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { useDriverOffers } from "@/lib/driver-offers";
+import {
+  alertsOnboarded,
+  notifyInBackground,
+  resumeSound,
+  soundReady,
+  startRinging,
+  stopRinging,
+  useWakeLock,
+} from "@/lib/driver-alerts";
+import { OfferAlert, OfferClosedNotice } from "@/components/driver/OfferAlert";
+import { AlertsOnboarding } from "@/components/driver/AlertsOnboarding";
 
 export const Route = createFileRoute("/_authenticated/driver")({
   head: ({ matches }) =>
@@ -108,7 +122,57 @@ function DriverApp() {
     };
   }, [enabled, user, qc]);
 
+  const offersOn = enabled && !!profile.data?.is_active;
+  const offers = useDriverOffers(user?.id ?? null, offersOn);
+  const [tab, setTab] = useState("new");
+  const [answering, setAnswering] = useState(false);
+  const [needsTap, setNeedsTap] = useState(false);
+
+  // Ring and vibrate when a new offer arrives; a system notification too if the app is in the background.
+  const seen = useRef(new Set<string>());
+  useEffect(() => {
+    const fresh = offers.offers.filter((o) => !seen.current.has(o.offer_id));
+    for (const o of offers.offers) seen.current.add(o.offer_id);
+    if (fresh.length) {
+      startRinging();
+      const o = fresh[0];
+      notifyInBackground(
+        ar ? `أوردر جديد #${o.order_number}` : `New order #${o.order_number}`,
+        [o.area, o.city].filter(Boolean).join("، "),
+      );
+    }
+    if (!offers.offers.length) stopRinging();
+  }, [offers.offers, ar]);
+  useEffect(() => () => stopRinging(), []);
+
+  // After a reload the browser locks audio until the next tap: unlock on the first tap anywhere.
+  useEffect(() => {
+    if (!offersOn || !alertsOnboarded()) return;
+    if (soundReady()) return setNeedsTap(false);
+    setNeedsTap(true);
+    const unlock = async () => setNeedsTap(!(await resumeSound()));
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, [offersOn]);
+
+  const answer = useCallback(
+    async (offerId: string, accept: boolean) => {
+      setAnswering(true);
+      stopRinging();
+      const r = await offers.respond(offerId, accept);
+      setAnswering(false);
+      if (r === "accepted") {
+        toast.success(ar ? "تم قبول الطلب" : "Order accepted");
+        setTab("active");
+      } else if (r === "error")
+        toast.error(ar ? "تعذر إرسال الرد، حاول تاني" : "Could not send, try again");
+    },
+    [offers, ar],
+  );
+
   const activeDelivery = orders.data?.find((o) => o.status === "out_for_delivery");
+  // Keep the screen on while waiting for orders or delivering one.
+  const wake = useWakeLock(offersOn && (profile.data?.status === "available" || !!activeDelivery));
   const tracking = useLocationTracker(
     enabled && profile.data?.is_active ? (activeDelivery?.id ?? null) : null,
     user?.id ?? null,
@@ -221,6 +285,29 @@ function DriverApp() {
           </section>
         )}
 
+        {!deactivated && <AlertsOnboarding ar={ar} />}
+        {offers.closed && (
+          <OfferClosedNotice
+            outcome={offers.closed.outcome}
+            ar={ar}
+            onDismiss={offers.dismissClosed}
+          />
+        )}
+        {needsTap && !deactivated && (
+          <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-sm">
+            <Volume2 className="h-4 w-4" />
+            {ar ? "اضغط في أي مكان لتشغيل صوت الطلبات" : "Tap anywhere to turn order sound on"}
+          </p>
+        )}
+        {(wake === "unsupported" || wake === "error") && !deactivated && (
+          <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-sm">
+            <Sun className="h-4 w-4" />
+            {ar
+              ? "الجهاز ده مش بيسمح للتطبيق يخلي الشاشة منورة. خلّي مدة قفل الشاشة أطول من الإعدادات علشان ما يفوتكش طلب."
+              : "This device can't keep the screen on for the app. Set a longer screen timeout in settings so you don't miss orders."}
+          </p>
+        )}
+
         {activeDelivery && !deactivated && (
           <div className="flex items-center gap-2 rounded-2xl bg-success/10 p-3 text-sm text-success">
             <Radio className="h-4 w-4 animate-pulse" />
@@ -232,10 +319,20 @@ function DriverApp() {
           </div>
         )}
 
-        <Tabs defaultValue="new">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="new">
-              {ar ? "جديدة" : "New"} ({groups.new.length})
+            <TabsTrigger value="new" className="relative">
+              {ar ? "جديدة" : "New"} ({groups.new.length + offers.offers.length})
+              {offers.offers.length > 0 && (
+                <span
+                  aria-label={
+                    ar ? `${offers.offers.length} عرض جديد` : `${offers.offers.length} new offers`
+                  }
+                  className="absolute -top-1 end-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-white"
+                >
+                  {offers.offers.length}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="active">
               {ar ? "نشطة" : "Active"} ({groups.active.length})
@@ -282,6 +379,18 @@ function DriverApp() {
           ))}
         </Tabs>
       </div>
+      {offers.offers[0] && !deactivated && (
+        <OfferAlert
+          key={offers.offers[0].offer_id}
+          offer={offers.offers[0]}
+          offset={offers.offset}
+          ar={ar}
+          more={offers.offers.length - 1}
+          busy={answering}
+          onAccept={() => answer(offers.offers[0].offer_id, true)}
+          onReject={() => answer(offers.offers[0].offer_id, false)}
+        />
+      )}
     </div>
   );
 }

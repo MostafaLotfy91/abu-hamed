@@ -601,6 +601,8 @@ export async function getOrder(id: string) {
     coupon_code: string | null;
     discount: number;
     driver_accepted_at: string | null;
+    driver_id: string | null;
+    dispatch_status: string;
     order_status_history: { status: string; created_at: string }[];
   };
 }
@@ -787,4 +789,87 @@ export async function cleanupTag(tag: string) {
   await db.from("banners").delete().ilike("title_en", like);
   await db.from("social_links").delete().ilike("url", like);
   await db.from("import_jobs").delete().ilike("file_name", like);
+}
+
+/* --------------------------------------------------------------- dispatch -- */
+
+/**
+ * Makes the test driver the only one dispatch can pick: other available drivers go offline (returned so they
+ * can be restored) and the per-driver limit is raised so earlier specs' open orders don't count against it.
+ */
+export async function reserveDispatchForTestDriver() {
+  const db = service();
+  const ids = await ensureAccounts();
+  const others = (must(
+    await db
+      .from("driver_profiles")
+      .select("user_id,status")
+      .neq("user_id", ids.driver)
+      .neq("status", "offline"),
+    "other drivers",
+  ) ?? []) as { user_id: string; status: string }[];
+  if (others.length)
+    must(
+      await db
+        .from("driver_profiles")
+        .update({ status: "offline" })
+        .in(
+          "user_id",
+          others.map((o) => o.user_id),
+        ),
+      "pause other drivers",
+    );
+  must(
+    await db
+      .from("driver_profiles")
+      .update({ status: "available", is_active: true })
+      .eq("user_id", ids.driver),
+    "test driver available",
+  );
+  const s = await readSettings();
+  await updateSettings({ max_active_orders_per_driver: 20, driver_accept_timeout_seconds: 120 });
+  return async () => {
+    for (const o of others)
+      await db.from("driver_profiles").update({ status: o.status }).eq("user_id", o.user_id);
+    await updateSettings({
+      max_active_orders_per_driver: s.max_active_orders_per_driver,
+      driver_accept_timeout_seconds: s.driver_accept_timeout_seconds,
+    });
+  };
+}
+
+/** A confirmed order offered to the test driver through dispatch_order (as the service role). */
+export async function createOfferedOrder(cat: Catalog) {
+  const o = await placeOrderAs([
+    { product_id: cat.productId, variant_id: cat.variants.L, quantity: 2 },
+  ]);
+  await advanceOrder(o.id, "confirmed");
+  const r = must(await service().rpc("dispatch_order", { _order_id: o.id }), "dispatch_order");
+  if (r !== "offered") throw new Error(`dispatch_order returned ${String(r)}`);
+  return o;
+}
+
+export async function offersFor(orderId: string) {
+  return (must(
+    await service()
+      .from("order_dispatch_offers")
+      .select("id,driver_id,status")
+      .eq("order_id", orderId),
+    "offers",
+  ) ?? []) as { id: string; driver_id: string; status: string }[];
+}
+
+/** Ends an open offer's time and runs the expiry job (what pg_cron does every minute). */
+export async function expireOffersNow(orderId: string) {
+  const db = service();
+  must(
+    await db
+      .from("order_dispatch_offers")
+      // A fixed past time: this machine's clock may differ from the server's.
+      .update({ expires_at: "2000-01-01T00:00:00Z" } as never)
+      .eq("order_id", orderId)
+      .eq("status", "offered"),
+    "expire offer",
+  );
+  must(await db.rpc("expire_stale_offers"), "expire_stale_offers");
 }
