@@ -8,6 +8,8 @@ import { ErrorState, EmptyState } from "@/components/store/states";
 import { Skeleton } from "@/components/ui/skeleton";
 import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { CategoryCard } from "@/components/store/CategoryCard";
+import { profileKeyOf } from "@/lib/catalog";
 
 export const Route = createFileRoute("/categories")({
   head: ({ matches }) => pageHead(matches, { title: { ar: "الأقسام", en: "Categories" } }),
@@ -69,24 +71,14 @@ function CategoriesPage() {
         {children.length > 0 && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {children.map((c) => (
-              <Link
+              <CategoryCard
                 key={c.id}
-                to="/category/$id"
-                params={{ id: c.id }}
-                className="overflow-hidden rounded-2xl bg-card shadow-card"
-              >
-                <div className="aspect-[4/3] bg-muted">
-                  {c.image_url && (
-                    <img
-                      src={c.image_url}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <div className="p-2 text-sm font-semibold">{tx(c, "name")}</div>
-              </Link>
+                id={c.id}
+                name={tx(c, "name")}
+                image={c.image_url}
+                profileKey={profileKeyOf(c.id, all)}
+                variant="card"
+              />
             ))}
           </div>
         )}

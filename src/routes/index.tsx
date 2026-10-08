@@ -15,6 +15,8 @@ import { EmptyState, ErrorState, ProductCardSkeleton } from "@/components/store/
 import { pageHead } from "@/lib/seo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { countLabel } from "@/lib/format";
+import { CategoryCard } from "@/components/store/CategoryCard";
+import { profileKeyOf } from "@/lib/catalog";
 
 export const Route = createFileRoute("/")({
   head: ({ matches }) => pageHead(matches),
@@ -105,26 +107,16 @@ function Departments() {
           ? Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="aspect-[3/4] rounded-md" />
             ))
-          : roots.map((c) => (
-              <Link
+          : roots.map((c, i) => (
+              <CategoryCard
                 key={c.id}
-                to="/category/$id"
-                params={{ id: c.id }}
-                className="group relative block aspect-[3/4] overflow-hidden rounded-md bg-muted"
-              >
-                {c.image_url && (
-                  <img
-                    src={c.image_url}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                )}
-                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/70 to-transparent p-3 pt-10 text-sm font-bold text-background md:text-base">
-                  {tx(c, "name")}
-                </span>
-              </Link>
+                id={c.id}
+                name={tx(c, "name")}
+                image={c.image_url}
+                profileKey={profileKeyOf(c.id, data ?? [])}
+                variant="tile"
+                priority={i < 4}
+              />
             ))}
       </div>
     </section>
