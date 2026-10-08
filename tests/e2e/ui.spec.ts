@@ -193,3 +193,14 @@ test.describe("flash deals", () => {
     }
   });
 });
+
+test.describe("right-to-left components", () => {
+  test("tabs run right-to-left in Arabic and left-to-right in English", async ({ page }) => {
+    await page.goto("/auth");
+    const x = async (name: string) => (await page.getByRole("tab", { name }).boundingBox())!.x;
+    // Arabic: the first tab (email) is on the right.
+    expect(await x("البريد الإلكتروني")).toBeGreaterThan(await x("رقم الموبايل"));
+    await page.getByRole("button", { name: "English" }).click();
+    expect(await x("Email")).toBeLessThan(await x("Phone"));
+  });
+});

@@ -5,8 +5,13 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useDir } from "@/lib/i18n";
 
-const Select = SelectPrimitive.Root;
+// Follows the page language (Radix defaults to left-to-right).
+const Select = (props: React.ComponentProps<typeof SelectPrimitive.Root>) => {
+  const pageDir = useDir();
+  return <SelectPrimitive.Root {...props} dir={props.dir ?? pageDir} />;
+};
 
 const SelectGroup = SelectPrimitive.Group;
 

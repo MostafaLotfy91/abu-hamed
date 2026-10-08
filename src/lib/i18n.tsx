@@ -287,3 +287,8 @@ export function useI18n() {
   if (!c) throw new Error("useI18n outside provider");
   return c;
 }
+
+/** Text direction for components that need it (Radix Tabs/Select default to "ltr"); undefined outside the provider. */
+export function useDir(): "rtl" | "ltr" | undefined {
+  return useContext(I18nContext)?.dir;
+}

@@ -2,8 +2,17 @@ import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "@/lib/utils";
+import { useDir } from "@/lib/i18n";
 
-const Tabs = TabsPrimitive.Root;
+// Follows the page language: Radix defaults to left-to-right, which reversed tab order in Arabic.
+const Tabs = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>
+>(({ dir, ...props }, ref) => {
+  const pageDir = useDir();
+  return <TabsPrimitive.Root ref={ref} dir={dir ?? pageDir} {...props} />;
+});
+Tabs.displayName = TabsPrimitive.Root.displayName;
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
