@@ -190,7 +190,12 @@ export function CrudPage({
       let v = editing[f.key];
       if (f.type === "number") v = v === "" || v == null ? null : Number(v);
       if (f.type === "datetime") v = v ? new Date(v as string).toISOString() : null;
-      if ((f.type === "text" || f.type === "textarea" || !f.type) && v === "") v = null;
+      // An empty text box or an unselected "—" option means "no value" (columns like gender have CHECKs).
+      if (
+        (f.type === "text" || f.type === "textarea" || f.type === "select" || !f.type) &&
+        v === ""
+      )
+        v = null;
       if (f.required && (v == null || v === "")) return toast.error(`${f.label} *`);
       payload[f.key] = v;
     }

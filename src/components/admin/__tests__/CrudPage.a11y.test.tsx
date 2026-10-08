@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 // Table query (server-side paging): supabase.from(t).select("*", { count }).order()[.eq/.or]().range() -> one row.
+const inserted = vi.hoisted(() => [] as Record<string, unknown>[]);
 vi.mock("@/integrations/supabase/client", () => {
   const rows = [{ id: "1", code: "SALE", value: 10, image_url: null, is_active: true }];
   const chain = {
@@ -11,6 +12,10 @@ vi.mock("@/integrations/supabase/client", () => {
     eq: () => chain,
     or: () => chain,
     range: async () => ({ data: rows, error: null, count: rows.length }),
+    insert: async (payload: Record<string, unknown>) => {
+      inserted.push(payload);
+      return { error: null };
+    },
   };
   return { supabase: { from: () => chain } };
 });
@@ -51,5 +56,16 @@ describe("CrudPage accessibility", () => {
     expect(screen.getByLabelText("Notes").tagName).toBe("TEXTAREA");
     expect(screen.getByRole("switch", { name: "Active" })).toBeInTheDocument();
     expect(screen.getByLabelText("Image — Upload / رفع")).toHaveAttribute("type", "file");
+  });
+});
+
+describe("CrudPage save", () => {
+  it("sends an unselected option and empty text as null, not an empty string", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Add / إضافة" }));
+    fireEvent.change(screen.getByLabelText("Code *"), { target: { value: "NEW" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save / حفظ" }));
+    await waitFor(() => expect(inserted).toHaveLength(1));
+    expect(inserted[0]).toMatchObject({ code: "NEW", kind: null, notes: null });
   });
 });
