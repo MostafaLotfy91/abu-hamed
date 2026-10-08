@@ -136,7 +136,7 @@ function Checkout() {
             </button>
           </div>
         </Card>
-        <Card step={4} title={t("order_notes")}><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={2} /></Card>
+        <Card step={4} title={t("order_notes")}><Textarea aria-label={t("order_notes")} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={2} /></Card>
       </div>
       <aside className="h-fit space-y-4 rounded-md border p-5 lg:sticky lg:top-20">
         <h2 className="font-semibold">{t("order_summary")}</h2>

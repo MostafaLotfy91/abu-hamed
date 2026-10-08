@@ -22,7 +22,9 @@ export function ProductImage({ src, alt, className, priority }: { src?: string |
   const ref = useCallback((el: HTMLImageElement | null) => { if (el?.complete && el.naturalWidth) setLoaded(true); }, []);
   if (!src || failed)
     return (
-      <div className={cn("flex items-center justify-center bg-muted text-muted-foreground/60", className)}>
+      // Same accessible name as the real image would have, so links wrapping the placeholder still have text.
+      <div className={cn("flex items-center justify-center bg-muted text-muted-foreground/60", className)}
+        {...(alt ? { role: "img", "aria-label": alt } : { "aria-hidden": true })}>
         <ImageOff className="h-7 w-7" aria-hidden />
       </div>
     );

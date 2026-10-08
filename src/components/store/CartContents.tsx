@@ -26,7 +26,7 @@ export function CartLines({ editableNotes = true, onNavigate }: { editableNotes?
       {cart.items.map((i) => (
         <li key={i.key} className="flex gap-3 py-4">
           <Link to="/product/$id" params={{ id: i.productId }} onClick={onNavigate} className="shrink-0">
-            <ProductImage src={i.image} alt="" className="aspect-[4/5] w-20 rounded-md bg-muted" />
+            <ProductImage src={i.image} alt={tx(i, "name")} className="aspect-[4/5] w-20 rounded-md bg-muted" />
           </Link>
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex items-start justify-between gap-2">
