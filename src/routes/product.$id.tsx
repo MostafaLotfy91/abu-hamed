@@ -42,18 +42,19 @@ import { cn } from "@/lib/utils";
 import { usePublishWaContext } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/product/$id")({
-  // Just enough of the product for the <head> (title, description, share image) in the server HTML.
+  // The product is loaded here so the server HTML has the page and its <head> (title, description, share
+  // image); the page query starts from it instead of showing a skeleton until a second request returns.
   loader: async ({ params }) => {
     const { data } = await supabase
       .from("products")
-      .select("name_ar,name_en,description_ar,description_en,images")
+      .select(`*, product_variants(*)`)
       .eq("id", params.id)
       .eq("is_active", true)
       .maybeSingle();
-    return { seo: data ?? null };
+    return { product: data ?? null };
   },
   head: ({ matches, loaderData }) => {
-    const p = loaderData?.seo;
+    const p = loaderData?.product;
     const h = pageHead(matches, {
       title: p ? { ar: p.name_ar, en: p.name_en } : { ar: "منتج", en: "Product" },
       description: p
@@ -68,6 +69,7 @@ export const Route = createFileRoute("/product/$id")({
 
 function ProductPage() {
   const { id } = Route.useParams();
+  const { product: loaded } = Route.useLoaderData();
   const { t, tx, lang } = useI18n();
   const money = useMoney();
   const cart = useCart();
@@ -89,6 +91,7 @@ function ProductPage() {
       if (error) throw error;
       return data;
     },
+    initialData: loaded?.id === id ? loaded : undefined,
   });
   const p = q.data;
   const cats = useQuery({
