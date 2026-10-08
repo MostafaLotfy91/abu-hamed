@@ -11,6 +11,7 @@ import { useMoney } from "./use-money";
 import { QtyStepper } from "./QtyStepper";
 import { ProductImage } from "./ProductCard";
 import { EmptyState } from "./states";
+import { cn } from "@/lib/utils";
 
 export function CartLines({
   editableNotes = true,
@@ -38,7 +39,14 @@ export function CartLines({
   return (
     <ul className="divide-y">
       {cart.items.map((i) => (
-        <li key={i.key} className="flex gap-3 py-4">
+        <li
+          key={i.key}
+          data-just-added={i.key === cart.lastAdded || undefined}
+          className={cn(
+            "flex gap-3 py-4 transition-colors",
+            i.key === cart.lastAdded && "-mx-2 rounded-md bg-primary-soft px-2",
+          )}
+        >
           <Link
             to="/product/$id"
             params={{ id: i.productId }}

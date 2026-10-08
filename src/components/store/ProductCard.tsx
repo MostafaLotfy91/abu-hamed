@@ -130,7 +130,7 @@ export function ProductCard({ p }: { p: Product }) {
 
   const quickAdd = () => {
     if (hasVariants) return setQuick(true);
-    cart.add({
+    cart.addAndShow({
       productId: p.id,
       variantId: null,
       name_ar: p.name_ar,

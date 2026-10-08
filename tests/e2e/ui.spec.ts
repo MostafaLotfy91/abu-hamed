@@ -121,3 +121,25 @@ test.describe("product photos", () => {
     }
   });
 });
+
+test.describe("mini-cart", () => {
+  test.use({ lang: "ar" });
+
+  test("adding opens the mini-cart on the new item; continue shopping closes it", async ({
+    page,
+    catalog,
+  }) => {
+    await page.goto(`/product/${catalog.productId}`);
+    await page
+      .getByRole("group", { name: "المقاس" })
+      .getByRole("button", { name: "L", exact: true })
+      .click();
+    await visible(page.getByRole("button", { name: /^أضف للسلة/ })).click();
+    const drawer = page.getByRole("dialog", { name: /السلة/ });
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByRole("status")).toHaveText(/تمت الإضافة للسلة/);
+    await expect(drawer.locator("li[data-just-added]")).toContainText(catalog.product.ar);
+    await drawer.getByRole("button", { name: "كمّل تسوق" }).click();
+    await expect(drawer).toBeHidden();
+  });
+});

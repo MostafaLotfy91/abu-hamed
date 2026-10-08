@@ -45,7 +45,7 @@ export function QuickAddSheet({
 
   const add = () => {
     if (!chosen) return;
-    cart.add({
+    cart.addAndShow({
       productId: p.id,
       variantId: chosen.id,
       name_ar: p.name_ar,

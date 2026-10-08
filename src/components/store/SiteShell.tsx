@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Bike,
+  CheckCircle2,
   Home,
   LayoutGrid,
   Languages,
@@ -197,6 +198,15 @@ export function SiteShell({ children }: { children: ReactNode }) {
               )}
             </SheetTitle>
           </SheetHeader>
+          {cart.lastAdded && (
+            <p
+              role="status"
+              className="flex items-center gap-2 border-b bg-success/10 px-4 py-2 text-sm font-semibold text-success"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {t("added_to_cart")}
+            </p>
+          )}
           <div className="flex-1 overflow-y-auto px-4">
             <CartLines onNavigate={() => cart.setDrawerOpen(false)} />
           </div>
@@ -213,15 +223,20 @@ export function SiteShell({ children }: { children: ReactNode }) {
               >
                 {t("checkout")}
               </Button>
-              <button
-                className="w-full text-center text-sm font-medium underline underline-offset-4"
-                onClick={() => {
-                  cart.setDrawerOpen(false);
-                  nav({ to: "/cart" });
-                }}
-              >
-                {t("view_cart")}
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => cart.setDrawerOpen(false)}>
+                  {t("continue_shopping")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    cart.setDrawerOpen(false);
+                    nav({ to: "/cart" });
+                  }}
+                >
+                  {t("view_cart")}
+                </Button>
+              </div>
             </div>
           )}
         </SheetContent>

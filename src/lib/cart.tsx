@@ -42,6 +42,10 @@ type Ctx = {
   qtyOf: (productId: string, variantId?: string | null) => number;
   drawerOpen: boolean;
   setDrawerOpen: (o: boolean) => void;
+  /** Key of the line added last (highlighted in the mini-cart until it closes). */
+  lastAdded: string | null;
+  /** Adds and opens the mini-cart on that item. */
+  addAndShow: (item: Omit<CartItem, "quantity" | "key">, qty?: number) => void;
 };
 
 const CartContext = createContext<Ctx | null>(null);
@@ -56,7 +60,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [coupon, setCoupon] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpenState] = useState(false);
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const setDrawerOpen = useCallback((o: boolean) => {
+    setDrawerOpenState(o);
+    if (!o) setLastAdded(null);
+  }, []);
 
   useEffect(() => {
     try {
@@ -115,8 +124,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       qtyOf: (pid, vid = null) => items.find((i) => i.key === `${pid}|${vid ?? ""}`)?.quantity ?? 0,
       drawerOpen,
       setDrawerOpen,
+      lastAdded,
+      addAndShow: (item, qty = 1) => {
+        add(item, qty);
+        setLastAdded(`${item.productId}|${item.variantId ?? ""}`);
+        setDrawerOpenState(true);
+      },
     }),
-    [items, coupon, add, setQty, drawerOpen],
+    [items, coupon, add, setQty, drawerOpen, setDrawerOpen, lastAdded],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -129,6 +129,7 @@ const dict = {
   total: { ar: "الإجمالي", en: "Total" },
   checkout: { ar: "إتمام الطلب", en: "Checkout" },
   view_cart: { ar: "عرض السلة", en: "View cart" },
+  continue_shopping: { ar: "كمّل تسوق", en: "Continue shopping" },
   min_order_note: { ar: "الحد الأدنى للطلب", en: "Minimum order" },
   free_delivery_over: { ar: "توصيل مجاني للطلبات فوق", en: "Free delivery over" },
   delivery_address: { ar: "عنوان التوصيل", en: "Delivery address" },

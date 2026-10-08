@@ -210,7 +210,7 @@ function ProductPage() {
       setTimeout(() => setNudge(false), 1200);
       return toast.error(t("select_size_color"));
     }
-    cart.add(
+    cart.addAndShow(
       {
         productId: p.id,
         variantId: variant?.id ?? null,
@@ -228,9 +228,7 @@ function ProductPage() {
       },
       curQty,
     );
-    toast.success(t("added_to_cart"), {
-      action: { label: t("view_cart"), onClick: () => cart.setDrawerOpen(true) },
-    });
+    toast.success(t("added_to_cart"));
   };
 
   const toggleWish = async () => {
