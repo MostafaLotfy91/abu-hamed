@@ -3,7 +3,13 @@ import type { Browser, BrowserContextOptions, Locator, Page } from "@playwright/
 import * as XLSX from "xlsx";
 import { COLUMNS, type Column } from "../../../src/lib/product-import";
 import { ACCOUNTS, BASE_URL, type Role } from "./env";
-import { expect, installGuards, setInitialLang, type Lang } from "./test";
+import {
+  expect,
+  installGuards,
+  setInitialLang,
+  waitForHydrationOnNavigation,
+  type Lang,
+} from "./test";
 
 /**
  * UI strings used by the specs, copied from src/lib/i18n.tsx (dict) and the components that inline
@@ -167,6 +173,7 @@ export async function newGuardedContext(
   const context = await browser.newContext({ baseURL: BASE_URL, ...opts });
   await installGuards(context);
   await context.addInitScript(setInitialLang, lang);
+  context.on("page", waitForHydrationOnNavigation);
   return context;
 }
 

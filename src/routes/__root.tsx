@@ -177,6 +177,10 @@ function Chrome() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { settings } = Route.useLoaderData();
+  // Marks the moment React owns the server-rendered page (used by the E2E tests before they interact).
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = "true";
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider initial={settings}>

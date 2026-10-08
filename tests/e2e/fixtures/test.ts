@@ -6,7 +6,7 @@
  *    fonts are stubbed, and any Supabase host other than the configured one is blocked.
  *  - `accounts` / `catalog`: per-worker seeded data (see seed.ts), cleaned up when the worker ends.
  */
-import { test as base, expect, type BrowserContext } from "@playwright/test";
+import { test as base, expect, type BrowserContext, type Page } from "@playwright/test";
 import { SUPABASE_URL, runTag } from "./env";
 import { cleanupTag, createCatalog, ensureAccounts, type AccountIds, type Catalog } from "./seed";
 import { assistantStream, insightsStream, ONE_PX_PNG } from "./mocks";
@@ -15,6 +15,15 @@ import { alignClock } from "./clock";
 export type Lang = "ar" | "en";
 
 type TestFx = { lang: Lang; guards: void };
+
+/**
+ * Pages are server-rendered, so controls are visible before React attaches their handlers; a click in that
+ * window does nothing. After every app navigation, wait until the root marks the page hydrated.
+ */
+async function waitForHydration(page: Page) {
+  if (!new URL(page.url()).pathname.startsWith("/storage/"))
+    await page.locator("html[data-hydrated]").waitFor({ state: "attached", timeout: 30_000 });
+}
 type WorkerFx = { accounts: AccountIds; catalog: Catalog };
 
 /**
@@ -84,8 +93,29 @@ async function installGuards(context: BrowserContext) {
   }
 }
 
+/** Makes goto/reload on this page also wait for hydration (unless waitUntil is "commit"). */
+export function waitForHydrationOnNavigation(page: Page) {
+  const goto = page.goto.bind(page);
+  const reload = page.reload.bind(page);
+  page.goto = async (url, opts) => {
+    const res = await goto(url, opts);
+    if (opts?.waitUntil !== "commit") await waitForHydration(page);
+    return res;
+  };
+  page.reload = async (opts) => {
+    const res = await reload(opts);
+    if (opts?.waitUntil !== "commit") await waitForHydration(page);
+    return res;
+  };
+}
+
 export const test = base.extend<TestFx, WorkerFx>({
   lang: ["ar", { option: true }],
+
+  page: async ({ page }, provide) => {
+    waitForHydrationOnNavigation(page);
+    await provide(page);
+  },
 
   guards: [
     async ({ context, lang }, use) => {
