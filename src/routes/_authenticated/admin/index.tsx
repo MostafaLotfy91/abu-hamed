@@ -8,6 +8,7 @@ import { ErrorState, RowSkeleton } from "@/components/store/states";
 import { DispatchAlerts } from "@/components/admin/DispatchAlerts";
 import { CalendarDays, Clock, ShoppingBag, TrendingUp, Wallet, ReceiptText } from "lucide-react";
 import { formatCount } from "@/lib/format";
+import { compareWindows, pctChange } from "@/lib/stats";
 
 export const Route = createFileRoute("/_authenticated/admin/")({ component: Dashboard });
 
@@ -37,6 +38,14 @@ function Dashboard() {
   if (q.error || !q.data) return <ErrorState onRetry={() => q.refetch()} />;
   const s = q.data;
   const L = (ar: string, en: string) => (lang === "ar" ? ar : en);
+  const w = compareWindows(s.daily);
+  const trends: Record<number, { pct: number | null; vs: string }> = {
+    0: { pct: pctChange(w.today, w.yesterday), vs: L("عن امبارح", "vs yesterday") },
+    1: {
+      pct: pctChange(w.last7, w.prev7),
+      vs: L("آخر ٧ أيام عن اللي قبلها", "last 7 days vs the 7 before"),
+    },
+  };
   const cards = [
     [L("مبيعات اليوم", "Sales today"), money(s.today), Wallet],
     [L("مبيعات الأسبوع", "Sales this week"), money(s.week), TrendingUp],
@@ -60,6 +69,7 @@ function Dashboard() {
               <Icon className="h-4 w-4" />
             </div>
             <p className="mt-2 text-2xl font-bold tracking-tight">{v}</p>
+            {trends[i] && <Trend {...trends[i]} lang={lang} />}
           </div>
         ))}
       </div>
@@ -96,5 +106,23 @@ function Dashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** "↑ ١٢٪ عن امبارح" in green, "↓ ٥٪ …" in red; a dash when there is no previous figure. */
+function Trend({ pct, vs, lang }: { pct: number | null; vs: string; lang: "ar" | "en" }) {
+  if (pct == null) return <p className="mt-1 text-xs text-muted-foreground">—</p>;
+  const up = pct >= 0;
+  const n = new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(Math.abs(pct) / 100);
+  return (
+    <p
+      data-trend={up ? "up" : "down"}
+      className={`mt-1 text-xs font-semibold ${up ? "text-success" : "text-destructive"}`}
+    >
+      {up ? "↑" : "↓"} {n} <span className="font-normal text-muted-foreground">{vs}</span>
+    </p>
   );
 }
