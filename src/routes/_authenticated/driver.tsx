@@ -2,8 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BellRing,
   Bike,
   CheckCircle2,
+  Wallet,
   LogOut,
   MapPin,
   Navigation,
@@ -95,6 +97,7 @@ function DriverApp() {
   const { lang, toggle } = useI18n();
   const ar = lang === "ar";
   const L = ar ? "ar" : "en";
+  const money = useMoney();
   const qc = useQueryClient();
   const isDriver = roles.includes("driver");
   const enabled = isDriver && !!features.delivery_tracking;
@@ -270,9 +273,15 @@ function DriverApp() {
     completed: all.filter((o) => o.status === "delivered").slice(0, 20),
   };
   const deactivated = profile.data && !profile.data.is_active;
+  // Today on this phone's calendar: deliveries done and the cash to hand over.
+  const today = new Date().toDateString();
+  const doneToday = groups.completed.filter((o) => new Date(o.updated_at).toDateString() === today);
+  const cashToday = doneToday
+    .filter((o) => o.payment_method === "cod")
+    .reduce((n, o) => n + Number(o.total), 0);
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-10">
+    <div className="mx-auto min-h-screen max-w-lg bg-background pb-24">
       <header className="sticky top-0 z-10 flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
         <h1 className="flex items-center gap-2 text-base font-extrabold">
           <Bike className="h-5 w-5" />
@@ -355,6 +364,27 @@ function DriverApp() {
           </p>
         )}
 
+        {!deactivated && (
+          <section aria-label={ar ? "ملخص اليوم" : "Today"} className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-card p-3 shadow-card">
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {ar ? "اتسلّم النهارده" : "Delivered today"}
+              </p>
+              <p className="mt-1 text-lg font-extrabold">
+                {countLabel(doneToday.length, L, "order")}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-card p-3 shadow-card">
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Wallet className="h-3.5 w-3.5" />
+                {ar ? "كاش معاك للتسليم" : "Cash to hand over"}
+              </p>
+              <p className="mt-1 text-lg font-extrabold">{money(cashToday)}</p>
+            </div>
+          </section>
+        )}
+
         {activeDelivery && !deactivated && (
           <div className="flex items-center gap-2 rounded-2xl bg-success/10 p-3 text-sm text-success">
             <Radio className="h-4 w-4 animate-pulse" />
@@ -367,8 +397,10 @@ function DriverApp() {
         )}
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="new" className="relative">
+          {/* Bottom tab bar: reachable with the thumb. */}
+          <TabsList className="fixed inset-x-0 bottom-0 z-20 mx-auto grid h-auto w-full max-w-lg grid-cols-3 rounded-none border-t bg-background p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))]">
+            <TabsTrigger value="new" className="relative h-14 flex-col gap-0.5 text-xs">
+              <BellRing className="h-5 w-5" />
               {ar ? "جديدة" : "New"} ({formatCount(groups.new.length + offers.offers.length, L)})
               {offers.offers.length > 0 && (
                 <span
@@ -383,10 +415,14 @@ function DriverApp() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="active">
+            <TabsTrigger value="active" className="h-14 flex-col gap-0.5 text-xs">
+              <Bike className="h-5 w-5" />
               {ar ? "نشطة" : "Active"} ({formatCount(groups.active.length, L)})
             </TabsTrigger>
-            <TabsTrigger value="completed">{ar ? "مكتملة" : "Completed"}</TabsTrigger>
+            <TabsTrigger value="completed" className="h-14 flex-col gap-0.5 text-xs">
+              <CheckCircle2 className="h-5 w-5" />
+              {ar ? "مكتملة" : "Completed"}
+            </TabsTrigger>
           </TabsList>
           {(["new", "active", "completed"] as const).map((tab) => (
             <TabsContent key={tab} value={tab} className="space-y-3">

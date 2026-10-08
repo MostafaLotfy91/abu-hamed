@@ -16,6 +16,22 @@ import {
 
 test.skip(!E2E_READY, SKIP_REASON);
 
+/** Drags the accept thumb to the far end of its track (left in Arabic) with the mouse. */
+async function swipeToAccept(
+  page: import("@playwright/test").Page,
+  scope: import("@playwright/test").Locator,
+) {
+  const thumb = scope.getByTestId("swipe-thumb");
+  const track = scope.getByRole("button", { name: "اسحب للقبول" });
+  const t = (await thumb.boundingBox())!;
+  const k = (await track.boundingBox())!;
+  const y = t.y + t.height / 2;
+  await page.mouse.move(t.x + t.width / 2, y);
+  await page.mouse.down();
+  await page.mouse.move(k.x + 8, y, { steps: 12 });
+  await page.mouse.up();
+}
+
 /*
  * Automatic dispatch, driver side. The order is offered by dispatch_order (what the auto-dispatch trigger
  * calls), so these tests don't depend on the auto_dispatch_enabled flag. Other drivers are set offline
@@ -56,7 +72,10 @@ test.describe("dispatch offers (driver app)", () => {
     // No customer personal data before accepting.
     await expect(a).not.toContainText("01000000002");
 
-    await a.getByRole("button", { name: "قبول" }).click();
+    // A tap does not accept (protection against pocket taps); a real swipe does.
+    await a.getByTestId("swipe-thumb").click();
+    await expect(a).toBeVisible();
+    await swipeToAccept(page, a);
     await expect(toast(page, "تم قبول الطلب")).toBeVisible();
     await expect(a).toBeHidden();
     await expect(page.getByRole("tab", { name: /نشطة/, selected: true })).toBeVisible();

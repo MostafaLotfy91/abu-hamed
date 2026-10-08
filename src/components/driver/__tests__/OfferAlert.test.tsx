@@ -53,7 +53,7 @@ describe("OfferAlert", () => {
     expect(screen.getByRole("timer")).toHaveTextContent("0:55");
   });
 
-  it("accept and reject call back; both are disabled once time is up", () => {
+  it("swipe-accept and reject call back; both are disabled once time is up", () => {
     const onAccept = vi.fn();
     const onReject = vi.fn();
     render(
@@ -67,13 +67,16 @@ describe("OfferAlert", () => {
         onReject={onReject}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Swipe to accept" }), { key: "Enter" });
     fireEvent.click(screen.getByRole("button", { name: "Reject" }));
     expect(onAccept).toHaveBeenCalledTimes(1);
     expect(onReject).toHaveBeenCalledTimes(1);
     act(() => vi.advanceTimersByTime(121_000));
     expect(screen.getByText("Time is up")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Accept" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Swipe to accept" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(screen.getByRole("button", { name: "Reject" })).toBeDisabled();
   });
 

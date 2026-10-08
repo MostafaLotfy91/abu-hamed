@@ -170,7 +170,9 @@ function LangFromSettings({ children }: { children: ReactNode }) {
 
 function Chrome() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  if (path.startsWith("/admin") || path.startsWith("/auth")) return <Outlet />;
+  // Admin, sign-in and the driver app are full-screen apps of their own (no shop header/nav/floating buttons).
+  if (path.startsWith("/admin") || path.startsWith("/auth") || path.startsWith("/driver"))
+    return <Outlet />;
   return (
     <SiteShell>
       <Outlet />

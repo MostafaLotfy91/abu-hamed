@@ -50,6 +50,11 @@ test.describe("driver app", () => {
     await page.getByRole("tab", { name: new RegExp(s.driverDone) }).click();
     await expect(card).toBeVisible();
     await expect(card.getByRole("button")).toHaveCount(0);
+    // Today's summary counts it (at least this one).
+    await expect(page.getByRole("region", { name: "ملخص اليوم" })).not.toContainText("لا طلبات");
+    // The driver app is its own screen: no shop navigation or floating buttons.
+    await expect(page.getByRole("link", { name: "الرئيسية" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "الستايلست", exact: true })).toHaveCount(0);
   });
 
   test("availability status buttons update the driver profile", async ({ page, accounts }) => {

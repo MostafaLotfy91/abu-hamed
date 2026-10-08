@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { BellRing, Check, MapPin, Package, Timer, X } from "lucide-react";
+import { BellRing, MapPin, Package, Timer, X } from "lucide-react";
+import { SwipeToAccept } from "./SwipeToAccept";
 import { Button } from "@/components/ui/button";
 import { useMoney } from "@/components/store/use-money";
 import { countLabel, formatCount } from "@/lib/format";
@@ -135,23 +136,22 @@ export function OfferAlert({
           </p>
         )}
 
-        <div className="mt-auto grid grid-cols-2 gap-3">
+        {/* Accept is a swipe (a tap in a pocket can't take an order); reject stays a plain button. */}
+        <div className="mt-auto space-y-3">
+          <SwipeToAccept
+            label={ar ? "اسحب للقبول" : "Swipe to accept"}
+            dir={ar ? "rtl" : "ltr"}
+            disabled={busy || expired}
+            onAccept={onAccept}
+          />
           <Button
             variant="outline"
-            className="h-14 text-base"
+            className="h-12 w-full text-base"
             disabled={busy || expired}
             onClick={onReject}
           >
             <X className="me-1 h-5 w-5" />
             {ar ? "رفض" : "Reject"}
-          </Button>
-          <Button
-            className="h-14 bg-success text-base text-background hover:bg-success/90"
-            disabled={busy || expired}
-            onClick={onAccept}
-          >
-            <Check className="me-1 h-5 w-5" />
-            {ar ? "قبول" : "Accept"}
           </Button>
         </div>
       </div>
