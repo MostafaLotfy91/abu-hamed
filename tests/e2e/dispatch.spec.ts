@@ -101,3 +101,25 @@ test.describe("dispatch offers (driver app)", () => {
     await expect(a).toBeHidden();
   });
 });
+
+test.describe("driver notification settings", () => {
+  test.use({ lang: "ar" });
+
+  test("settings open from the header; the driver app is installable", async ({ page }) => {
+    await login(page, "driver", "/driver");
+    // Manifest linked for "Add to Home Screen" (required for push on iPhone).
+    await expect(page.locator('link[rel="manifest"]')).toHaveAttribute(
+      "href",
+      "/driver.webmanifest",
+    );
+    await page.getByRole("button", { name: "الإعدادات" }).click();
+    const dialog = page.getByRole("dialog", { name: "الإعدادات" });
+    await expect(dialog).toBeVisible();
+    // Either push is set up for this store (switch) or the page says it isn't; never a blank screen.
+    await expect(
+      dialog
+        .getByRole("switch", { name: "إشعارات الطلبات" })
+        .or(dialog.getByText("إشعارات الجهاز مش مفعّلة للمتجر لسه.")),
+    ).toBeVisible();
+  });
+});

@@ -872,6 +872,20 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_subscriptions: {
+        Row: {
+          created_at: string;
+          endpoint: string;
+          id: string;
+          keys: Json;
+          last_success_at: string | null;
+          user_agent: string | null;
+          user_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       return_requests: {
         Row: {
           admin_note: string | null;
@@ -1250,6 +1264,10 @@ export type Database = {
           _notes: string;
           _payment_method: string;
         };
+        Returns: string;
+      };
+      register_push_subscription: {
+        Args: { _endpoint: string; _keys: Json; _user_agent?: string };
         Returns: string;
       };
       request_return: {

@@ -24,17 +24,22 @@ provider's secret store, never in the repo.
 
 ## 2. Hosting environment variables
 
-| Name | Where | Notes |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | build + server | production project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | build + server | publishable/anon key |
-| `SUPABASE_URL` | server | same URL |
-| `SUPABASE_PUBLISHABLE_KEY` | server | same publishable key |
-| `SUPABASE_SERVICE_ROLE_KEY` | server only | never prefixed `VITE_` |
-| `LOVABLE_API_KEY` | server only | needed for the AI chat and AI insights |
-| `RATE_LIMIT_SALT` | server only | random, 16+ chars |
-| `LOVABLE_CRON_SECRET` (+ `_PREVIOUS` while rotating) | server only | scheduled jobs |
-| `TRUSTED_IP_HEADER` | server | only if behind a proxy that sets it |
+| Name                                                 | Where          | Notes                                  |
+| ---------------------------------------------------- | -------------- | -------------------------------------- |
+| `VITE_SUPABASE_URL`                                  | build + server | production project URL                 |
+| `VITE_SUPABASE_PUBLISHABLE_KEY`                      | build + server | publishable/anon key                   |
+| `SUPABASE_URL`                                       | server         | same URL                               |
+| `SUPABASE_PUBLISHABLE_KEY`                           | server         | same publishable key                   |
+| `SUPABASE_SERVICE_ROLE_KEY`                          | server only    | never prefixed `VITE_`                 |
+| `LOVABLE_API_KEY`                                    | server only    | needed for the AI chat and AI insights |
+| `RATE_LIMIT_SALT`                                    | server only    | random, 16+ chars                      |
+| `LOVABLE_CRON_SECRET` (+ `_PREVIOUS` while rotating) | server only    | scheduled jobs                         |
+| `TRUSTED_IP_HEADER`                                  | server         | only if behind a proxy that sets it    |
+| `VITE_VAPID_PUBLIC_KEY`                              | build + server | driver push notifications (public key) |
+
+Edge Function secrets (names only): `DISPATCH_CRON_SECRET` (only without pg_cron), `VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `DRIVER_PUSH_WEBHOOK_SECRET`. Vault secrets: `driver_push_url`,
+`driver_push_secret`. Setup steps: `docs/dispatch.md`.
 
 ## 3. Catalogue
 

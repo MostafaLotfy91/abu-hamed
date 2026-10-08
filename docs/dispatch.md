@@ -15,6 +15,7 @@ Migration: `supabase/migrations/20261008140000_order_dispatch.sql`.
    Among those, it picks the fewest active orders first, then the driver idle longest (oldest last offer).
    Driver rows are taken with `FOR UPDATE SKIP LOCKED`, so parallel dispatches never pick the same driver.
    Unique indexes guarantee one open offer per order and per driver.
+
 3. The driver has `driver_accept_timeout_seconds` to answer through `driver_respond_to_offer(offer_id, accept)`:
    - **accept**: the order is assigned (`orders.driver_id`, `driver_accepted_at`, `dispatch_status = assigned`)
      inside the order's row lock, so only one accept can win;
@@ -32,11 +33,11 @@ expiry time (plus the server time, so the app's countdown is correct even on a p
 
 ## Tables
 
-| Table | Who can read | Who can write |
-| --- | --- | --- |
-| `order_dispatch_offers` | the offered driver, staff | security-definer functions only |
-| `driver_dispatch_state` (load, open offer, last offer time) | the driver themselves, staff | functions/triggers only |
-| `order_dispatch_events` (audit: offered, accepted, rejected, expired, cancelled, no_driver, manual_assign, manual_unassign) | staff | functions/triggers only |
+| Table                                                                                                                       | Who can read                 | Who can write                   |
+| --------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------- |
+| `order_dispatch_offers`                                                                                                     | the offered driver, staff    | security-definer functions only |
+| `driver_dispatch_state` (load, open offer, last offer time)                                                                 | the driver themselves, staff | functions/triggers only         |
+| `order_dispatch_events` (audit: offered, accepted, rejected, expired, cancelled, no_driver, manual_assign, manual_unassign) | staff                        | functions/triggers only         |
 
 `orders.dispatch_status` is one of `unassigned`, `offered`, `assigned` or `no_driver_available`.
 
@@ -56,10 +57,44 @@ hand-over to the next driver. It never assigns an expired offer.
 
 ## Settings (store_settings)
 
-| Column | Default | Range |
-| --- | --- | --- |
-| `features.auto_dispatch_enabled` | `false` | |
-| `dispatch_trigger_status` | `preparing` | `confirmed`, `preparing` |
-| `driver_accept_timeout_seconds` | 120 | 30–1800 |
-| `max_active_orders_per_driver` | 3 | 1–20 |
-| `dispatch_alert_after_minutes` | 10 | 1–1440 (admin alert for orders waiting without a driver) |
+| Column                           | Default     | Range                                                    |
+| -------------------------------- | ----------- | -------------------------------------------------------- |
+| `features.auto_dispatch_enabled` | `false`     |                                                          |
+| `dispatch_trigger_status`        | `preparing` | `confirmed`, `preparing`                                 |
+| `driver_accept_timeout_seconds`  | 120         | 30–1800                                                  |
+| `max_active_orders_per_driver`   | 3           | 1–20                                                     |
+| `dispatch_alert_after_minutes`   | 10          | 1–1440 (admin alert for orders waiting without a driver) |
+
+## Push notifications (app closed or screen locked)
+
+Migration `20261008150000_push_subscriptions.sql` and Edge Function `supabase/functions/send-driver-push`.
+
+How it works: a new offer row → database trigger (pg_net) → `send-driver-push` → Web Push to every device the
+driver enabled → the service worker `/driver-sw.js` shows **«أوردر جديد #123»** and opens `/driver` on tap.
+The payload holds only the order number, a short text and the link: no customer name, phone or address.
+Devices the push service reports as gone (HTTP 404/410) are deleted automatically.
+
+One-time setup per store:
+
+1. Generate keys: `node scripts/generate-vapid-keys.mjs` (prints to your terminal only).
+2. App environment (Vercel → Project → Settings → Environment Variables, and `.env` locally):
+   `VITE_VAPID_PUBLIC_KEY` (public by design). Redeploy after adding it.
+3. Edge Function secrets (Dashboard → Edge Functions → Secrets, or `supabase secrets set`):
+   `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:owner@yourstore.com`),
+   `DRIVER_PUSH_WEBHOOK_SECRET` (any long random string).
+4. Deploy: `supabase functions deploy send-driver-push --no-verify-jwt`
+   (the function checks the webhook secret or the driver's own login itself).
+5. Let the database call it. In the SQL editor, run once with your values:
+   ```sql
+   select vault.create_secret('https://<project-ref>.supabase.co/functions/v1/send-driver-push', 'driver_push_url');
+   select vault.create_secret('<same value as DRIVER_PUSH_WEBHOOK_SECRET>', 'driver_push_secret');
+   ```
+   Requires the pg_net extension (Database → Extensions). Without these two secrets nothing is sent and
+   dispatching works exactly the same.
+6. Each driver: driver app → ⚙ Settings → turn on "Order notifications" → "Send a test notification".
+
+Phones:
+
+- **Android (Chrome)**: works in the browser tab or installed app.
+- **iPhone/iPad**: iOS 16.4+, and only after Safari → Share → **Add to Home Screen**, then opening the app
+  from that icon and enabling notifications there. The settings screen shows these steps on iPhone.

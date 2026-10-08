@@ -10,6 +10,7 @@ import {
   Package,
   Phone,
   Radio,
+  Settings,
   Sun,
   Volume2,
 } from "lucide-react";
@@ -39,10 +40,37 @@ import {
 } from "@/lib/driver-alerts";
 import { OfferAlert, OfferClosedNotice } from "@/components/driver/OfferAlert";
 import { AlertsOnboarding } from "@/components/driver/AlertsOnboarding";
+import { PushSettings } from "@/components/driver/PushSettings";
+import { refreshPushRegistration } from "@/lib/push";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/driver")({
-  head: ({ matches }) =>
-    pageHead(matches, { title: { ar: "تطبيق المندوب", en: "Driver app" }, noindex: true }),
+  head: ({ matches }) => {
+    const h = pageHead(matches, {
+      title: { ar: "تطبيق المندوب", en: "Driver app" },
+      noindex: true,
+    });
+    return {
+      ...h,
+      // Installable driver app (needed for push notifications on iPhone).
+      meta: [
+        ...h.meta,
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-title", content: "Driver" },
+      ],
+      links: [
+        { rel: "manifest", href: "/driver.webmanifest" },
+        { rel: "apple-touch-icon", href: "/driver-icon-192.png" },
+      ],
+    };
+  },
   component: DriverApp,
 });
 
@@ -127,6 +155,12 @@ function DriverApp() {
   const [tab, setTab] = useState("new");
   const [answering, setAnswering] = useState(false);
   const [needsTap, setNeedsTap] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // A device that already receives push is re-linked to whoever is signed in now.
+  useEffect(() => {
+    if (offersOn) refreshPushRegistration().catch(() => {});
+  }, [offersOn]);
 
   // Ring and vibrate when a new offer arrives; a system notification too if the app is in the background.
   const seen = useRef(new Set<string>());
@@ -242,6 +276,15 @@ function DriverApp() {
           {ar ? "تطبيق المندوب" : "Driver"}
         </h1>
         <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-primary-foreground hover:bg-primary-foreground/10"
+            onClick={() => setSettingsOpen(true)}
+            aria-label={ar ? "الإعدادات" : "Settings"}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -379,6 +422,17 @@ function DriverApp() {
           ))}
         </Tabs>
       </div>
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{ar ? "الإعدادات" : "Settings"}</DialogTitle>
+            <DialogDescription>
+              {ar ? "إشعارات الطلبات الجديدة" : "New order notifications"}
+            </DialogDescription>
+          </DialogHeader>
+          {settingsOpen && <PushSettings ar={ar} />}
+        </DialogContent>
+      </Dialog>
       {offers.offers[0] && !deactivated && (
         <OfferAlert
           key={offers.offers[0].offer_id}

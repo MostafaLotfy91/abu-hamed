@@ -53,8 +53,9 @@ export function useDriverOffers(driverId: string | null, enabled: boolean) {
   const q = useQuery({
     queryKey: [OFFERS_KEY, driverId],
     enabled: enabled && !!driverId,
-    // Backup for a missed Realtime event; Realtime normally makes this instant.
-    refetchInterval: 30_000,
+    // Backup for a missed Realtime event (Realtime normally makes this instant). Short, because an offer
+    // only lives ~2 minutes; it is one small query per online driver.
+    refetchInterval: 10_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     queryFn: async () => {
