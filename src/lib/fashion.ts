@@ -1,18 +1,9 @@
-/** Fashion domain constants shared by storefront and admin. */
+/**
+ * Fashion helpers shared by storefront and admin. Size presets per category live in the database
+ * (product_profiles); only enumerations the database validates (gender, season, concentration) are listed here.
+ */
+/** Which size chart a profile shows; "none" = no size guide. */
 export type SizeType = "clothes" | "shoes" | "kids" | "none";
-
-export const SIZE_SETS: Record<Exclude<SizeType, "none">, string[]> = {
-  clothes: ["S", "M", "L", "XL", "XXL", "XXXL"],
-  shoes: ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"],
-  kids: ["0-3m", "3-6m", "6-12m", "1-2y", "2-3y", "3-4y", "4-5y", "5-6y", "6-7y", "7-8y", "8-10y", "10-12y", "12-14y"],
-};
-
-export const SIZE_TYPE_OPTIONS = [
-  { value: "clothes", label: "ملابس (S–XXXL) / Clothes" },
-  { value: "shoes", label: "أحذية (36–46) / Shoes" },
-  { value: "kids", label: "أطفال (بالسن) / Kids by age" },
-  { value: "none", label: "بدون مقاس / No size" },
-];
 
 export const GENDERS = [
   { value: "men", ar: "رجالي", en: "Men" },
@@ -38,13 +29,23 @@ export function sizeLabel(size: string, lang: "ar" | "en") {
   return `${m[1]}-${m[2]} ${unit}`;
 }
 
-/** Sort sizes in their natural order (by set index, then numeric). */
+const LETTER_SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "4XL", "5XL"];
+
+/** Sort key: letter sizes (XXS..5XL), then ages ("0-3m", "2-3y") by months, then numbers, then anything else. */
+function sizeRank(s: string): [number, number] {
+  const letter = LETTER_SIZES.indexOf(s.toUpperCase());
+  if (letter !== -1) return [0, letter];
+  const age = /^(\d+)-(\d+)(m|y)$/i.exec(s);
+  if (age) return [1, Number(age[1]) * (age[3].toLowerCase() === "y" ? 12 : 1)];
+  if (/^\d+(\.\d+)?$/.test(s)) return [2, Number(s)];
+  return [3, 0];
+}
+
+/** Sort sizes in their natural order (letters, ages, numbers, then alphabetical). */
 export function sortSizes(sizes: string[]) {
-  const all = [...SIZE_SETS.clothes, ...SIZE_SETS.kids, ...SIZE_SETS.shoes];
   return [...sizes].sort((a, b) => {
-    const ia = all.indexOf(a), ib = all.indexOf(b);
-    if (ia !== -1 && ib !== -1) return ia - ib;
-    return a.localeCompare(b, undefined, { numeric: true });
+    const [ga, va] = sizeRank(a), [gb, vb] = sizeRank(b);
+    return ga - gb || va - vb || a.localeCompare(b, undefined, { numeric: true });
   });
 }
 

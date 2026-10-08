@@ -22,6 +22,8 @@ export type Field = {
   required?: boolean;
   list?: boolean; // show in table
   default?: unknown;
+  /** Show this field in the form only when it returns true for the row being edited (values are kept either way). */
+  show?: (row: Record<string, unknown>) => boolean;
 };
 
 type AnyTable = "categories" | "products" | "banners" | "coupons" | "product_variants" | "branches";
@@ -165,7 +167,7 @@ export function CrudPage({
           <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
           {editing && (
             <div className="grid gap-3 sm:grid-cols-2">
-              {fields.map((f) => {
+              {fields.filter((f) => !f.show || f.show(editing)).map((f) => {
                 const v = editing[f.key];
                 const set = (nv: unknown) => setEditing({ ...editing, [f.key]: nv });
                 const wide = f.type === "textarea" || f.type === "images";

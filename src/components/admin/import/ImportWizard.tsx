@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchCategories, fetchFacets } from "@/lib/queries";
+import { fetchCategories, fetchFacets, fetchProfiles } from "@/lib/queries";
 import { IMPORT_BATCH, IMPORT_MAX_BYTES, IMPORT_MAX_ROWS, toPayload, toRows, validateRows, type CheckedRow } from "@/lib/product-import";
 import { downloadErrorReport, downloadTemplate, exportProducts, readSheet } from "@/lib/product-import-xlsx";
 import { Button } from "@/components/ui/button";
@@ -50,11 +50,13 @@ export function ImportWizard() {
       if (!rows.length) throw new Error("الملف فاضي أو العناوين غير صحيحة");
       if (rows.length > IMPORT_MAX_ROWS) throw new Error(`الحد الأقصى ${IMPORT_MAX_ROWS} صف`);
       if (unknownHeaders.length) toast.warning(`أعمدة غير معروفة سيتم تجاهلها: ${unknownHeaders.join("، ")}`);
-      const [cats, existing] = await Promise.all([
+      const [cats, existing, profiles] = await Promise.all([
         fetchCategories(),
         existingKeys([...new Set(rows.map((r) => r.product_code).filter(Boolean))], rows.map((r) => r.sku).filter(Boolean)),
+        fetchProfiles(),
       ]);
-      const res = validateRows(rows, cats, existing, create);
+      // Sizes are checked against each category's profile (e.g. no clothing sizes for perfumes).
+      const res = validateRows(rows, cats, existing, create, profiles);
       setFile(f); setChecked(res.checked); setSummary(res.summary); setProgress(null);
     } catch (e) { toast.error((e as Error).message); }
     setBusy(false);
@@ -91,7 +93,7 @@ export function ImportWizard() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={async () => { try { const [cats, facets] = await Promise.all([fetchCategories(), fetchFacets()]); await downloadTemplate(cats, facets.colors); } catch (e) { toast.error((e as Error).message); } }}><Download className="h-4 w-4" />تحميل القالب</Button>
+        <Button variant="outline" onClick={async () => { try { const [cats, facets, profiles] = await Promise.all([fetchCategories(), fetchFacets(), fetchProfiles()]); await downloadTemplate(cats, facets.colors, profiles); } catch (e) { toast.error((e as Error).message); } }}><Download className="h-4 w-4" />تحميل القالب</Button>
         <Button variant="outline" onClick={async () => { try { await exportProducts(await fetchCategories()); } catch (e) { toast.error((e as Error).message); } }}>
           <FileSpreadsheet className="h-4 w-4" />تصدير المنتجات إلى Excel
         </Button>

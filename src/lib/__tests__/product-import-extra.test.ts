@@ -3,6 +3,7 @@ import {
   categoryPath, clean, IMPORT_MAX_BYTES, IMPORT_MAX_ROWS, looksLikeFormula, mapHeader, matchImageFile, neutralizeFormula,
   normalizeColor, normalizeSize, resolveCategory, toPayload, toRows, validateRows, type CategoryInfo, type PaletteColor,
 } from "@/lib/product-import";
+import type { Profile } from "@/lib/catalog";
 
 // Colours are matched against the store's own palette (from catalog_facets), no longer a built-in list.
 const PALETTE: PaletteColor[] = [
@@ -12,16 +13,23 @@ const PALETTE: PaletteColor[] = [
 ];
 
 const cats: CategoryInfo[] = [
-  { id: "m", name_ar: "ملابس رجالي", name_en: "Men", parent_id: null, size_type: "clothes" },
-  { id: "s", name_ar: "قمصان", name_en: "Shirts", parent_id: "m", size_type: "none" },
-  { id: "sh", name_ar: "أحذية", name_en: "Shoes", parent_id: null, size_type: "shoes" },
-  { id: "p", name_ar: "عطور", name_en: "Perfumes", parent_id: null, size_type: "none" },
+  { id: "m", name_ar: "ملابس رجالي", name_en: "Men", parent_id: null, profile: "clothes" },
+  { id: "s", name_ar: "قمصان", name_en: "Shirts", parent_id: "m", profile: null },
+  { id: "sh", name_ar: "أحذية", name_en: "Shoes", parent_id: null, profile: "shoes" },
+  { id: "p", name_ar: "عطور", name_en: "Perfumes", parent_id: null, profile: "perfume" },
 ];
+// Category profiles (product_profiles): sizes are validated against the category's profile.
+const PROFILES: Profile[] = [
+  { key: "clothes", name_ar: "ملابس", name_en: "Clothing", filters: [], fields: [], sizes: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"], size_guide: "clothes" },
+  { key: "shoes", name_ar: "أحذية", name_en: "Shoes", filters: [], fields: [], sizes: ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"], size_guide: "shoes" },
+  { key: "perfume", name_ar: "عطور", name_en: "Perfumes", filters: [], fields: [], sizes: null, size_guide: null },
+];
+
 const none = { productCodes: new Set<string>(), variantSkus: new Set<string>() };
 const HEAD = ["product_code", "name_ar", "category", "price", "size", "sku", "stock"];
 const one = (row: string[], head = HEAD) => toRows([head, row]).rows[0];
 const check = (row: string[], opts: { head?: string[]; create?: boolean; existing?: typeof none } = {}) =>
-  validateRows(toRows([opts.head ?? HEAD, row]).rows, cats, opts.existing ?? none, opts.create ?? false).checked[0];
+  validateRows(toRows([opts.head ?? HEAD, row]).rows, cats, opts.existing ?? none, opts.create ?? false, PROFILES).checked[0];
 
 describe("constants", () => {
   it("exposes import limits", () => {
@@ -159,11 +167,11 @@ describe("normalizeColor", () => {
 
 describe("resolveCategory / categoryPath", () => {
   it("resolves Arabic and English paths, case-insensitively", () => {
-    expect(resolveCategory("ملابس رجالي > قمصان", cats)).toEqual({ id: "s", sizeType: "clothes" });
-    expect(resolveCategory("men > SHIRTS", cats)).toEqual({ id: "s", sizeType: "clothes" });
-    expect(resolveCategory("Men>قمصان", cats)).toEqual({ id: "s", sizeType: "clothes" });
-    expect(resolveCategory("أحذية", cats)).toEqual({ id: "sh", sizeType: "shoes" });
-    expect(resolveCategory("Perfumes", cats)).toEqual({ id: "p", sizeType: "none" });
+    expect(resolveCategory("ملابس رجالي > قمصان", cats, PROFILES)).toEqual({ id: "s", sizes: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] });
+    expect(resolveCategory("men > SHIRTS", cats, PROFILES)).toEqual({ id: "s", sizes: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] });
+    expect(resolveCategory("Men>قمصان", cats, PROFILES)).toEqual({ id: "s", sizes: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] });
+    expect(resolveCategory("أحذية", cats, PROFILES)).toEqual({ id: "sh", sizes: ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"] });
+    expect(resolveCategory("Perfumes", cats, PROFILES)).toEqual({ id: "p", sizes: null });
   });
   it("requires the full path from the root", () => {
     expect(resolveCategory("قمصان", cats)).toBeNull();
@@ -256,7 +264,7 @@ describe("validateRows", () => {
   });
   it("errors on duplicate sku in the file", () => {
     const rs = toRows([HEAD, ["A1", "قميص", "Men", "100", "L", "DUP", "1"], ["A1", "", "Men", "100", "M", "DUP", "1"]]).rows;
-    const { checked } = validateRows(rs, cats, none, false);
+    const { checked } = validateRows(rs, cats, none, false, PROFILES);
     expect(checked.every((c) => c.status === "error" && c.messages.includes("كود الصنف مكرر في الملف (DUP)"))).toBe(true);
   });
   it("errors on unknown gender and season", () => {
@@ -303,7 +311,7 @@ describe("validateRows", () => {
       ["NEW", "جديد", "Men", "100", "S", "NEW-S", "1"],
       ["BAD", "x", "Men", "-1", "S", "BAD-S", "1"],
     ]).rows;
-    expect(validateRows(rs, cats, existing, false).summary).toEqual({ newProducts: 1, updatedProducts: 1, newVariants: 2, errors: 1 });
+    expect(validateRows(rs, cats, existing, false, PROFILES).summary).toEqual({ newProducts: 1, updatedProducts: 1, newVariants: 2, errors: 1 });
   });
 });
 

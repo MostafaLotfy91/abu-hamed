@@ -39,6 +39,12 @@ describe("sizeLabel", () => {
 });
 
 describe("sortSizes", () => {
+  it("orders letter sizes without a hardcoded preset, including XS and 4XL", () => {
+    expect(sortSizes(["4XL", "M", "XS", "xl", "S", "XXS"])).toEqual(["XXS", "XS", "S", "M", "xl", "4XL"]);
+  });
+  it("puts letters before ages before numbers before free text", () => {
+    expect(sortSizes(["One size", "40", "2-3y", "M"])).toEqual(["M", "2-3y", "40", "One size"]);
+  });
   it("orders all clothing sizes naturally", () => {
     expect(sortSizes(["XXXL", "L", "XXL", "S", "XL", "M"])).toEqual(["S", "M", "L", "XL", "XXL", "XXXL"]);
   });

@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Json, Tables } from "@/integrations/supabase/types";
+import { descendantIds as descendantsOf, toCatalogQuery, type ListState, type Profile } from "@/lib/catalog";
 import { assertImageFile, toWebp } from "@/lib/image-compress";
 
 export type Product = Tables<"products"> & { product_variants?: { id: string; size?: string | null; color_hex?: string | null; color_ar?: string | null; color_en?: string | null; stock?: number; is_active?: boolean; price?: number | null }[] };
@@ -38,69 +39,55 @@ export async function fetchProductsHome(kind: "flash" | "best" | "new" | "season
 
 /** Collects a category and all descendants (unlimited depth via parent_id). */
 export function descendantIds(all: Category[], rootId: string) {
-  const out = [rootId];
-  for (let i = 0; i < out.length; i++) {
-    for (const c of all) if (c.parent_id === out[i]) out.push(c.id);
-  }
-  return out;
+  return descendantsOf(all, rootId);
 }
 
-export type ListFilters = {
-  q?: string;
-  categoryIds?: string[];
-  minPrice?: number;
-  maxPrice?: number;
-  brand?: string;
-  discounted?: boolean;
-  inStock?: boolean;
-  gender?: string;
-  size?: string;
-  color?: string;
-  sort?: "newest" | "price_asc" | "price_desc" | "popular";
-};
+/** What a listing shows: a base scope (search text or category subtree) plus the user's filters. */
+export type ListFilters = { q?: string; categoryIds?: string[] } & ListState;
 
 export const PAGE_SIZE = 20;
 
-/** Builds the filtered products query; `head` returns only the exact count. */
-function filteredProducts(f: ListFilters, head = false) {
-  const variantJoin = f.size || f.color ? ",vf:product_variants!inner(size,color_en,stock)" : "";
-  let q = supabase.from("products").select(PRODUCT_FIELDS + variantJoin, head ? { count: "exact", head: true } : undefined).eq("is_active", true);
-  if (f.size) q = q.eq("vf.size", f.size);
-  if (f.color) q = q.eq("vf.color_en", f.color);
-  if (variantJoin && f.inStock) q = q.gt("vf.stock", 0);
-  if (f.gender) q = q.eq("gender", f.gender);
-  if (f.q) {
-    const s = f.q.replace(/[%,()]/g, " ").trim();
-    q = q.or(`name_ar.ilike.%${s}%,name_en.ilike.%${s}%,brand.ilike.%${s}%`);
-  }
-  if (f.categoryIds?.length) q = q.in("category_id", f.categoryIds);
-  if (f.minPrice != null) q = q.gte("price", f.minPrice);
-  if (f.maxPrice != null) q = q.lte("price", f.maxPrice);
-  if (f.brand) q = q.eq("brand", f.brand);
-  if (f.discounted) q = q.or(`old_price.not.is.null,flash_ends_at.gt.${new Date().toISOString()}`);
-  if (f.inStock) q = q.gt("stock", 0);
-  return q;
-}
-
-export async function fetchProductPage(f: ListFilters, page: number) {
-  let q = filteredProducts(f);
-  switch (f.sort) {
-    case "price_asc": q = q.order("price", { ascending: true }); break;
-    case "price_desc": q = q.order("price", { ascending: false }); break;
-    case "popular": q = q.order("sold_count", { ascending: false }); break;
-    default: q = q.order("created_at", { ascending: false });
-  }
-  const from = page * PAGE_SIZE;
-  const { data, error } = await q.range(from, from + PAGE_SIZE - 1);
+/** Matching products, ordered and paged by the catalog_search SQL function (same rules as the count and options). */
+export async function fetchProductPage(f: ListFilters, page: number, typeIds?: string[]) {
+  const { data, error } = await supabase
+    .rpc("catalog_search", { f: toCatalogQuery(f, f, typeIds) as Json, _sort: f.sort ?? "newest", _limit: PAGE_SIZE, _offset: page * PAGE_SIZE })
+    .select(PRODUCT_FIELDS);
   if (error) throw error;
   return data as unknown as Product[];
 }
 
-export async function fetchProductCount(f: ListFilters) {
-  const { count, error } = await filteredProducts(f, true);
+export async function fetchProductCount(f: ListFilters, typeIds?: string[]) {
+  const { data, error } = await supabase.rpc("catalog_count", { f: toCatalogQuery(f, f, typeIds) as Json });
   if (error) throw error;
-  return count ?? 0;
+  return data ?? 0;
 }
+
+export type FilterOptions = Omit<Facets, "volumes"> & {
+  volumes: { value: number; count: number }[];
+  materials: { value: string; en: string | null; count: number }[];
+  categories: { value: string; count: number }[];
+  discounted: number;
+  in_stock: number;
+  price: { min: number | null; max: number | null };
+};
+export const EMPTY_OPTIONS: FilterOptions = {
+  sizes: [], colors: [], brands: [], genders: [], seasons: [], concentrations: [], volumes: [], materials: [], categories: [],
+  discounted: 0, in_stock: 0, price: { min: null, max: null },
+};
+
+/** Filter values present in the current result set, each counted with the other active filters applied. */
+export async function fetchFilterOptions(f: ListFilters, typeIds?: string[]): Promise<FilterOptions> {
+  const { data, error } = await supabase.rpc("catalog_filter_options", { f: toCatalogQuery(f, f, typeIds) as Json });
+  if (error) throw error;
+  return { ...EMPTY_OPTIONS, ...((data ?? {}) as Partial<FilterOptions>) };
+}
+
+export async function fetchProfiles(): Promise<Profile[]> {
+  const { data, error } = await supabase.from("product_profiles").select("*").order("sort_order");
+  if (error) throw error;
+  return (data ?? []) as unknown as Profile[];
+}
+export const profilesQuery = { queryKey: ["product_profiles"], queryFn: fetchProfiles, staleTime: 10 * 60_000 };
 
 export type Facet = { value: string; count: number };
 export type ColorFacet = { en: string; ar: string | null; hex: string | null; count: number };

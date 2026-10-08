@@ -37,16 +37,22 @@ test.describe("customer shopping (Arabic, RTL)", () => {
     if (isMobile) {
       await visible(page.getByRole("button", { name: new RegExp(s.filters) })).click();
       const sheet = page.getByRole("dialog");
-      await sheet.getByPlaceholder(s.min, { exact: true }).fill(String(catalog.price + 1000));
+      // Price inputs are found by label: their placeholder shows the real price range of the listing.
+      await sheet.getByRole("spinbutton", { name: s.min, exact: true }).fill(String(catalog.price + 1000));
       await sheet.getByRole("button", { name: /^عرض .* منتج$/ }).click();
     } else {
-      await visible(page.getByPlaceholder(s.min, { exact: true })).fill(String(catalog.price + 1000));
+      await visible(page.getByRole("spinbutton", { name: s.min, exact: true })).fill(String(catalog.price + 1000));
     }
     await expect(page.getByRole("heading", { name: s.noProducts })).toBeVisible();
     await page.getByRole("button", { name: s.clearAll }).click();
     await expect(product).toBeVisible();
 
-    // Size filter: M is stocked, XXXL does not exist for this product.
+    // Only sizes that exist in the listing are offered (S, M, L for the seeded shirt); XXXL is not.
+    const sizeButtons = isMobile ? null : page.locator("aside");
+    if (sizeButtons) {
+      await expect(sizeButtons.getByRole("button", { name: "M", exact: true })).toBeVisible();
+      await expect(sizeButtons.getByRole("button", { name: "XXXL", exact: true })).toHaveCount(0);
+    }
     const pickSize = async (size: string) => {
       if (isMobile) {
         await visible(page.getByRole("button", { name: new RegExp(s.filters) })).click();
@@ -57,10 +63,12 @@ test.describe("customer shopping (Arabic, RTL)", () => {
         await visible(page.locator("aside").getByRole("button", { name: size, exact: true })).click();
       }
     };
-    await pickSize("XXXL");
-    await expect(page.getByRole("heading", { name: s.noProducts })).toBeVisible();
-    await page.getByRole("button", { name: s.clearAll }).click();
     await pickSize("M");
+    await expect(product).toBeVisible();
+    // Filters live in the URL: a reload keeps them.
+    await expect(page).toHaveURL(/[?&]size=M(&|$)/);
+    await page.reload();
+    await expect(page.getByRole("button", { name: /^M$/ }).filter({ has: page.locator("svg") })).toBeVisible();
     await expect(product).toBeVisible();
   });
 

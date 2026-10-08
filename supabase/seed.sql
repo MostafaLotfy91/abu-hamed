@@ -175,3 +175,18 @@ from rows;
 
 insert into public.coupons (code, discount_type, value, min_order, max_discount)
 values ('DEMO10', 'percent', 10, 150, 50) on conflict (code) do nothing;
+
+-- Category profiles for the demo departments (subcategories inherit).
+update public.categories set profile = case id
+  when 'a277259a-ec31-54fb-bada-cca3b5d78ceb' then 'clothes'      -- Men's clothing
+  when 'c2f13de9-250f-5d38-ac58-e7d24181eba0' then 'clothes'      -- Women's clothing
+  when 'bfa3823d-a7f8-5fdc-b47b-659b1d556785' then 'kids'         -- Kids
+  when '0e6e2c4e-2df5-5215-8531-7c2ef764c4a7' then 'shoes'        -- Shoes
+  when '6cbfea30-7cd2-5390-b30b-07d2ce138402' then 'shoes'        -- Sneakers
+  when 'f92c33fe-fa44-5dcd-afa3-6435c8deb0b4' then 'shoes'        -- Slippers
+  when '3d6b6055-f692-5d8e-a2a3-49d4951c2269' then 'modest'       -- Galabiyas
+  when '931393f1-f194-5733-8323-6c1a56f80516' then 'modest'       -- Abayas
+  when 'b9b87a06-eb54-5210-8dac-9e64e5259be0' then 'perfume'      -- Perfumes
+  when '736a95ca-d315-564a-8e99-9c7189ccde43' then 'accessories'  -- Accessories
+  else profile end
+ where parent_id is null;

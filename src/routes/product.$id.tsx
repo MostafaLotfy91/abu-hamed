@@ -8,7 +8,9 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { effectivePrice } from "@/lib/format";
-import { defaultSelection, findVariant, GENDERS, LOW_STOCK, SEASONS, sizeLabel, type SizeType } from "@/lib/fashion";
+import { defaultSelection, findVariant, GENDERS, LOW_STOCK, SEASONS, sizeLabel } from "@/lib/fashion";
+import { profileOf } from "@/lib/catalog";
+import { fetchCategories, profilesQuery } from "@/lib/queries";
 import { ProductGallery } from "@/components/store/ProductGallery";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SizeGuide } from "@/components/store/SizeGuide";
@@ -52,12 +54,14 @@ function ProductPage() {
   const q = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select(`*, product_variants(*), categories(size_type)`).eq("id", id).maybeSingle();
+      const { data, error } = await supabase.from("products").select(`*, product_variants(*)`).eq("id", id).maybeSingle();
       if (error) throw error;
       return data;
     },
   });
   const p = q.data;
+  const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, staleTime: 5 * 60_000 });
+  const profiles = useQuery(profilesQuery);
   // What the page shows as selected (including the auto-picked colour) is what the WhatsApp message describes.
   const picked = defaultSelection(p?.product_variants ?? [], { size, color });
   const waColor = (() => { const v = p?.product_variants?.find((x) => x.color_en === picked.color); return v ? tx(v, "color") : picked.color; })();
@@ -90,7 +94,9 @@ function ProductPage() {
   if (!p) return <EmptyState title={t("no_products")} />;
 
   const variants = (p.product_variants ?? []).filter((v) => v.is_active).sort((a, b) => a.sort_order - b.sort_order);
-  const sizeType = (p.size_type ?? (p.categories as { size_type?: string } | null)?.size_type ?? "none") as SizeType;
+  // Category profile decides the size guide, the fragrance section and how the size axis is labelled.
+  const profile = profileOf(p.category_id, cats.data ?? [], profiles.data ?? []);
+  const sizeAxisLabel = profile.sizes ? t("size") : lang === "ar" ? "الخيار" : "Option";
   const { sizes, colors, color: pickedColor, size: pickedSize } = picked;
   const needSize = sizes.length > 0, needColor = colors.length > 0;
   const variant = variants.length ? findVariant(variants, needSize ? pickedSize : null, needColor ? pickedColor : null) : null;
@@ -107,7 +113,8 @@ function ProductPage() {
   const images = p.images?.length ? p.images : [null];
   const name = tx(p, "name");
   const g = GENDERS.find((x) => x.value === p.gender), se = SEASONS.find((x) => x.value === p.season);
-  const isPerfume = !!(p.top_notes || p.middle_notes || p.base_notes || p.volume_ml || p.concentration);
+  const isPerfume = (profile.fields.includes("notes") || profile.fields.includes("volume"))
+    && !!(p.top_notes || p.middle_notes || p.base_notes || p.volume_ml || p.concentration);
 
   const add = () => {
     if (!ready) return toast.error(t("select_size_color"));
@@ -174,8 +181,8 @@ function ProductPage() {
           {needSize && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold">{t("size")}</p>
-                <SizeGuide type={sizeType} />
+                <p className="text-sm font-semibold">{sizeAxisLabel}</p>
+                {profile.size_guide && <SizeGuide type={profile.size_guide} />}
               </div>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                 {sizes.map((s) => {

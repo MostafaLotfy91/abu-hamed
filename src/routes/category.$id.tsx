@@ -1,11 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
-import { descendantIds, fetchCategories } from "@/lib/queries";
+import { parseListSearch, profileOf, toListSearch, type ListState } from "@/lib/catalog";
+import { descendantIds, fetchCategories, profilesQuery } from "@/lib/queries";
 import { ProductListing } from "@/components/store/ProductListing";
 import { ProductGridSkeleton, ErrorState, EmptyState } from "@/components/store/states";
 
 export const Route = createFileRoute("/category/$id")({
+  // Listing filters live in the URL so reloads and shared links keep them (see parseListSearch).
+  validateSearch: (s: Record<string, unknown>): Partial<Record<string, unknown>> => s,
   head: () => ({
     meta: [
       { title: "قسم المنتجات · Category" },
@@ -20,8 +24,12 @@ export const Route = createFileRoute("/category/$id")({
 function CategoryPage() {
   const { id } = Route.useParams();
   const { tx, t } = useI18n();
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/category/$id" });
+  const onStateChange = useCallback((next: ListState) => navigate({ search: toListSearch(next), replace: true }), [navigate]);
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
-  if (isLoading) return <ProductGridSkeleton />;
+  const profiles = useQuery(profilesQuery);
+  if (isLoading || profiles.isLoading) return <ProductGridSkeleton />;
   if (error) return <ErrorState onRetry={() => refetch()} />;
   const all = data ?? [];
   const cat = all.find((c) => c.id === id);
@@ -47,7 +55,10 @@ function CategoryPage() {
           ))}
         </div>
       )}
-      <ProductListing key={id} base={{ categoryIds: descendantIds(all, id) }} title={tx(cat, "name")} />
+      <ProductListing key={id} base={{ categoryIds: descendantIds(all, id) }} title={tx(cat, "name")}
+        profile={profileOf(id, all, profiles.data ?? [])}
+        types={kids.map((k) => ({ id: k.id, label: tx(k, "name"), ids: descendantIds(all, k.id) }))}
+        state={parseListSearch(search)} onStateChange={onStateChange} />
     </div>
   );
 }

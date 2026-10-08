@@ -200,6 +200,7 @@ export type Database = {
           name_ar: string
           name_en: string
           parent_id: string | null
+          profile: string | null
           size_type: string
           sort_order: number
         }
@@ -211,6 +212,7 @@ export type Database = {
           name_ar: string
           name_en: string
           parent_id?: string | null
+          profile?: string | null
           size_type?: string
           sort_order?: number
         }
@@ -222,6 +224,7 @@ export type Database = {
           name_ar?: string
           name_en?: string
           parent_id?: string | null
+          profile?: string | null
           size_type?: string
           sort_order?: number
         }
@@ -589,6 +592,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_profiles: {
+        Row: {
+          fields: string[]
+          filters: string[]
+          key: string
+          name_ar: string
+          name_en: string
+          size_guide: string | null
+          sizes: string[] | null
+          sort_order: number
+        }
+        Insert: {
+          fields?: string[]
+          filters?: string[]
+          key: string
+          name_ar: string
+          name_en: string
+          size_guide?: string | null
+          sizes?: string[] | null
+          sort_order?: number
+        }
+        Update: {
+          fields?: string[]
+          filters?: string[]
+          key?: string
+          name_ar?: string
+          name_en?: string
+          size_guide?: string | null
+          sizes?: string[] | null
+          sort_order?: number
+        }
+        Relationships: []
       }
       product_variants: {
         Row: {
@@ -1105,6 +1141,13 @@ export type Database = {
       }
       cancel_my_order: { Args: { _order_id: string }; Returns: undefined }
       catalog_facets: { Args: { _category_ids?: string[] | null }; Returns: Json }
+      catalog_count: { Args: { f?: Json }; Returns: number }
+      catalog_filter_options: { Args: { f?: Json }; Returns: Json }
+      catalog_search: {
+        Args: { f?: Json; _sort?: string; _limit?: number; _offset?: number }
+        Returns: Database["public"]["Tables"]["products"]["Row"][]
+      }
+      category_profile: { Args: { _category_id: string }; Returns: string }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_order_customers: {
         Args: never

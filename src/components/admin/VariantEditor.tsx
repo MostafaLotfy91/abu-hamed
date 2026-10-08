@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { SIZE_SETS, sortSizes, type SizeType } from "@/lib/fashion";
+import { sortSizes } from "@/lib/fashion";
 import { fetchFacets } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,8 @@ import { Switch } from "@/components/ui/switch";
 type PaletteColor = { ar: string; en: string; hex: string };
 
 /** Admin variant editor: bulk-generate size × color combinations, then edit stock/price/SKU per row. */
-export function VariantEditor({ productId, sku, sizeType }: { productId: string; sku: string | null; sizeType: SizeType }) {
+/** `sizes` is the category profile's size preset (null = this kind of product has no sizes). */
+export function VariantEditor({ productId, sku, sizes: preset }: { productId: string; sku: string | null; sizes: string[] | null }) {
   const qc = useQueryClient();
   const key = ["admin", "variants", productId];
   const q = useQuery({
@@ -44,7 +45,7 @@ export function VariantEditor({ productId, sku, sizeType }: { productId: string;
   };
   const [stock, setStock] = useState(10);
   const [busy, setBusy] = useState(false);
-  const sizeSet = sizeType === "none" ? [] : SIZE_SETS[sizeType];
+  const sizeSet: string[] = preset ?? [];
   const toggle = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
   const generate = async () => {

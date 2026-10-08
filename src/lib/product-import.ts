@@ -1,5 +1,5 @@
 /** Pure parsing/normalizing/validation for the Excel product import (no I/O, unit-tested). */
-import { SIZE_SETS, type SizeType } from "@/lib/fashion";
+import { profileOf, type Profile } from "@/lib/catalog";
 import { toAsciiDigits } from "@/lib/format";
 
 export const IMPORT_MAX_ROWS = 2000;
@@ -88,10 +88,10 @@ export function normalizeColor(s: string, hex?: string, palette: PaletteColor[] 
   return { color_ar: c?.ar ?? v, color_en: c?.en ?? v, color_hex: validHex || (c?.hex ?? "") };
 }
 
-export type CategoryInfo = { id: string; name_ar: string; name_en: string; parent_id: string | null; size_type: string };
+export type CategoryInfo = { id: string; name_ar: string; name_en: string; parent_id: string | null; profile: string | null };
 
-/** Resolves "ملابس رجالي > قمصان" to a category; returns the effective size type too. */
-export function resolveCategory(path: string, cats: CategoryInfo[]) {
+/** Resolves "ملابس رجالي > قمصان" to a category; returns its effective size preset (null = no sizes). */
+export function resolveCategory(path: string, cats: CategoryInfo[], profiles: Profile[] = []) {
   let parent: string | null = null, hit: CategoryInfo | undefined;
   const chain: CategoryInfo[] = [];
   for (const seg of path.split(">").map((s) => s.trim()).filter(Boolean)) {
@@ -100,8 +100,7 @@ export function resolveCategory(path: string, cats: CategoryInfo[]) {
     chain.push(hit); parent = hit.id;
   }
   if (!hit) return null;
-  const st = [...chain].reverse().find((c) => c.size_type && c.size_type !== "none")?.size_type ?? "none";
-  return { id: hit.id, sizeType: st as SizeType };
+  return { id: hit.id, sizes: profileOf(hit.id, cats, profiles).sizes };
 }
 
 export const categoryPath = (id: string | null, cats: CategoryInfo[]) => {
@@ -153,7 +152,7 @@ export function toRows(matrix: unknown[][], palette: PaletteColor[] = []): { row
 
 export type Existing = { productCodes: Set<string>; variantSkus: Set<string> };
 
-export function validateRows(rows: ImportRow[], cats: CategoryInfo[], existing: Existing, createCategories: boolean) {
+export function validateRows(rows: ImportRow[], cats: CategoryInfo[], existing: Existing, createCategories: boolean, profiles: Profile[] = []) {
   const skuCount = new Map<string, number>();
   rows.forEach((r) => r.sku && skuCount.set(r.sku, (skuCount.get(r.sku) ?? 0) + 1));
   const named = new Set(rows.filter((r) => r.name_ar).map((r) => r.product_code));
@@ -172,11 +171,11 @@ export function validateRows(rows: ImportRow[], cats: CategoryInfo[], existing: 
     if (r.concentration && !["EDP", "EDT", "Parfum"].includes(r.concentration)) w.push("التركيز غير معروف وسيتم تجاهله");
     if (r.volume_ml !== null && Number.isNaN(r.volume_ml)) e.push("الحجم ليس رقماً");
     if (r.category) {
-      const cat = resolveCategory(r.category, cats);
+      const cat = resolveCategory(r.category, cats, profiles);
       if (!cat) (createCategories ? w : e).push(createCategories ? "سيتم إنشاء قسم جديد" : `القسم غير موجود: ${r.category}`);
-      else if (r.size && cat.sizeType !== "none" && !SIZE_SETS[cat.sizeType as Exclude<SizeType, "none">].includes(r.size))
+      else if (r.size && cat.sizes && !cat.sizes.includes(r.size))
         e.push(`المقاس ${r.size} غير مسموح لهذا القسم`);
-      else if (r.size && cat.sizeType === "none") w.push("القسم بدون مقاسات، تأكد من المقاس");
+      else if (r.size && !cat.sizes) w.push("القسم بدون مقاسات، تأكد من المقاس");
     } else if (!existing.productCodes.has(r.product_code)) w.push("بدون قسم");
     if (!r.sku && (r.size || r.color_ar)) w.push("بدون كود صنف — سيتم المطابقة بالمقاس واللون");
     const bad = r.images.filter((u) => !/^https:\/\//i.test(u));

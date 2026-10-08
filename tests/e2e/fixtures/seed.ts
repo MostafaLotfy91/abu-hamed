@@ -186,7 +186,7 @@ export async function createCatalog(tag: string): Promise<Catalog> {
   const db = service();
   const category = { ar: `قسم اختبار ${tag}`, en: `E2E Dept ${tag}` };
   const cat = must(
-    await db.from("categories").insert({ name_ar: category.ar, name_en: category.en, size_type: "clothes", sort_order: -1, is_active: true }).select("id").single(),
+    await db.from("categories").insert({ name_ar: category.ar, name_en: category.en, size_type: "clothes", profile: "clothes", sort_order: -1, is_active: true }).select("id").single(),
     "insert category",
   );
   const product = { ar: `قميص اختبار ${tag}`, en: `E2E Shirt ${tag}` };
@@ -214,6 +214,36 @@ export async function createCatalog(tag: string): Promise<Catalog> {
     tag, categoryId: cat.id, category, productId: p.id, product, sku, price, color,
     variants: Object.fromEntries(vs.map((v) => [v.size, v.id])) as Catalog["variants"],
     couponCode, couponPercent: 10,
+  };
+}
+
+export type ProfileCatalog = {
+  perfume: { categoryId: string; name: { ar: string; en: string }; productId: string };
+  accessories: { categoryId: string; watchesId: string; name: { ar: string; en: string }; productId: string };
+};
+
+/** A perfume department and an accessories department (with a "watches" subcategory), tagged for cleanup. */
+export async function createProfileCatalog(tag: string): Promise<ProfileCatalog> {
+  const db = service();
+  const perfName = { ar: `عطور اختبار ${tag}`, en: `E2E Perfumes ${tag}` };
+  const perfCat = must(await db.from("categories").insert({ name_ar: perfName.ar, name_en: perfName.en, profile: "perfume", sort_order: 998, is_active: true }).select("id").single(), "perfume category");
+  const perf = must(await db.from("products").insert({
+    category_id: perfCat.id, name_ar: `عطر اختبار ${tag}`, name_en: `E2E Perfume ${tag}`, sku: `E2E-${tag}-PERF`, price: 800, stock: 5,
+    is_active: true, gender: "unisex", brand: `E2E ${tag}`, concentration: "EDP", volume_ml: 100, top_notes: "برغموت", base_notes: "مسك",
+  }).select("id").single(), "perfume product");
+  const accName = { ar: `إكسسوارات اختبار ${tag}`, en: `E2E Accessories ${tag}` };
+  const accCat = must(await db.from("categories").insert({ name_ar: accName.ar, name_en: accName.en, profile: "accessories", sort_order: 997, is_active: true }).select("id").single(), "accessories category");
+  const watches = must(await db.from("categories").insert({ name_ar: `ساعات اختبار ${tag}`, name_en: `E2E Watches ${tag}`, parent_id: accCat.id, sort_order: 0, is_active: true }).select("id").single(), "watches category");
+  const watch = must(await db.from("products").insert({
+    category_id: watches.id, name_ar: `ساعة اختبار ${tag}`, name_en: `E2E Watch ${tag}`, sku: `E2E-${tag}-WATCH`, price: 1200, stock: 0,
+    is_active: true, brand: `E2E ${tag}`, material_ar: "ستانلس", material_en: "Stainless",
+  }).select("id").single(), "watch product");
+  must(await db.from("product_variants").insert([
+    { product_id: watch.id, name_ar: "ذهبي", name_en: "Gold", color_ar: "ذهبي", color_en: "Gold", color_hex: "#c8a24a", stock: 3, sku: `E2E-${tag}-WATCH-GLD`, is_active: true },
+  ]), "watch variant");
+  return {
+    perfume: { categoryId: perfCat.id, name: perfName, productId: perf.id },
+    accessories: { categoryId: accCat.id, watchesId: watches.id, name: accName, productId: watch.id },
   };
 }
 

@@ -1,6 +1,7 @@
 /** Excel I/O for product import/export (browser only — SheetJS loaded on demand). */
 import { supabase } from "@/integrations/supabase/client";
-import { GENDERS, SEASONS, SIZE_SETS, CONCENTRATIONS } from "@/lib/fashion";
+import { GENDERS, SEASONS, CONCENTRATIONS } from "@/lib/fashion";
+import type { Profile } from "@/lib/catalog";
 import { AR_HEADERS, COLUMNS, categoryPath, neutralizeFormula, type CategoryInfo, type PaletteColor } from "@/lib/product-import";
 
 const loadXlsx = () => import("xlsx");
@@ -22,7 +23,7 @@ const INSTRUCTIONS = [
 ];
 
 /** Import template. The example row is neutral; the Lists sheet shows the store's own categories and colours. */
-export async function downloadTemplate(cats: CategoryInfo[], palette: PaletteColor[] = []) {
+export async function downloadTemplate(cats: CategoryInfo[], palette: PaletteColor[] = [], profiles: Profile[] = []) {
   const XLSX = await loadXlsx();
   const example = ["SKU-001", "قميص قطن", "Cotton shirt", cats[0] ? categoryPath(cats.find((c) => c.parent_id)?.id ?? cats[0].id, cats) : "", "",
     "men", "summer", "قطن", "وصف المنتج", "Product description", "غسيل على 30", 450, 550, "أسود", "#000000", "L", "SKU-001-BLK-L", 10,
@@ -32,8 +33,10 @@ export async function downloadTemplate(cats: CategoryInfo[], palette: PaletteCol
   ws["!cols"] = COLUMNS.map(() => ({ wch: 18 }));
   XLSX.utils.book_append_sheet(wb, ws, "Products");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([...INSTRUCTIONS, [], ["العمود", "الاسم بالعربي"], ...COLUMNS.map((c) => [c, AR_HEADERS[c]])]), "Instructions");
-  const lists: string[][] = [["category", "clothes sizes", "shoe sizes", "kids sizes", "gender", "season", "color", "concentration"]];
-  const cols = [cats.map((c) => categoryPath(c.id, cats)).sort(), SIZE_SETS.clothes, SIZE_SETS.shoes, SIZE_SETS.kids,
+  // One size column per category profile that has sizes (sizes are validated against the category's profile).
+  const sized = profiles.filter((p) => p.sizes?.length);
+  const lists: string[][] = [["category", ...sized.map((p) => `${p.name_en} sizes`), "gender", "season", "color", "concentration"]];
+  const cols = [cats.map((c) => categoryPath(c.id, cats)).sort(), ...sized.map((p) => p.sizes ?? []),
     GENDERS.map((g) => g.value), SEASONS.map((s) => s.value), palette.map((c) => c.ar ?? c.en), [...CONCENTRATIONS]];
   const n = Math.max(...cols.map((c) => c.length));
   for (let i = 0; i < n; i++) lists.push(cols.map((c) => c[i] ?? ""));
