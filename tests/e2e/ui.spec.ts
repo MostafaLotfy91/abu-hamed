@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures/test";
 import { E2E_READY, SKIP_REASON } from "./fixtures/env";
 import { T, toast, visible } from "./fixtures/helpers";
-import { setVariantStock } from "./fixtures/seed";
+import { readSettings, setProductImages, setVariantStock } from "./fixtures/seed";
 
 test.skip(!E2E_READY, SKIP_REASON);
 
@@ -76,6 +76,48 @@ test.describe("product page buying", () => {
     } finally {
       await setVariantStock(catalog.variants.M, 50);
       await setVariantStock(catalog.variants.L, 50);
+    }
+  });
+});
+
+test.describe("product photos", () => {
+  test.use({ lang: "ar" });
+
+  test("no photos: store-logo placeholder and nothing to zoom", async ({ page, catalog }) => {
+    const { logo_url } = await readSettings();
+    await page.goto(`/product/${catalog.productId}`);
+    const placeholder = page.getByRole("img", { name: catalog.product.ar }).first();
+    await expect(placeholder).toBeVisible();
+    if (logo_url) await expect(placeholder.locator(`img[src="${logo_url}"]`)).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "تكبير الصورة" }).first()).toBeDisabled();
+  });
+
+  test("viewer: next/previous, counter and tap-to-zoom", async ({ page, catalog }) => {
+    const dot = (color: string) =>
+      `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="${color}"/></svg>`)}`;
+    await setProductImages(catalog.productId, [dot("#c33"), dot("#33c")]);
+    try {
+      await page.goto(`/product/${catalog.productId}`);
+      await page.getByRole("button", { name: "تكبير الصورة" }).first().click();
+      const viewer = page.getByRole("dialog", { name: catalog.product.ar });
+      await expect(viewer.getByText(/١ \/ ٢/)).toBeVisible();
+      await viewer.getByRole("button", { name: "الصورة التالية" }).click();
+      await expect(viewer.getByText(/٢ \/ ٢/)).toBeVisible();
+      await viewer.getByRole("button", { name: "الصورة السابقة" }).click();
+      await expect(viewer.getByText(/١ \/ ٢/)).toBeVisible();
+      // Tap zooms in (the hint disappears and the photo grows past the screen), tap again zooms out.
+      const photo = viewer.getByRole("img", { name: catalog.product.ar });
+      await photo.click();
+      await expect(viewer.getByText("اضغط على الصورة للتكبير")).toBeHidden();
+      const box = await photo.boundingBox();
+      const frame = await viewer.boundingBox();
+      expect(box!.width).toBeGreaterThan(frame!.width * 2);
+      await photo.click({ position: { x: 20, y: 20 } });
+      await expect(viewer.getByText("اضغط على الصورة للتكبير")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(viewer).toBeHidden();
+    } finally {
+      await setProductImages(catalog.productId, []);
     }
   });
 });

@@ -908,3 +908,10 @@ export async function rejectAsDriver(offerId: string) {
   await c.auth.signOut();
   return r;
 }
+
+export async function setProductImages(productId: string, images: string[]) {
+  must(
+    await service().from("products").update({ images, thumbnails: [] }).eq("id", productId),
+    "set product images",
+  );
+}

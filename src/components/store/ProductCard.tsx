@@ -12,6 +12,7 @@ import { LOW_STOCK } from "@/lib/fashion";
 import type { Product } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { useMoney } from "./use-money";
+import { useSettings } from "@/lib/store-settings";
 import { QuickAddSheet } from "./QuickAddSheet";
 
 const NEW_DAYS = 21;
@@ -29,6 +30,7 @@ export function ProductImage({
 }) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+  const logo = useSettings().settings?.logo_url;
   // Images already in the browser cache can finish before React attaches onLoad.
   const ref = useCallback((el: HTMLImageElement | null) => {
     if (el?.complete && el.naturalWidth) setLoaded(true);
@@ -43,7 +45,12 @@ export function ProductImage({
         )}
         {...(alt ? { role: "img", "aria-label": alt } : { "aria-hidden": true })}
       >
-        <ImageOff className="h-7 w-7" aria-hidden />
+        {logo ? (
+          // No product photo: the store logo, faded, reads better than a broken-image icon.
+          <img src={logo} alt="" aria-hidden className="w-1/2 max-w-32 opacity-25 grayscale" />
+        ) : (
+          <ImageOff className="h-7 w-7" aria-hidden />
+        )}
       </div>
     );
   return (

@@ -2,8 +2,8 @@ import { useRef, useState } from "react";
 import { ZoomIn } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ProductImage } from "./ProductCard";
+import { ImageViewer } from "./ImageViewer";
 
 /** Swipeable gallery (scroll-snap) with dots on mobile, thumbnails on desktop and a tap-to-zoom viewer. */
 export function ProductGallery({
@@ -19,6 +19,10 @@ export function ProductGallery({
   const track = useRef<HTMLDivElement>(null);
   const [idx, setIdx] = useState(0);
   const [zoom, setZoom] = useState(false);
+  // The viewer keeps its own position: gallery scroll events (e.g. when the dialog locks scrolling) must not move it.
+  const [viewIdx, setViewIdx] = useState(0);
+  // Only real photos open in the viewer (a product without photos shows the placeholder, nothing to zoom).
+  const photos = images.filter((x): x is string => !!x);
 
   const go = (i: number) => {
     const el = track.current?.children[i] as HTMLElement | undefined;
@@ -44,12 +48,13 @@ export function ProductGallery({
             <button
               key={i}
               type="button"
+              disabled={!src}
               onClick={() => {
-                setIdx(i);
+                setViewIdx(i);
                 setZoom(true);
               }}
               aria-label={t("zoom")}
-              className="w-full shrink-0 snap-start cursor-zoom-in"
+              className="w-full shrink-0 snap-start cursor-zoom-in disabled:cursor-default"
             >
               <ProductImage
                 src={src}
@@ -61,10 +66,12 @@ export function ProductGallery({
           ))}
         </div>
         {overlay}
-        <ZoomIn
-          className="pointer-events-none absolute bottom-3 end-3 hidden h-5 w-5 text-foreground/70 md:block"
-          aria-hidden
-        />
+        {photos.length > 0 && (
+          <ZoomIn
+            className="pointer-events-none absolute bottom-3 end-3 hidden h-5 w-5 text-foreground/70 md:block"
+            aria-hidden
+          />
+        )}
         {images.length > 1 && (
           <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden">
             {images.map((_, i) => (
@@ -97,14 +104,17 @@ export function ProductGallery({
           ))}
         </div>
       )}
-      <Dialog open={zoom} onOpenChange={setZoom}>
-        <DialogContent className="max-w-4xl border-0 bg-background p-0">
-          <DialogTitle className="sr-only">{alt}</DialogTitle>
-          <div className="max-h-[90vh] overflow-auto">
-            {images[idx] && <img src={images[idx]!} alt={alt} className="w-full object-contain" />}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ImageViewer
+        images={photos}
+        alt={alt}
+        index={Math.min(viewIdx, Math.max(0, photos.length - 1))}
+        open={zoom && photos.length > 0}
+        onIndex={(i) => {
+          setViewIdx(i);
+          go(i);
+        }}
+        onOpenChange={setZoom}
+      />
     </div>
   );
 }
