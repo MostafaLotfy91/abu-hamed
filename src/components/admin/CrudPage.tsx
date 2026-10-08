@@ -66,8 +66,9 @@ export function ImageInput({
             setBusy(true);
             try {
               onChange(await uploadMedia(f, folder));
+              toast.success(bi("تم رفع الصورة — احفظ للتأكيد / Image uploaded — save to keep it"));
             } catch (err) {
-              toast.error((err as Error).message);
+              toast.error(bi((err as Error).message));
             }
             setBusy(false);
           }}
@@ -80,7 +81,10 @@ export function ImageInput({
           variant="ghost"
           aria-label={bi("إزالة الصورة / Remove image")}
           title={bi("إزالة الصورة / Remove image")}
-          onClick={() => onChange(null)}
+          onClick={() => {
+            onChange(null);
+            toast(bi("تمت إزالة الصورة — احفظ للتأكيد / Image removed — save to keep it"));
+          }}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -106,6 +110,7 @@ export function CrudPage({
   rowActions,
   headerExtra,
   renderCell,
+  notice,
 }: {
   table: AnyTable;
   title: string;
@@ -116,6 +121,8 @@ export function CrudPage({
   fixed?: Record<string, unknown>;
   rowActions?: (row: Record<string, unknown>) => ReactNode;
   headerExtra?: ReactNode;
+  /** Shown between the header and the table (e.g. "categories missing images"). */
+  notice?: ReactNode;
   renderCell?: (f: Field, row: Record<string, unknown>) => ReactNode | undefined;
 }) {
   const bi = useBi();
@@ -291,6 +298,7 @@ export function CrudPage({
           حذف
         </Button>
       </BulkBar>
+      {notice}
       {confirmDialog}
       {q.isLoading ? (
         <RowSkeleton n={5} />

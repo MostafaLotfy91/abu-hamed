@@ -111,6 +111,17 @@ const NOUNS = {
     },
     en: { one: "{n} minute", other: "{n} minutes" },
   },
+  category: {
+    ar: {
+      zero: "لا أقسام",
+      one: "قسم واحد",
+      two: "قسمان",
+      few: "{n} أقسام",
+      many: "{n} قسمًا",
+      other: "{n} قسم",
+    },
+    en: { one: "{n} category", other: "{n} categories" },
+  },
   offer: {
     ar: {
       zero: "لا عروض",
