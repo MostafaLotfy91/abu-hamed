@@ -10,6 +10,7 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { THEME_SCRIPT, ThemeProvider } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -139,12 +140,15 @@ function RootShell({ children }: { children: ReactNode }) {
   const settings = Route.useLoaderData()?.settings ?? null;
   const lang = settings?.default_language === "en" ? "en" : "ar";
   return (
+    // suppressHydrationWarning: the head script may add class="dark" before React hydrates.
     <html
+      suppressHydrationWarning
       lang={lang}
       dir={lang === "ar" ? "rtl" : "ltr"}
       style={themeVars(settings) as React.CSSProperties}
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
@@ -183,16 +187,18 @@ function RootComponent() {
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
-      <SettingsProvider initial={settings}>
-        <LangFromSettings>
-          <AuthProvider>
-            <CartProvider>
-              <Chrome />
-              <Toaster position="top-center" richColors />
-            </CartProvider>
-          </AuthProvider>
-        </LangFromSettings>
-      </SettingsProvider>
+      <ThemeProvider>
+        <SettingsProvider initial={settings}>
+          <LangFromSettings>
+            <AuthProvider>
+              <CartProvider>
+                <Chrome />
+                <Toaster position="top-center" richColors />
+              </CartProvider>
+            </AuthProvider>
+          </LangFromSettings>
+        </SettingsProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

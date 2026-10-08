@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { SearchBox } from "./SearchBox";
 import { CartLines, CartTotals } from "./CartContents";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/lib/theme";
 
 const NAV: {
   to: "/" | "/categories" | "/cart" | "/orders" | "/account";
@@ -49,7 +50,8 @@ export function StoreLogo() {
           alt=""
           width={160}
           height={44}
-          className="h-9 w-auto max-w-[120px] object-contain md:h-11 md:max-w-[160px]"
+          // Logos are usually drawn for a light background: give them a light plate in dark mode.
+          className="h-9 w-auto max-w-[120px] object-contain md:h-11 md:max-w-[160px] dark:rounded-md dark:bg-white dark:p-0.5"
         />
       ) : (
         <span className="max-w-[40vw] truncate text-lg font-extrabold tracking-tight sm:hidden">
@@ -114,6 +116,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               </Link>
             </Button>
           )}
+          <ThemeToggle ar={lang === "ar"} className="h-11 w-11" />
           <Button
             variant="ghost"
             size="sm"

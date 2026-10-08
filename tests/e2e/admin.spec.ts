@@ -341,11 +341,16 @@ test.describe("admin", () => {
 
       await page.goto("/");
       await expect(page.locator("footer")).toContainText(newName);
+      // The store colour is injected as --brand-primary (dark mode derives a lighter --primary from it);
+      // in light mode the colour the page uses is exactly the store's.
       await expect
         .poll(() =>
-          page.evaluate(() => document.documentElement.style.getPropertyValue("--primary").trim()),
+          page.evaluate(() => [
+            document.documentElement.style.getPropertyValue("--brand-primary").trim(),
+            getComputedStyle(document.documentElement).getPropertyValue("--primary").trim(),
+          ]),
         )
-        .toBe("#123456");
+        .toEqual(["#123456", "#123456"]);
     } finally {
       await updateSettings({ name_ar: original.name_ar, primary_color: original.primary_color });
     }

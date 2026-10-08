@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: ({ matches }) =>
@@ -109,6 +110,7 @@ function AdminLayout() {
             <StoreLogo />
           </div>
           <div className="flex items-center gap-1">
+            <ThemeToggle ar={lang === "ar"} className={cn("h-8 w-8", collapsed && "md:hidden")} />
             <Button
               size="sm"
               variant="ghost"

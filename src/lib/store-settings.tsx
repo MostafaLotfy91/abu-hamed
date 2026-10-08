@@ -48,8 +48,9 @@ export function themeVars(
 ): Record<string, string> {
   const v: Record<string, string> = {};
   if (s?.primary_color) {
-    v["--primary"] = s.primary_color;
-    v["--primary-foreground"] = readableOn(s.primary_color);
+    // --primary itself is derived in CSS, so dark mode can lighten a dark brand colour (styles.css).
+    v["--brand-primary"] = s.primary_color;
+    v["--brand-primary-foreground"] = readableOn(s.primary_color);
   }
   if (s?.secondary_color) {
     v["--brand-secondary"] = s.secondary_color;
@@ -78,8 +79,8 @@ export function SettingsProvider({
     if (isLoading) return;
     const root = document.documentElement.style;
     if (data?.primary_color) {
-      root.setProperty("--primary", data.primary_color);
-      root.setProperty("--primary-foreground", readableOn(data.primary_color));
+      root.setProperty("--brand-primary", data.primary_color);
+      root.setProperty("--brand-primary-foreground", readableOn(data.primary_color));
     }
     if (data?.secondary_color) {
       root.setProperty("--brand-secondary", data.secondary_color);

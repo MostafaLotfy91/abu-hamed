@@ -49,6 +49,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ThemeToggle } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/driver")({
   head: ({ matches }) => {
@@ -285,6 +286,7 @@ function DriverApp() {
           >
             <Settings className="h-4 w-4" />
           </Button>
+          <ThemeToggle ar={ar} className="text-primary-foreground hover:bg-primary-foreground/10" />
           <Button
             size="sm"
             variant="ghost"
