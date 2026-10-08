@@ -85,12 +85,19 @@ One-time setup per store:
 4. Deploy: `supabase functions deploy send-driver-push --no-verify-jwt`
    (the function checks the webhook secret or the driver's own login itself).
 5. Let the database call it. In the SQL editor, run once with your values:
+
    ```sql
    select vault.create_secret('https://<project-ref>.supabase.co/functions/v1/send-driver-push', 'driver_push_url');
    select vault.create_secret('<same value as DRIVER_PUSH_WEBHOOK_SECRET>', 'driver_push_secret');
    ```
+
    Requires the pg_net extension (Database → Extensions). Without these two secrets nothing is sent and
    dispatching works exactly the same.
+   Shortcut for a dev/staging project (allowlisted in `.env.test`): put the four function secrets in the
+   git-ignored `supabase/.env.push`, then
+   `npx supabase secrets set --env-file supabase/.env.push --project-ref <ref>` (step 3) and
+   `node scripts/setup-push-vault.mjs` (step 5; creates or updates both Vault secrets, prints no values).
+
 6. Each driver: driver app → ⚙ Settings → turn on "Order notifications" → "Send a test notification".
 
 Phones:
