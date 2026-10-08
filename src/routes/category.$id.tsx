@@ -5,20 +5,43 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/seo";
 import { parseListSearch, profileOf, toListSearch, type ListState } from "@/lib/catalog";
-import { descendantIds, fetchCategories, profilesQuery } from "@/lib/queries";
+import { descendantIds, fetchCategories, fetchProfiles, profilesQuery } from "@/lib/queries";
+import { isServer, listingFiltersFor, loadInitialListing } from "@/lib/listing-ssr";
 import { ProductListing } from "@/components/store/ProductListing";
 import { ProductGridSkeleton, ErrorState, EmptyState } from "@/components/store/states";
 
 export const Route = createFileRoute("/category/$id")({
   // Listing filters live in the URL so reloads and shared links keep them (see parseListSearch).
   validateSearch: (s: Record<string, unknown>): Partial<Record<string, unknown>> => s,
-  loader: async ({ params }) => {
-    const { data } = await supabase
-      .from("categories")
-      .select("name_ar,name_en,image_url")
-      .eq("id", params.id)
-      .maybeSingle();
-    return { seo: data ?? null };
+  loaderDeps: ({ search }) => ({ search }),
+  loader: async ({ params, deps, context }) => {
+    // <head> data; cached so filter changes in the browser don't refetch it.
+    const seo = await context.queryClient.ensureQueryData({
+      queryKey: ["category-seo", params.id],
+      queryFn: async () =>
+        (
+          await supabase
+            .from("categories")
+            .select("name_ar,name_en,image_url")
+            .eq("id", params.id)
+            .maybeSingle()
+        ).data ?? null,
+    });
+    // On the server, also load what the page needs to render its products into the HTML.
+    if (!isServer()) return { seo, ssr: null };
+    const [categories, profiles] = await Promise.all([fetchCategories(), fetchProfiles()]);
+    const kids = categories.filter((c) => c.parent_id === params.id && c.is_active);
+    const filters = listingFiltersFor(
+      { categoryIds: descendantIds(categories, params.id) },
+      deps.search,
+      profileOf(params.id, categories, profiles),
+    );
+    const typeIds =
+      filters.type && kids.some((k) => k.id === filters.type)
+        ? descendantIds(categories, filters.type)
+        : undefined;
+    const listing = await loadInitialListing(filters, typeIds);
+    return { seo, ssr: { categories, profiles, listing } };
   },
   head: ({ matches, loaderData }) =>
     pageHead(matches, {
@@ -39,11 +62,16 @@ function CategoryPage() {
     (next: ListState) => navigate({ search: toListSearch(next), replace: true }),
     [navigate],
   );
+  const { ssr } = Route.useLoaderData();
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
+    ...(ssr ? { initialData: ssr.categories, staleTime: 60_000 } : {}),
   });
-  const profiles = useQuery(profilesQuery);
+  const profiles = useQuery({
+    ...profilesQuery,
+    ...(ssr ? { initialData: ssr.profiles } : {}),
+  });
   if (isLoading || profiles.isLoading) return <ProductGridSkeleton />;
   if (error) return <ErrorState onRetry={() => refetch()} />;
   const all = data ?? [];
@@ -101,6 +129,7 @@ function CategoryPage() {
         types={kids.map((k) => ({ id: k.id, label: tx(k, "name"), ids: descendantIds(all, k.id) }))}
         state={parseListSearch(search)}
         onStateChange={onStateChange}
+        initial={ssr?.listing}
       />
     </div>
   );

@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { countLabel } from "@/lib/format";
+import { listingKey, type InitialListing } from "@/lib/listing-ssr";
 
 type Base = Pick<ListFilters, "q" | "categoryIds">;
 /** A subcategory offered by the "type" filter: its id, label and the ids of its whole subtree. */
@@ -47,7 +48,10 @@ export function ProductListing({
   types = [],
   state,
   onStateChange,
+  initial,
 }: {
+  /** First page loaded by the route on the server (used only while the listing shows exactly that state). */
+  initial?: InitialListing | null;
   base: Base;
   title?: React.ReactNode;
   profile: Profile | null;
@@ -74,15 +78,19 @@ export function ProductListing({
   const filters: ListFilters = { ...base, ...f };
   const typeIds = typeIdsOf(f);
 
+  const seed = initial && initial.key === listingKey(filters, typeIds) ? initial : null;
   const q = useInfiniteQuery({
     queryKey: ["products", filters, typeIds ?? null],
     initialPageParam: 0,
+    // Server-loaded first page: shown immediately and not refetched right after hydration.
+    ...(seed ? { initialData: { pages: [seed.items], pageParams: [0] }, staleTime: 60_000 } : {}),
     queryFn: ({ pageParam }) => fetchProductPage(filters, pageParam, typeIds),
     getNextPageParam: (last, pages) => (last.length === PAGE_SIZE ? pages.length : undefined),
   });
   const total = useQuery({
     queryKey: ["products-count", filters, typeIds ?? null],
     queryFn: () => fetchProductCount(filters, typeIds),
+    ...(seed ? { initialData: seed.total, staleTime: 60_000 } : {}),
     placeholderData: keepPreviousData,
   });
   const optionsQ = useQuery({

@@ -32,3 +32,15 @@ test.describe("dark mode", () => {
     });
   });
 });
+
+test.describe("listings in the server HTML", () => {
+  test("category and search pages arrive with their products (before any script runs)", async ({
+    request,
+    catalog,
+  }) => {
+    for (const path of [`/category/${catalog.categoryId}`, `/products?q=${catalog.tag}`]) {
+      const html = await (await request.get(path)).text();
+      expect(html, path).toContain(`/product/${catalog.productId}`);
+    }
+  });
+});
