@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      // Test output (Playwright traces contain .html files) must not trigger dev-server page reloads,
+      // or E2E runs reload the page under test mid-step.
+      watch: { ignored: ["**/tests/e2e/.results/**", "**/tests/e2e/.report/**", "**/.output/**"] },
+    },
+  },
 });
