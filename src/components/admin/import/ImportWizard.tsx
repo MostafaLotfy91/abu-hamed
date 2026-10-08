@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Download, FileSpreadsheet, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchCategories } from "@/lib/queries";
+import { fetchCategories, fetchFacets } from "@/lib/queries";
 import { IMPORT_BATCH, IMPORT_MAX_BYTES, IMPORT_MAX_ROWS, toPayload, toRows, validateRows, type CheckedRow } from "@/lib/product-import";
 import { downloadErrorReport, downloadTemplate, exportProducts, readSheet } from "@/lib/product-import-xlsx";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,9 @@ export function ImportWizard() {
     if (f.size > IMPORT_MAX_BYTES) return toast.error("حجم الملف أكبر من 5 ميجا");
     setBusy(true);
     try {
-      const { rows, unknownHeaders } = toRows(await readSheet(f));
+      // Colour names in the sheet are matched against the colours the store already uses.
+      const palette = (await fetchFacets()).colors;
+      const { rows, unknownHeaders } = toRows(await readSheet(f), palette);
       if (!rows.length) throw new Error("الملف فاضي أو العناوين غير صحيحة");
       if (rows.length > IMPORT_MAX_ROWS) throw new Error(`الحد الأقصى ${IMPORT_MAX_ROWS} صف`);
       if (unknownHeaders.length) toast.warning(`أعمدة غير معروفة سيتم تجاهلها: ${unknownHeaders.join("، ")}`);
@@ -89,7 +91,7 @@ export function ImportWizard() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={async () => downloadTemplate(await fetchCategories())}><Download className="h-4 w-4" />تحميل القالب</Button>
+        <Button variant="outline" onClick={async () => { try { const [cats, facets] = await Promise.all([fetchCategories(), fetchFacets()]); await downloadTemplate(cats, facets.colors); } catch (e) { toast.error((e as Error).message); } }}><Download className="h-4 w-4" />تحميل القالب</Button>
         <Button variant="outline" onClick={async () => { try { await exportProducts(await fetchCategories()); } catch (e) { toast.error((e as Error).message); } }}>
           <FileSpreadsheet className="h-4 w-4" />تصدير المنتجات إلى Excel
         </Button>

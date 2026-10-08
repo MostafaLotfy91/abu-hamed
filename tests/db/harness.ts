@@ -10,17 +10,24 @@ const MIGRATIONS = path.join(ROOT, "supabase/migrations");
 
 export const migrationFiles = () => readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
 
-/** Fresh database with the Supabase shim and every migration applied in order. */
-export async function freshDb() {
-  const db = new PGlite({ extensions: { pg_trgm } });
-  await db.exec(readFileSync(path.join(__dirname, "supabase-shim.sql"), "utf8"));
+/** Applies migration files (in order) whose version is >= `from` and < `before`. */
+export async function applyMigrations(db: PGlite, opts: { from?: string; before?: string } = {}) {
   for (const f of migrationFiles()) {
+    const v = f.split("_")[0];
+    if ((opts.from && v < opts.from) || (opts.before && v >= opts.before)) continue;
     try {
       await db.exec(readFileSync(path.join(MIGRATIONS, f), "utf8"));
     } catch (e) {
       throw new Error(`migration ${f} failed: ${(e as Error).message}`);
     }
   }
+}
+
+/** Fresh database with the Supabase shim and every migration (or those before `before`) applied in order. */
+export async function freshDb(opts: { before?: string } = {}) {
+  const db = new PGlite({ extensions: { pg_trgm } });
+  await db.exec(readFileSync(path.join(__dirname, "supabase-shim.sql"), "utf8"));
+  await applyMigrations(db, { before: opts.before });
   return db;
 }
 

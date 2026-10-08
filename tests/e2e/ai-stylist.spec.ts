@@ -69,8 +69,9 @@ test.describe("AI stylist (mocked)", () => {
     const requests = await mockAssistant(page, catalog);
     await page.goto("/");
     await page.getByRole("button", { name: s.stylist, exact: true }).click();
-    await page.getByRole("button", { name: "طقم لفرح" }).click();
-    await expect.poll(() => requests.at(-1)?.messages.at(-1)?.content).toBe("طقم لفرح");
+    // Chips are the store's top-level departments (no hardcoded phrases); the seed's department sorts first.
+    await page.getByRole("button", { name: catalog.category.ar, exact: true }).click();
+    await expect.poll(() => requests.at(-1)?.messages.at(-1)?.content).toBe(catalog.category.ar);
     await card(page, catalog, s.viewProduct).getByRole("link", { name: s.viewProduct }).click();
     await expect(page).toHaveURL(new RegExp(`/product/${catalog.productId}$`));
     await expect(page.getByText(s.stylistSub)).toHaveCount(0);

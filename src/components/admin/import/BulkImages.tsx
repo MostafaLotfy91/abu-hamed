@@ -83,7 +83,7 @@ export function BulkImages() {
         onDrop={(e) => { e.preventDefault(); if (!busy) run([...e.dataTransfer.files]); }}>
         <ImageUp className="h-8 w-8 text-muted-foreground" />
         <span className="font-semibold">اسحب الصور أو ملف ZIP هنا</span>
-        <span className="text-xs text-muted-foreground">سمِّ الملفات: AH001_1.jpg أو AH001_أسود_1.jpg — يتم ضغطها وتحويلها إلى WebP تلقائياً</span>
+        <span className="text-xs text-muted-foreground">سمِّ الملفات بكود المنتج: SKU-001_1.jpg أو SKU-001_أسود_1.jpg — يتم ضغطها وتحويلها إلى WebP تلقائياً</span>
         <input type="file" hidden multiple accept="image/*,.zip" disabled={busy} onChange={(e) => { const f = [...(e.target.files ?? [])]; if (f.length) run(f); e.target.value = ""; }} />
       </label>
       {progress !== null && <Progress value={progress} />}

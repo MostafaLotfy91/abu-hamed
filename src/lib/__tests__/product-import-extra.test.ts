@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   categoryPath, clean, IMPORT_MAX_BYTES, IMPORT_MAX_ROWS, looksLikeFormula, mapHeader, matchImageFile, neutralizeFormula,
-  normalizeColor, normalizeSize, resolveCategory, toPayload, toRows, validateRows, type CategoryInfo,
+  normalizeColor, normalizeSize, resolveCategory, toPayload, toRows, validateRows, type CategoryInfo, type PaletteColor,
 } from "@/lib/product-import";
+
+// Colours are matched against the store's own palette (from catalog_facets), no longer a built-in list.
+const PALETTE: PaletteColor[] = [
+  { en: "Black", ar: "أسود", hex: "#111111" },
+  { en: "Navy", ar: "كحلي", hex: "#1f2a44" },
+  { en: "Blue", ar: "أزرق", hex: "#2f6fb5" },
+];
 
 const cats: CategoryInfo[] = [
   { id: "m", name_ar: "ملابس رجالي", name_en: "Men", parent_id: null, size_type: "clothes" },
@@ -124,22 +131,26 @@ describe("normalizeSize", () => {
 
 describe("normalizeColor", () => {
   it("maps Arabic names (with and without hamza) to the palette", () => {
-    expect(normalizeColor("أسود")).toEqual({ color_ar: "أسود", color_en: "Black", color_hex: "#111111" });
-    expect(normalizeColor("اسود")).toEqual({ color_ar: "أسود", color_en: "Black", color_hex: "#111111" });
-    expect(normalizeColor("لبني").color_en).toBe("Blue");
+    expect(normalizeColor("أسود", "", PALETTE)).toEqual({ color_ar: "أسود", color_en: "Black", color_hex: "#111111" });
+    expect(normalizeColor("اسود", "", PALETTE)).toEqual({ color_ar: "أسود", color_en: "Black", color_hex: "#111111" });
+    expect(normalizeColor("لبني", "", PALETTE).color_en).toBe("Blue");
   });
   it("maps English names case-insensitively", () => {
-    expect(normalizeColor("navy")).toEqual({ color_ar: "كحلي", color_en: "Navy", color_hex: "#1f2a44" });
+    expect(normalizeColor("navy", "", PALETTE)).toEqual({ color_ar: "كحلي", color_en: "Navy", color_hex: "#1f2a44" });
   });
   it("keeps a valid custom hex over the palette hex", () => {
-    expect(normalizeColor("أسود", "#000").color_hex).toBe("#000");
+    expect(normalizeColor("أسود", "#000", PALETTE).color_hex).toBe("#000");
   });
   it("falls back to the palette hex when the given hex is invalid", () => {
-    expect(normalizeColor("أسود", "black").color_hex).toBe("#111111");
+    expect(normalizeColor("أسود", "black", PALETTE).color_hex).toBe("#111111");
   });
   it("keeps unknown colors with their hex", () => {
     expect(normalizeColor("فوشيا", "#ff00ff")).toEqual({ color_ar: "فوشيا", color_en: "فوشيا", color_hex: "#ff00ff" });
     expect(normalizeColor("فوشيا").color_hex).toBe("");
+  });
+  it("with no store palette yet, keeps the colour exactly as typed (nothing invented)", () => {
+    expect(normalizeColor("أسود")).toEqual({ color_ar: "أسود", color_en: "أسود", color_hex: "" });
+    expect(normalizeColor("أسود", "#101010")).toEqual({ color_ar: "أسود", color_en: "أسود", color_hex: "#101010" });
   });
   it("drops an invalid hex even when no color name is given", () => {
     expect(normalizeColor("", "not-a-hex").color_hex).toBe("");
@@ -212,7 +223,7 @@ describe("toRows", () => {
       .toMatchObject({ gender: "women", season: "winter", concentration: "EDP" });
   });
   it("normalizes size and color", () => {
-    const r = one(["A1", "اكس لارج", "اسود"], ["product_code", "size", "color_ar"]);
+    const r = toRows([["product_code", "size", "color_ar"], ["A1", "اكس لارج", "اسود"]], PALETTE).rows[0];
     expect(r).toMatchObject({ size: "XL", color_ar: "أسود", color_en: "Black", color_hex: "#111111" });
   });
 });

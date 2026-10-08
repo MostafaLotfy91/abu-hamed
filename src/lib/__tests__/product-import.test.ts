@@ -11,7 +11,8 @@ const rows = (data: string[][]) => toRows([["product_code", "name_ar", "category
 describe("product import", () => {
   it("converts Arabic-Indic digits", () => expect(clean("٤٥٠")).toBe("450"));
   it("normalizes لارج to L", () => expect(normalizeSize("لارج")).toBe("L"));
-  it("maps Arabic color to hex", () => expect(normalizeColor("أسود").color_hex).toBe("#111111"));
+  // The palette is the store's own colours (catalog_facets), passed in by the import wizard.
+  it("maps Arabic color to hex", () => expect(normalizeColor("أسود", "", [{ en: "Black", ar: "أسود", hex: "#111111" }]).color_hex).toBe("#111111"));
   it("accepts Arabic headers", () => expect(toRows([["كود المنتج", "السعر"], ["A1", "10"]]).rows[0].price).toBe(10));
   it("flags size not allowed for category", () => {
     const { checked } = validateRows(rows([["A1", "قميص", "ملابس رجالي > قمصان", "100", "44", "A1-44", "1"]]), cats, none, false);

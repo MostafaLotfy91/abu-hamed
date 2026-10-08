@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { COLORS, GENDERS, sizeLabel } from "@/lib/fashion";
-import { fetchProductCount, fetchProductPage, PAGE_SIZE, type ListFilters } from "@/lib/queries";
+import { GENDERS, sizeLabel } from "@/lib/fashion";
+import { EMPTY_FACETS, fetchFacets, fetchProductCount, fetchProductPage, PAGE_SIZE, type ListFilters } from "@/lib/queries";
 import { ProductCard } from "./ProductCard";
 import { EmptyState, ErrorState, ProductGridSkeleton } from "./states";
 import { FilterPanel, type Extra } from "./FilterPanel";
@@ -28,6 +28,8 @@ export function ProductListing({ base, title }: { base: Base; title?: React.Reac
     getNextPageParam: (last, pages) => (last.length === PAGE_SIZE ? pages.length : undefined),
   });
   const total = useQuery({ queryKey: ["products-count", filters], queryFn: () => fetchProductCount(filters), placeholderData: keepPreviousData });
+  const facetsQ = useQuery({ queryKey: ["facets", base.categoryIds ?? null], queryFn: () => fetchFacets(base.categoryIds), staleTime: 60_000 });
+  const facets = facetsQ.data ?? EMPTY_FACETS;
   const draftFilters = { ...base, ...draft };
   const draftTotal = useQuery({ queryKey: ["products-count", draftFilters], queryFn: () => fetchProductCount(draftFilters), enabled: open, placeholderData: keepPreviousData });
 
@@ -50,7 +52,7 @@ export function ProductListing({ base, title }: { base: Base; title?: React.Reac
   if (f.brand) chips.push({ key: "brand", label: f.brand, clear: { brand: undefined } });
   if (f.gender) chips.push({ key: "gender", label: GENDERS.find((g) => g.value === f.gender)?.[lang] ?? f.gender, clear: { gender: undefined } });
   if (f.size) chips.push({ key: "size", label: sizeLabel(f.size, lang), clear: { size: undefined } });
-  if (f.color) { const c = COLORS.find((x) => x.en === f.color); chips.push({ key: "color", label: c ? c[lang] : f.color, clear: { color: undefined } }); }
+  if (f.color) { const c = facets.colors.find((x) => x.en === f.color); chips.push({ key: "color", label: (c && (lang === "ar" ? c.ar : c.en)) || f.color, clear: { color: undefined } }); }
   if (f.discounted) chips.push({ key: "disc", label: t("discounted_label"), clear: { discounted: undefined } });
   if (f.inStock) chips.push({ key: "stock", label: t("in_stock_only"), clear: { inStock: undefined } });
 
@@ -66,7 +68,7 @@ export function ProductListing({ base, title }: { base: Base; title?: React.Reac
             </SheetTrigger>
             <SheetContent side="bottom" className="flex max-h-[88vh] flex-col rounded-t-lg p-0">
               <SheetHeader className="border-b p-4 text-start"><SheetTitle>{t("filters")}</SheetTitle></SheetHeader>
-              <div className="flex-1 overflow-y-auto p-4"><FilterPanel value={draft} onChange={setDraft} /></div>
+              <div className="flex-1 overflow-y-auto p-4"><FilterPanel value={draft} onChange={setDraft} facets={facets} /></div>
               <div className="grid grid-cols-2 gap-2 border-t p-4">
                 <Button variant="outline" onClick={() => setDraft({ sort: f.sort })}>{t("reset")}</Button>
                 <Button onClick={() => { setF(draft); setOpen(false); }}>{t("show_results").replace("{n}", String(draftTotal.data ?? "…"))}</Button>
@@ -99,7 +101,7 @@ export function ProductListing({ base, title }: { base: Base; title?: React.Reac
 
       <div className="lg:grid lg:grid-cols-[15rem_1fr] lg:gap-8">
         <aside className="hidden lg:block">
-          <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pe-2"><FilterPanel value={f} onChange={setF} /></div>
+          <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pe-2"><FilterPanel value={f} onChange={setF} facets={facets} /></div>
         </aside>
         <div>
           {q.isLoading ? (

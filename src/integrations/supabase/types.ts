@@ -414,7 +414,6 @@ export type Database = {
           product_id: string | null
           quantity: number
           size: string | null
-          unit: string
           unit_price: number
           variant_id: string | null
           variant_name_ar: string | null
@@ -434,7 +433,6 @@ export type Database = {
           product_id?: string | null
           quantity: number
           size?: string | null
-          unit?: string
           unit_price: number
           variant_id?: string | null
           variant_name_ar?: string | null
@@ -454,7 +452,6 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           size?: string | null
-          unit?: string
           unit_price?: number
           variant_id?: string | null
           variant_name_ar?: string | null
@@ -1107,6 +1104,7 @@ export type Database = {
         Returns: boolean
       }
       cancel_my_order: { Args: { _order_id: string }; Returns: undefined }
+      catalog_facets: { Args: { _category_ids?: string[] | null }; Returns: Json }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_order_customers: {
         Args: never

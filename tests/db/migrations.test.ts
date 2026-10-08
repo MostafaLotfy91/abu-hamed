@@ -26,6 +26,18 @@ describe("migrations build a fresh database", () => {
     expect(rows).toHaveLength(1);
   });
 
+  it("the development seed (supabase/seed.sql) applies on top of the migrations", async () => {
+    const db = await freshDb();
+    const { readFileSync } = await import("node:fs");
+    await db.exec(readFileSync("supabase/seed.sql", "utf8"));
+    const { rows } = await db.query<{ p: number; v: number; c: number }>(
+      `select (select count(*) from public.products)::int p, (select count(*) from public.product_variants)::int v, (select count(*) from public.categories)::int c`,
+    );
+    expect(rows[0].p).toBe(54);
+    expect(rows[0].v).toBeGreaterThan(100);
+    expect(rows[0].c).toBeGreaterThan(40);
+  });
+
   it("enables RLS on every public table (lists any exceptions)", async () => {
     const db = await freshDb();
     const { rows } = await db.query<{ tablename: string }>(

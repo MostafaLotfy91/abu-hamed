@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { formatQty } from "@/lib/format";
+import { formatCount } from "@/lib/format";
 import { VariantLine } from "@/components/store/CartContents";
 import { ReturnSection } from "@/components/store/ReturnRequest";
 import { rpcErrorMessage } from "@/lib/queries";
@@ -115,7 +115,7 @@ function OrderDetail() {
                 <div className="flex-1">
                   <p className="text-sm font-semibold">{tx(i, "name")}</p>
                   <VariantLine size={i.size} colorName={tx(i, "color")} hex={i.color_hex} fallback={tx(i, "variant_name")} />
-                  <p className="text-xs text-muted-foreground">{formatQty(Number(i.quantity), lang)} × {money(i.unit_price)}</p>
+                  <p className="text-xs text-muted-foreground">{formatCount(Number(i.quantity), lang)} × {money(i.unit_price)}</p>
                   {i.notes && <p className="text-xs italic text-muted-foreground">{i.notes}</p>}
                 </div>
                 <span className="font-bold">{money(i.line_total)}</span>

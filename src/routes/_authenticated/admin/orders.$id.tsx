@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useSettings } from "@/lib/store-settings";
-import { formatQty } from "@/lib/format";
+import { formatCount } from "@/lib/format";
 import { useOrder } from "../orders.$id";
 import { useMoney } from "@/components/store/use-money";
 import { ALL_STATUSES, OrderTimeline, StatusBadge, statusKey } from "@/components/store/OrderTimeline";
@@ -94,7 +94,7 @@ function Page() {
               <tr key={i.id}>
                 <td className="py-2">{n + 1}</td>
                 <td>{tx(i, "name")}{(i.size || i.color_ar) ? ` · ${[i.size, tx(i, "color")].filter(Boolean).join(" / ")}` : i.variant_name_ar ? ` · ${tx(i, "variant_name")}` : ""}{i.notes && <div className="text-xs italic text-muted-foreground">{i.notes}</div>}</td>
-                <td className="text-center">{formatQty(Number(i.quantity), lang)}</td>
+                <td className="text-center">{formatCount(Number(i.quantity), lang)}</td>
                 <td className="text-center">{money(i.unit_price)}</td>
                 <td className="text-end font-semibold">{money(i.line_total)}</td>
               </tr>

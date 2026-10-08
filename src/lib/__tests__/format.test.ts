@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deliveryFeeFor, effectivePrice, formatMoney, formatQty } from "@/lib/format";
+import { deliveryFeeFor, effectivePrice, formatCount, formatMoney } from "@/lib/format";
 
 const EGP = { ar: "ج.م", en: "EGP" };
 
@@ -30,12 +30,13 @@ describe("formatMoney", () => {
   });
 });
 
-describe("formatQty", () => {
+// Quantities are whole pieces since the grocery-era weights were removed (was formatQty with 3 decimals).
+describe("formatCount", () => {
   it("formats with up to 3 decimals in each language", () => {
-    expect(formatQty(1.2345, "en")).toBe("1.235");
-    expect(formatQty(1.2345, "ar")).toBe("١٫٢٣٥");
-    expect(formatQty(1000, "en")).toBe("1,000");
-    expect(formatQty(3, "ar")).toBe("٣");
+    expect(formatCount(2, "en")).toBe("2");
+    expect(formatCount(1000, "en")).toBe("1,000");
+    expect(formatCount(3, "ar")).toBe("٣");
+    expect(formatCount(12, "ar")).toBe("١٢");
   });
 });
 

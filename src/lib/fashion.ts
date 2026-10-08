@@ -29,21 +29,6 @@ export const SEASONS = [
 
 export const CONCENTRATIONS = ["EDP", "EDT", "Parfum"] as const;
 
-/** Common colors for the admin bulk editor and storefront filter. */
-export const COLORS = [
-  { en: "Black", ar: "أسود", hex: "#111111" },
-  { en: "White", ar: "أبيض", hex: "#f5f5f5" },
-  { en: "Navy", ar: "كحلي", hex: "#1f2a44" },
-  { en: "Beige", ar: "بيج", hex: "#d8c3a5" },
-  { en: "Gray", ar: "رمادي", hex: "#8a8a8a" },
-  { en: "Red", ar: "أحمر", hex: "#b3261e" },
-  { en: "Olive", ar: "زيتي", hex: "#6b7046" },
-  { en: "Brown", ar: "بني", hex: "#6d4c41" },
-  { en: "Pink", ar: "وردي", hex: "#e8a0b4" },
-  { en: "Blue", ar: "أزرق", hex: "#2f6fb5" },
-  { en: "Gold", ar: "ذهبي", hex: "#c8a24a" },
-];
-
 export const LOW_STOCK = 3;
 
 export function sizeLabel(size: string, lang: "ar" | "en") {

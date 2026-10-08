@@ -186,7 +186,7 @@ export async function createCatalog(tag: string): Promise<Catalog> {
   const db = service();
   const category = { ar: `قسم اختبار ${tag}`, en: `E2E Dept ${tag}` };
   const cat = must(
-    await db.from("categories").insert({ name_ar: category.ar, name_en: category.en, size_type: "clothes", sort_order: 999, is_active: true }).select("id").single(),
+    await db.from("categories").insert({ name_ar: category.ar, name_en: category.en, size_type: "clothes", sort_order: -1, is_active: true }).select("id").single(),
     "insert category",
   );
   const product = { ar: `قميص اختبار ${tag}`, en: `E2E Shirt ${tag}` };

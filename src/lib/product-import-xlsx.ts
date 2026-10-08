@@ -1,7 +1,7 @@
 /** Excel I/O for product import/export (browser only — SheetJS loaded on demand). */
 import { supabase } from "@/integrations/supabase/client";
-import { GENDERS, SEASONS, SIZE_SETS, CONCENTRATIONS, COLORS } from "@/lib/fashion";
-import { AR_HEADERS, COLUMNS, categoryPath, neutralizeFormula, type CategoryInfo } from "@/lib/product-import";
+import { GENDERS, SEASONS, SIZE_SETS, CONCENTRATIONS } from "@/lib/fashion";
+import { AR_HEADERS, COLUMNS, categoryPath, neutralizeFormula, type CategoryInfo, type PaletteColor } from "@/lib/product-import";
 
 const loadXlsx = () => import("xlsx");
 
@@ -21,10 +21,11 @@ const INSTRUCTIONS = [
   ["• الحد الأقصى: 5 ميجا و2000 صف. أي خلية تبدأ بـ = أو + تُحفظ كنص فقط."],
 ];
 
-export async function downloadTemplate(cats: CategoryInfo[]) {
+/** Import template. The example row is neutral; the Lists sheet shows the store's own categories and colours. */
+export async function downloadTemplate(cats: CategoryInfo[], palette: PaletteColor[] = []) {
   const XLSX = await loadXlsx();
-  const example = ["AH900", "قميص قطن كاجوال", "Casual cotton shirt", cats[0] ? categoryPath(cats.find((c) => c.parent_id)?.id ?? cats[0].id, cats) : "", "Abu Hamed",
-    "men", "summer", "قطن 100%", "قميص مريح", "Comfortable shirt", "غسيل على 30", 450, 550, "أسود", "#111111", "L", "AH900-BLK-L", 10,
+  const example = ["SKU-001", "قميص قطن", "Cotton shirt", cats[0] ? categoryPath(cats.find((c) => c.parent_id)?.id ?? cats[0].id, cats) : "", "",
+    "men", "summer", "قطن", "وصف المنتج", "Product description", "غسيل على 30", 450, 550, "أسود", "#000000", "L", "SKU-001-BLK-L", 10,
     "https://example.com/shirt.jpg", "", "", "", "", 1, "", "", "", "", ""];
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet([[...COLUMNS], example]);
@@ -33,7 +34,7 @@ export async function downloadTemplate(cats: CategoryInfo[]) {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([...INSTRUCTIONS, [], ["العمود", "الاسم بالعربي"], ...COLUMNS.map((c) => [c, AR_HEADERS[c]])]), "Instructions");
   const lists: string[][] = [["category", "clothes sizes", "shoe sizes", "kids sizes", "gender", "season", "color", "concentration"]];
   const cols = [cats.map((c) => categoryPath(c.id, cats)).sort(), SIZE_SETS.clothes, SIZE_SETS.shoes, SIZE_SETS.kids,
-    GENDERS.map((g) => g.value), SEASONS.map((s) => s.value), COLORS.map((c) => c.ar), [...CONCENTRATIONS]];
+    GENDERS.map((g) => g.value), SEASONS.map((s) => s.value), palette.map((c) => c.ar ?? c.en), [...CONCENTRATIONS]];
   const n = Math.max(...cols.map((c) => c.length));
   for (let i = 0; i < n; i++) lists.push(cols.map((c) => c[i] ?? ""));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lists), "Lists");

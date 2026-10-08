@@ -17,8 +17,9 @@ export function formatMoney(value: number | string | null | undefined, lang: Lan
   return lang === "ar" ? `${num} ${sym}` : `${sym} ${num}`;
 }
 
-export function formatQty(q: number, lang: Lang) {
-  return new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", { maximumFractionDigits: 3 }).format(q);
+/** Item counts (always whole pieces), with locale digits. */
+export function formatCount(q: number, lang: Lang) {
+  return new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", { maximumFractionDigits: 0 }).format(q);
 }
 
 type PriceInput = {

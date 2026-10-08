@@ -1,1 +1,7 @@
 project_id = "pnvaaivklxxtvbudvgmq"
+
+# Demo data for LOCAL development only: applied by `supabase start` / local resets.
+# `supabase db push` (staging/production) never runs seed files.
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]

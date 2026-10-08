@@ -1,5 +1,5 @@
 /** Pure parsing/normalizing/validation for the Excel product import (no I/O, unit-tested). */
-import { COLORS, SIZE_SETS, type SizeType } from "@/lib/fashion";
+import { SIZE_SETS, type SizeType } from "@/lib/fashion";
 import { toAsciiDigits } from "@/lib/format";
 
 export const IMPORT_MAX_ROWS = 2000;
@@ -70,14 +70,21 @@ export function normalizeSize(s: string): string {
   return v;
 }
 
-export function normalizeColor(s: string, hex?: string) {
+/** A colour the store already uses (from catalog_facets), used to match names in the sheet. */
+export type PaletteColor = { en: string; ar: string | null; hex: string | null };
+
+/**
+ * Matches a colour name against the store's existing colours (Arabic or English, common Arabic spellings).
+ * Unknown colours are kept as typed, with the sheet's hex if it is a valid one.
+ */
+export function normalizeColor(s: string, hex?: string, palette: PaletteColor[] = []) {
   const v = clean(s);
   const h = clean(hex);
   // Only real hex colours reach the database (the value ends up in a style attribute on the storefront).
   const validHex = /^#[0-9a-f]{3,8}$/i.test(h) ? h : "";
   if (!v) return { color_ar: "", color_en: "", color_hex: validHex };
   const alias = EXTRA_COLORS[v];
-  const c = COLORS.find((x) => x.ar === v || x.en.toLowerCase() === (alias ?? v).toLowerCase());
+  const c = palette.find((x) => x.ar === v || x.en.toLowerCase() === (alias ?? v).toLowerCase());
   return { color_ar: c?.ar ?? v, color_en: c?.en ?? v, color_hex: validHex || (c?.hex ?? "") };
 }
 
@@ -119,7 +126,7 @@ const num = (s: string) => (s === "" ? null : Number(s.replace(/[,٬]/g, "")));
 const bool = (s: string) => !/^(0|false|no|لا|غير نشط)$/i.test(s);
 
 /** Turns raw sheet rows (header row first) into typed rows. */
-export function toRows(matrix: unknown[][]): { rows: ImportRow[]; unknownHeaders: string[] } {
+export function toRows(matrix: unknown[][], palette: PaletteColor[] = []): { rows: ImportRow[]; unknownHeaders: string[] } {
   if (!matrix.length) return { rows: [], unknownHeaders: [] };
   const heads = matrix[0].map((h) => mapHeader(String(h ?? "")));
   const unknownHeaders = matrix[0].filter((h, i) => clean(h) && !heads[i]).map((h) => clean(h));
@@ -129,7 +136,7 @@ export function toRows(matrix: unknown[][]): { rows: ImportRow[]; unknownHeaders
     heads.forEach((h, j) => { if (h) g[h] = clean(r[j]); });
     if (!Object.values(g).some(Boolean)) return;
     const s = (k: Column) => g[k] ?? "";
-    const color = normalizeColor(s("color_ar"), s("color_hex"));
+    const color = normalizeColor(s("color_ar"), s("color_hex"), palette);
     rows.push({
       row: i + 2, product_code: s("product_code"), name_ar: s("name_ar"), name_en: s("name_en"), category: s("category"),
       brand: s("brand"), gender: GENDER_MAP[s("gender").toLowerCase()] ?? s("gender").toLowerCase(),

@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
-import { COLORS, GENDERS, SIZE_SETS, sizeLabel } from "@/lib/fashion";
-import { fetchBrands, type ListFilters } from "@/lib/queries";
+import { GENDERS, sizeLabel, sortSizes } from "@/lib/fashion";
+import type { Facets, ListFilters } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,43 +10,54 @@ export type Extra = Omit<ListFilters, "q" | "categoryIds">;
 
 const pill = (on: boolean) => cn("rounded-full border px-3 py-1 text-sm transition", on ? "border-foreground bg-foreground text-background" : "bg-card hover:border-foreground");
 
-/** Shared filter controls: used live in the desktop sidebar and as a draft in the mobile sheet. */
-export function FilterPanel({ value: v, onChange }: { value: Extra; onChange: (v: Extra) => void }) {
+/**
+ * Shared filter controls: used live in the desktop sidebar and as a draft in the mobile sheet.
+ * Every option comes from `facets` (what exists in the catalogue); sections with no options are hidden.
+ */
+export function FilterPanel({ value: v, onChange, facets }: { value: Extra; onChange: (v: Extra) => void; facets: Facets }) {
   const { t, lang } = useI18n();
-  const brands = useQuery({ queryKey: ["brands"], queryFn: fetchBrands });
   const set = (patch: Partial<Extra>) => onChange({ ...v, ...patch });
   const num = (s: string) => (s ? Number(s) : undefined);
+  const genders = GENDERS.filter((g) => facets.genders.some((f) => f.value === g.value));
+  const sizes = sortSizes(facets.sizes.map((s) => s.value));
 
   return (
     <div className="space-y-6">
-      <section>
-        <Label className="text-xs font-semibold uppercase tracking-wide">{t("gender")}</Label>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {GENDERS.map((g) => <button key={g.value} onClick={() => set({ gender: v.gender === g.value ? undefined : g.value })} className={pill(v.gender === g.value)}>{g[lang]}</button>)}
-        </div>
-      </section>
-      <section>
-        <Label className="text-xs font-semibold uppercase tracking-wide">{t("size")}</Label>
-        {(["clothes", "shoes", "kids"] as const).map((k) => (
-          <div key={k} className="mt-2 flex flex-wrap gap-1.5">
-            {SIZE_SETS[k].map((sz) => (
-              <button key={sz} onClick={() => set({ size: v.size === sz ? undefined : sz })}
+      {genders.length > 0 && (
+        <section>
+          <Label className="text-xs font-semibold uppercase tracking-wide">{t("gender")}</Label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {genders.map((g) => <button key={g.value} onClick={() => set({ gender: v.gender === g.value ? undefined : g.value })} className={pill(v.gender === g.value)}>{g[lang]}</button>)}
+          </div>
+        </section>
+      )}
+      {sizes.length > 0 && (
+        <section>
+          <Label className="text-xs font-semibold uppercase tracking-wide">{t("size")}</Label>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {sizes.map((sz) => (
+              <button key={sz} onClick={() => set({ size: v.size === sz ? undefined : sz })} aria-pressed={v.size === sz}
                 className={cn("min-w-10 rounded-md border px-2 py-1 text-xs font-semibold transition", v.size === sz ? "border-foreground bg-foreground text-background" : "bg-card hover:border-foreground")}>{sizeLabel(sz, lang)}</button>
             ))}
           </div>
-        ))}
-      </section>
-      <section>
-        <Label className="text-xs font-semibold uppercase tracking-wide">{t("color")}</Label>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {COLORS.map((c) => (
-            <button key={c.en} title={c[lang]} aria-label={c[lang]} aria-pressed={v.color === c.en} onClick={() => set({ color: v.color === c.en ? undefined : c.en })}
-              className={cn("h-8 w-8 rounded-full border p-0.5", v.color === c.en ? "border-foreground" : "border-transparent")}>
-              <span className="block h-full w-full rounded-full border border-border" style={{ background: c.hex }} />
-            </button>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
+      {facets.colors.length > 0 && (
+        <section>
+          <Label className="text-xs font-semibold uppercase tracking-wide">{t("color")}</Label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {facets.colors.map((c) => {
+              const name = (lang === "ar" ? c.ar : c.en) ?? c.en;
+              return (
+                <button key={c.en} title={name} aria-label={name} aria-pressed={v.color === c.en} onClick={() => set({ color: v.color === c.en ? undefined : c.en })}
+                  className={cn("h-8 w-8 rounded-full border p-0.5", v.color === c.en ? "border-foreground" : "border-transparent")}>
+                  <span className="block h-full w-full rounded-full border border-border" style={{ background: c.hex ?? undefined }} />
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
       <section>
         <Label className="text-xs font-semibold uppercase tracking-wide">{t("price")}</Label>
         <div className="mt-2 flex gap-2">
@@ -55,11 +65,11 @@ export function FilterPanel({ value: v, onChange }: { value: Extra; onChange: (v
           <Input type="number" inputMode="decimal" placeholder={t("max")} value={v.maxPrice ?? ""} onChange={(e) => set({ maxPrice: num(e.target.value) })} />
         </div>
       </section>
-      {!!brands.data?.length && (
+      {facets.brands.length > 0 && (
         <section>
           <Label className="text-xs font-semibold uppercase tracking-wide">{t("brand")}</Label>
           <div className="mt-2 flex flex-wrap gap-2">
-            {brands.data.map((b) => <button key={b} onClick={() => set({ brand: v.brand === b ? undefined : b })} className={pill(v.brand === b)}>{b}</button>)}
+            {facets.brands.map((b) => <button key={b.value} onClick={() => set({ brand: v.brand === b.value ? undefined : b.value })} className={pill(v.brand === b.value)}>{b.value}</button>)}
           </div>
         </section>
       )}

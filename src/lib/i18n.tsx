@@ -176,9 +176,7 @@ const dict = {
   badge_new: { ar: "جديد", en: "New" },
   quick_add: { ar: "إضافة سريعة", en: "Quick add" },
   view_details: { ar: "عرض التفاصيل", en: "View details" },
-  trust_delivery: { ar: "توصيل سريع لكل المحافظات", en: "Fast delivery nationwide" },
   trust_cod: { ar: "الدفع عند الاستلام", en: "Cash on delivery" },
-  trust_returns: { ar: "استبدال واسترجاع سهل", en: "Easy returns & exchanges" },
   shop_now: { ar: "تسوق الآن", en: "Shop now" },
   sign_in_to_save: { ar: "سجّل دخولك لحفظ المفضلة", en: "Sign in to save favorites" },
 } as const;

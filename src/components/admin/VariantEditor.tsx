@@ -3,11 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { COLORS, SIZE_SETS, sortSizes, type SizeType } from "@/lib/fashion";
+import { SIZE_SETS, sortSizes, type SizeType } from "@/lib/fashion";
+import { fetchFacets } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+
+type PaletteColor = { ar: string; en: string; hex: string };
 
 /** Admin variant editor: bulk-generate size × color combinations, then edit stock/price/SKU per row. */
 export function VariantEditor({ productId, sku, sizeType }: { productId: string; sku: string | null; sizeType: SizeType }) {
@@ -23,6 +26,22 @@ export function VariantEditor({ productId, sku, sizeType }: { productId: string;
   });
   const [sizes, setSizes] = useState<string[]>([]);
   const [colors, setColors] = useState<string[]>([]);
+  // Palette = colours already used in the catalogue + any the admin adds here (nothing hardcoded).
+  const used = useQuery({ queryKey: ["facets", null], queryFn: () => fetchFacets(), staleTime: 60_000 });
+  const [custom, setCustom] = useState<PaletteColor[]>([]);
+  const [draft, setDraft] = useState<PaletteColor>({ ar: "", en: "", hex: "#000000" });
+  const palette: PaletteColor[] = [
+    ...(used.data?.colors ?? []).map((c) => ({ en: c.en, ar: c.ar ?? c.en, hex: c.hex ?? "" })),
+    ...custom,
+  ].filter((c, i, all) => all.findIndex((x) => x.en.toLowerCase() === c.en.toLowerCase()) === i);
+  const addColor = () => {
+    const c = { ar: draft.ar.trim(), en: draft.en.trim(), hex: draft.hex };
+    if (!c.ar || !c.en) return toast.error("اكتب اسم اللون بالعربي والإنجليزي / Enter the colour name in Arabic and English");
+    if (palette.some((x) => x.en.toLowerCase() === c.en.toLowerCase())) return toast.error("اللون موجود / Colour already exists");
+    setCustom([...custom, c]);
+    setColors([...colors, c.en]);
+    setDraft({ ar: "", en: "", hex: "#000000" });
+  };
   const [stock, setStock] = useState(10);
   const [busy, setBusy] = useState(false);
   const sizeSet = sizeType === "none" ? [] : SIZE_SETS[sizeType];
@@ -30,7 +49,7 @@ export function VariantEditor({ productId, sku, sizeType }: { productId: string;
 
   const generate = async () => {
     const ss = sizes.length ? sortSizes(sizes) : [null];
-    const cs = colors.length ? COLORS.filter((c) => colors.includes(c.en)) : [null];
+    const cs = colors.length ? palette.filter((c) => colors.includes(c.en)) : [null];
     if (!sizes.length && !colors.length) return toast.error("Pick sizes and/or colors");
     const existing = new Set((q.data ?? []).map((v) => `${v.size ?? ""}|${v.color_en ?? ""}`));
     const rows = cs.flatMap((c, ci) => ss.map((s, si) => ({ c, s, ci, si })))
@@ -73,11 +92,18 @@ export function VariantEditor({ productId, sku, sizeType }: { productId: string;
         )}
         <div><Label id="variant-colors-label">الألوان / Colors</Label>
           <div role="group" aria-labelledby="variant-colors-label" className="mt-1 flex flex-wrap gap-1.5">
-            {COLORS.map((c) => (
+            {palette.map((c) => (
               <button key={c.en} type="button" title={`${c.ar} / ${c.en}`} aria-label={`${c.ar} / ${c.en}`} aria-pressed={colors.includes(c.en)} onClick={() => setColors(toggle(colors, c.en))} className={`h-7 w-7 rounded-full border-2 p-0.5 ${colors.includes(c.en) ? "border-primary" : "border-transparent"}`}>
-                <span className="block h-full w-full rounded-full border" style={{ background: c.hex }} />
+                <span className="block h-full w-full rounded-full border" style={{ background: c.hex || undefined }} />
               </button>
             ))}
+            {!palette.length && <span className="text-xs text-muted-foreground">لا توجد ألوان بعد — أضف لوناً / No colours yet — add one</span>}
+          </div>
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            <Input aria-label="اسم اللون (عربي) / Colour name (Arabic)" placeholder="اسم اللون" className="h-9 w-28" value={draft.ar} onChange={(e) => setDraft({ ...draft, ar: e.target.value })} />
+            <Input aria-label="Colour name (English)" placeholder="Colour" dir="ltr" className="h-9 w-28" value={draft.en} onChange={(e) => setDraft({ ...draft, en: e.target.value })} />
+            <Input aria-label="درجة اللون / Swatch" type="color" className="h-9 w-12 p-1" value={draft.hex} onChange={(e) => setDraft({ ...draft, hex: e.target.value })} />
+            <Button type="button" size="sm" variant="outline" onClick={addColor}>إضافة لون / Add colour</Button>
           </div>
         </div>
         <div className="flex items-end gap-2">

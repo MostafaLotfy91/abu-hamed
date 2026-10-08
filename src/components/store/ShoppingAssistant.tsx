@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import { RotateCcw, Send, Shirt, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useSettings } from "@/lib/store-settings";
+import { fetchCategories } from "@/lib/queries";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,8 +13,6 @@ import { AssistantProductCard } from "./AssistantProductCard";
 
 type Msg = { role: "user" | "assistant"; content: string; products?: AssistantProduct[]; error?: boolean };
 
-const CHIPS_AR = ["طقم لفرح", "هدية لراجل", "لبس العيد للأطفال", "عطر يومي"];
-const CHIPS_EN = ["Wedding outfit", "Gift for a man", "Eid outfit for kids", "Everyday perfume"];
 const MAX_LEN = 1000;
 
 function errorText(status: number, ar: boolean) {
@@ -27,6 +27,9 @@ export function ShoppingAssistant() {
   const { features, settings } = useSettings();
   const { lang } = useI18n();
   const ar = lang === "ar";
+  // Suggestion chips are the store's own top-level departments (no hardcoded catalogue phrases).
+  const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, staleTime: 5 * 60_000 });
+  const chips = (cats.data ?? []).filter((c) => !c.parent_id && c.is_active).slice(0, 4).map((c) => (ar ? c.name_ar : c.name_en));
   const onProduct = useRouterState({ select: (s) => s.location.pathname.startsWith("/product/") });
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -130,7 +133,7 @@ export function ShoppingAssistant() {
                   {ar ? "قولي المناسبة والميزانية والمقاس، وأنا أظبطلك اللوك من المتجر." : "Tell me the occasion, budget and size — I'll put a look together from the store."}
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {(ar ? CHIPS_AR : CHIPS_EN).map((e) => (
+                  {chips.map((e) => (
                     <button key={e} onClick={() => send(e)} className="rounded-full border px-3 py-1.5 text-sm hover:bg-accent">{e}</button>
                   ))}
                 </div>

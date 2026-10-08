@@ -102,9 +102,20 @@ export async function fetchProductCount(f: ListFilters) {
   return count ?? 0;
 }
 
-export async function fetchBrands() {
-  const { data } = await supabase.from("products").select("brand").eq("is_active", true).not("brand", "is", null);
-  return Array.from(new Set((data ?? []).map((r) => r.brand as string))).sort();
+export type Facet = { value: string; count: number };
+export type ColorFacet = { en: string; ar: string | null; hex: string | null; count: number };
+/** What actually exists on active products (and variants) in scope, with product counts. */
+export type Facets = {
+  sizes: Facet[]; colors: ColorFacet[]; brands: Facet[]; genders: Facet[]; seasons: Facet[];
+  concentrations: Facet[]; volumes: { value: number; count: number }[];
+};
+export const EMPTY_FACETS: Facets = { sizes: [], colors: [], brands: [], genders: [], seasons: [], concentrations: [], volumes: [] };
+
+/** Filter options derived from the catalogue (catalog_facets RPC); nothing is hardcoded. */
+export async function fetchFacets(categoryIds?: string[]): Promise<Facets> {
+  const { data, error } = await supabase.rpc("catalog_facets", { _category_ids: categoryIds?.length ? categoryIds : null });
+  if (error) throw error;
+  return { ...EMPTY_FACETS, ...((data ?? {}) as Partial<Facets>) };
 }
 
 /** Validates, resizes to WebP and uploads to the public store-media bucket; returns its public URL. */
