@@ -1,4 +1,3 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, tool, isStepCount, type ModelMessage } from "ai";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -10,10 +9,8 @@ import {
 } from "./insights-types";
 import type { Json } from "@/integrations/supabase/types";
 import { checkRateLimit, rateLimitResponse } from "./rate-limit.server";
+import { aiConfig, aiModel, type AiConfig } from "./ai-provider.server";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1";
-const MODEL = "openai/gpt-6-astra";
-const RUN_HEADER = "X-Lovable-AIG-Run-ID";
 const WEEK_MS = 7 * 24 * 3600_000;
 
 const bodySchema = z.object({
@@ -99,12 +96,12 @@ async function authorize(request: Request) {
 }
 
 function runModel(
+  ai: AiConfig,
   db: SupabaseClient,
   messages: ModelMessage[],
   signal: AbortSignal,
   onData: (name: InsightName, rows: InsightRow[]) => void,
 ) {
-  const apiKey = process.env["LOVABLE_API_KEY"]!;
   const tools = Object.fromEntries(
     INSIGHT_QUERIES.map((name) => [
       name,
@@ -125,40 +122,19 @@ function runModel(
       }),
     ]),
   );
-  let runId: string | undefined;
-  const provider = createOpenAI({
-    baseURL: GATEWAY,
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-    fetch: async (input, init) => {
-      const headers = new Headers(init?.headers);
-      if (runId && !headers.has(RUN_HEADER)) headers.set(RUN_HEADER, runId);
-      const res = await fetch(input, { ...init, headers });
-      runId ??= res.headers.get(RUN_HEADER) ?? undefined;
-      return res;
-    },
-  });
   return streamText({
-    model: provider.responses(MODEL),
+    model: aiModel(ai),
     instructions: INSTRUCTIONS,
     messages,
     tools,
     stopWhen: isStepCount(10),
     abortSignal: signal,
-    providerOptions: {
-      openai: {
-        store: false,
-        forceReasoning: true,
-        reasoningEffort: "low",
-        reasoningSummary: "auto",
-        include: ["reasoning.encrypted_content"],
-      },
-    },
   });
 }
 
 export async function handleInsights(request: Request): Promise<Response> {
-  if (!process.env["LOVABLE_API_KEY"]) return json(500, { error: "config" });
+  const ai = aiConfig();
+  if (!ai) return json(500, { error: "config" });
   const auth = await authorize(request);
   if (auth.error) return auth.error;
   const db = auth.db!;
@@ -185,6 +161,7 @@ export async function handleInsights(request: Request): Promise<Response> {
     }
     try {
       const result = runModel(
+        ai,
         db,
         [{ role: "user", content: WEEKLY_PROMPT }],
         request.signal,
@@ -216,7 +193,7 @@ export async function handleInsights(request: Request): Promise<Response> {
     async start(controller) {
       const send = (e: InsightEvent) => controller.enqueue(enc.encode(JSON.stringify(e) + "\n"));
       try {
-        const result = runModel(db, messages as ModelMessage[], request.signal, (name, rows) =>
+        const result = runModel(ai, db, messages as ModelMessage[], request.signal, (name, rows) =>
           send({ type: "data", name, rows: rows.slice(0, 50) }),
         );
         for await (const part of result.fullStream) {

@@ -1,16 +1,13 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, tool, isStepCount, type ModelMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { effectivePrice } from "./format";
 import { checkRateLimit, rateLimitResponse, visitorKey } from "./rate-limit.server";
 import type { AssistantEvent, AssistantProduct } from "./assistant-types";
+import { aiConfig, aiModel } from "./ai-provider.server";
 
 export type { AssistantProduct };
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1";
-const MODEL = "openai/gpt-6-astra";
-const RUN_HEADER = "X-Lovable-AIG-Run-ID";
 const MAX_HISTORY = 12;
 const MAX_CHARS = 1000;
 
@@ -86,11 +83,11 @@ const clean = (s: string) =>
 const SIZE_GUIDE = `دليل المقاسات (سم): ملابس كبار حسب محيط الصدر: S 88–94، M 95–101، L 102–108، XL 109–115، XXL 116–122، XXXL 123–129. تقريب بالوزن (للمعلومة فقط): أقل من 60كجم S، 60–70 M، 70–80 L، 80–90 XL، 90–100 XXL، أكثر من 100 XXXL. الأحذية 36–46 (طول القدم تقريباً 22.5سم للمقاس 36 ويزيد 0.65سم لكل مقاس). الأطفال بالسن/الطول: 3-4y 98–104، 4-5y 104–110، 5-6y 110–116، 6-7y 116–122، 7-8y 122–128، 8-10y 128–140، 10-12y 140–152، 12-14y 152–164.`;
 
 export async function handleAssistant(request: Request): Promise<Response> {
-  const apiKey = process.env["LOVABLE_API_KEY"];
+  const ai = aiConfig();
   const url = process.env["SUPABASE_URL"];
   const anon =
     process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
-  if (!apiKey || !url || !anon) return json(500, { error: "config" });
+  if (!ai || !url || !anon) return json(500, { error: "config" });
 
   let body: z.infer<typeof bodySchema>;
   try {
@@ -228,36 +225,13 @@ ${SIZE_GUIDE}
 - العملة: ${s?.currency_symbol_ar ?? ""}. السعر النهائي يُحسب عند الدفع.
 - بعد suggest_items قول للعميل إنه يقدر يختار المقاس واللون ويضيف للسلة من الكروت تحت.`;
 
-  let runId = request.headers.get(RUN_HEADER) ?? undefined;
-  const provider = createOpenAI({
-    baseURL: GATEWAY,
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-    fetch: async (input, init) => {
-      const headers = new Headers(init?.headers);
-      if (runId && !headers.has(RUN_HEADER)) headers.set(RUN_HEADER, runId);
-      const res = await fetch(input, { ...init, headers });
-      runId ??= res.headers.get(RUN_HEADER) ?? undefined;
-      return res;
-    },
-  });
-
   const result = streamText({
-    model: provider.responses(MODEL),
+    model: aiModel(ai),
     instructions,
     messages: messages as ModelMessage[],
     tools,
     stopWhen: isStepCount(12),
     abortSignal: request.signal,
-    providerOptions: {
-      openai: {
-        store: false,
-        forceReasoning: true,
-        reasoningEffort: "low",
-        reasoningSummary: "auto",
-        include: ["reasoning.encrypted_content"],
-      },
-    },
   });
 
   const enc = new TextEncoder();

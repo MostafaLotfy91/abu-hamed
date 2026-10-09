@@ -12,7 +12,7 @@ provider's secret store, never in the repo.
       store name (ar/en), logo, colours, currency, delivery fee, free-shipping threshold, WhatsApp number,
       contact phone.
 - [ ] Feature flags in `store_settings.features`: keep `online_payment` **off** (cash on delivery only).
-      Turn on `ai_assistant` / `ai_analytics` only after `LOVABLE_API_KEY` is set (section 2).
+      Turn on `ai_assistant` / `ai_analytics` only after `AI_API_KEY` is set (section 2).
 - [ ] Storage: the `store-media` bucket exists and is public-read. Uploads are limited to staff and to
       image extensions by the migrations.
 - [ ] Auth → URL configuration: Site URL = the production domain; add it (and `https://www.` if used)
@@ -24,18 +24,19 @@ provider's secret store, never in the repo.
 
 ## 2. Hosting environment variables
 
-| Name                                                 | Where          | Notes                                  |
-| ---------------------------------------------------- | -------------- | -------------------------------------- |
-| `VITE_SUPABASE_URL`                                  | build + server | production project URL                 |
-| `VITE_SUPABASE_PUBLISHABLE_KEY`                      | build + server | publishable/anon key                   |
-| `SUPABASE_URL`                                       | server         | same URL                               |
-| `SUPABASE_PUBLISHABLE_KEY`                           | server         | same publishable key                   |
-| `SUPABASE_SERVICE_ROLE_KEY`                          | server only    | never prefixed `VITE_`                 |
-| `LOVABLE_API_KEY`                                    | server only    | needed for the AI chat and AI insights |
-| `RATE_LIMIT_SALT`                                    | server only    | random, 16+ chars                      |
-| `LOVABLE_CRON_SECRET` (+ `_PREVIOUS` while rotating) | server only    | scheduled jobs                         |
-| `TRUSTED_IP_HEADER`                                  | server         | only if behind a proxy that sets it    |
-| `VITE_VAPID_PUBLIC_KEY`                              | build + server | driver push notifications (public key) |
+| Name                                                 | Where          | Notes                                                                         |
+| ---------------------------------------------------- | -------------- | ----------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`                                  | build + server | production project URL                                                        |
+| `VITE_SUPABASE_PUBLISHABLE_KEY`                      | build + server | publishable/anon key                                                          |
+| `SUPABASE_URL`                                       | server         | same URL                                                                      |
+| `SUPABASE_PUBLISHABLE_KEY`                           | server         | same publishable key                                                          |
+| `SUPABASE_SERVICE_ROLE_KEY`                          | server only    | never prefixed `VITE_`                                                        |
+| `AI_API_KEY`                                         | server only    | AI chat + AI insights. Free Google Gemini key from aistudio.google.com/apikey |
+| `AI_PROVIDER` / `AI_MODEL`                           | server only    | optional: `gemini` (default), `groq`, `openrouter`, `openai`; model override  |
+| `RATE_LIMIT_SALT`                                    | server only    | random, 16+ chars                                                             |
+| `LOVABLE_CRON_SECRET` (+ `_PREVIOUS` while rotating) | server only    | scheduled jobs                                                                |
+| `TRUSTED_IP_HEADER`                                  | server         | only if behind a proxy that sets it                                           |
+| `VITE_VAPID_PUBLIC_KEY`                              | build + server | driver push notifications (public key)                                        |
 
 Edge Function secrets (names only): `DISPATCH_CRON_SECRET` (only without pg_cron), `VAPID_PUBLIC_KEY`,
 `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `DRIVER_PUSH_WEBHOOK_SECRET`. Vault secrets: `driver_push_url`,
