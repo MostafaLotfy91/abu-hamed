@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createOpenAI } from "@ai-sdk/openai";
-import { streamText, tool } from "ai";
+import { isStepCount, streamText, tool } from "ai";
 import { z } from "zod";
 import { AI_PRESETS, aiConfig } from "../ai-provider.server";
 
@@ -172,6 +172,104 @@ describe("Gemini compatibility", () => {
       globalThis.fetch = realFetch;
     }
     expect(JSON.parse(sent).tools[0].function.parameters).toEqual({ type: "object" });
+  });
+
+  it("runs a Gemini tool call (thought signature, no index) and sends the signature back", async () => {
+    const { geminiFetch } = await import("../ai-provider.server");
+    const sse = (...chunks: unknown[]) =>
+      new Response(
+        [...chunks.map((c) => `data: ${JSON.stringify(c)}`), "data: [DONE]", ""].join("\n\n"),
+        { headers: { "content-type": "text/event-stream" } },
+      );
+    const head = { id: "r", object: "chat.completion.chunk", created: 1, model: "m" };
+    const sent: Record<string, unknown>[] = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (_i: unknown, init?: RequestInit) => {
+      sent.push(JSON.parse(String(init?.body)));
+      if (sent.length === 1)
+        // What Gemini actually streams: no "index"/"type", plus extra_content.
+        return sse({
+          ...head,
+          choices: [
+            {
+              index: 0,
+              delta: {
+                role: "assistant",
+                tool_calls: [
+                  {
+                    extra_content: { google: { thought_signature: "SIG123" } },
+                    function: { arguments: '{"query":"قميص"}', name: "search_products" },
+                    id: "call_a",
+                  },
+                ],
+              },
+              finish_reason: "tool_calls",
+            },
+          ],
+        });
+      return sse(
+        { ...head, choices: [{ index: 0, delta: { role: "assistant", content: "تمام" } }] },
+        { ...head, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] },
+      );
+    }) as typeof fetch;
+
+    let query = "";
+    let text = "";
+    try {
+      const model = createOpenAI({ baseURL: "https://x/v1", apiKey: "k", fetch: geminiFetch }).chat(
+        "m",
+      );
+      const result = streamText({
+        model,
+        messages: [{ role: "user", content: "عايز قميص" }],
+        tools: {
+          search_products: tool({
+            description: "search",
+            inputSchema: z.object({ query: z.string() }),
+            execute: async (input) => {
+              query = input.query;
+              return [];
+            },
+          }),
+        },
+        stopWhen: isStepCount(3),
+      });
+      for await (const part of result.fullStream) {
+        if (part.type === "text-delta") text += part.text;
+        if (part.type === "error") throw part.error;
+      }
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+
+    expect(query).toBe("قميص");
+    expect(text).toBe("تمام");
+    const msgs = sent[1].messages as { role: string; tool_calls?: unknown[] }[];
+    const call = msgs.find((m) => m.role === "assistant")?.tool_calls?.[0];
+    expect(call).toMatchObject({
+      id: "call_a",
+      extra_content: { google: { thought_signature: "SIG123" } },
+    });
+  });
+
+  it("tool calls with no known signature get Google's placeholder", async () => {
+    const { prepareGeminiRequest } = await import("../ai-provider.server");
+    const out = JSON.parse(
+      prepareGeminiRequest(
+        JSON.stringify({
+          messages: [
+            {
+              role: "assistant",
+              tool_calls: [{ id: "unknown", type: "function", function: { name: "t" } }],
+            },
+          ],
+        }),
+      ),
+    );
+    expect(out.messages[0].tool_calls[0].extra_content.google.thought_signature).toBe(
+      "skip_thought_signature_validator",
+    );
+    expect(prepareGeminiRequest("not json")).toBe("not json");
   });
 
   it("diagnostic reason never contains a key", async () => {

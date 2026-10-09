@@ -62,20 +62,117 @@ export function stripUnsupportedSchema(value: unknown): unknown {
   return value;
 }
 
-/** fetch for Gemini: same request, with tool schemas cleaned of keywords it rejects. */
-export const geminiFetch: typeof fetch = (input, init) => {
-  if (typeof init?.body === "string" && init.body.includes('"tools"')) {
-    try {
-      const body = JSON.parse(init.body) as { tools?: { function?: { parameters?: unknown } }[] };
-      for (const t of body.tools ?? [])
-        if (t.function?.parameters)
-          t.function.parameters = stripUnsupportedSchema(t.function.parameters);
-      init = { ...init, body: JSON.stringify(body) };
-    } catch {
-      /* not JSON: send unchanged */
-    }
+/*
+ * Gemini's OpenAI-compatible endpoint differs from OpenAI on tool calls:
+ *  - streamed tool_calls may lack "index"/"type" and carry extra_content.google.thought_signature, which the AI
+ *    SDK's strict chunk schema rejects ("Type validation failed");
+ *  - newer models require that signature to be sent back with the tool call on the next step.
+ * geminiFetch normalizes responses to OpenAI shape, remembers signatures by call id, and attaches them (or
+ * Google's documented placeholder) when the conversation is sent back.
+ */
+const SKIP_SIGNATURE = "skip_thought_signature_validator";
+const signatures = new Map<string, string>();
+const rememberSignature = (id: string, sig: string) => {
+  signatures.set(id, sig);
+  if (signatures.size > 500) signatures.delete(signatures.keys().next().value!);
+};
+
+type ToolCallDelta = {
+  index?: number;
+  id?: string;
+  type?: string;
+  function?: { name?: string; arguments?: string };
+  extra_content?: { google?: { thought_signature?: string } };
+};
+type Chunk = { choices?: { delta?: { tool_calls?: ToolCallDelta[] } }[] };
+
+/** One streamed Gemini chunk in strict OpenAI shape (signatures recorded, extra fields removed). */
+export function normalizeGeminiChunk<T>(chunk: T): T {
+  for (const choice of (chunk as Chunk)?.choices ?? []) {
+    const calls = choice?.delta?.tool_calls;
+    if (!Array.isArray(calls)) continue;
+    choice.delta!.tool_calls = calls.map((c, i) => {
+      const id = c.id || `call_${Date.now().toString(36)}_${i}`;
+      const sig = c.extra_content?.google?.thought_signature;
+      if (sig) rememberSignature(id, sig);
+      return {
+        index: typeof c.index === "number" ? c.index : i,
+        id,
+        type: c.type ?? "function",
+        function: { name: c.function?.name, arguments: c.function?.arguments ?? "" },
+      };
+    });
   }
-  return fetch(input, init);
+  return chunk;
+}
+
+/** Request body for Gemini: clean tool schemas; tool calls sent back carry their thought signature. */
+export function prepareGeminiRequest(body: string): string {
+  try {
+    const b = JSON.parse(body) as {
+      tools?: { function?: { parameters?: unknown } }[];
+      messages?: { role?: string; tool_calls?: ToolCallDelta[] }[];
+    };
+    for (const t of b.tools ?? [])
+      if (t.function?.parameters)
+        t.function.parameters = stripUnsupportedSchema(t.function.parameters);
+    for (const m of b.messages ?? [])
+      if (m.role === "assistant" && Array.isArray(m.tool_calls))
+        for (const c of m.tool_calls)
+          c.extra_content = {
+            google: { thought_signature: (c.id && signatures.get(c.id)) || SKIP_SIGNATURE },
+          };
+    return JSON.stringify(b);
+  } catch {
+    return body; // not JSON: send unchanged
+  }
+}
+
+/** Rewrites each `data: {...}` line of an SSE stream with normalizeGeminiChunk. */
+function normalizeSse(stream: ReadableStream<Uint8Array>) {
+  const dec = new TextDecoder();
+  const enc = new TextEncoder();
+  let buf = "";
+  const fix = (line: string) => {
+    const t = line.replace(/\r$/, "");
+    if (!t.startsWith("data:")) return line;
+    const payload = t.slice(5).trim();
+    if (!payload || payload === "[DONE]") return line;
+    try {
+      return `data: ${JSON.stringify(normalizeGeminiChunk(JSON.parse(payload)))}`;
+    } catch {
+      return line;
+    }
+  };
+  return stream.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, ctl) {
+        buf += dec.decode(chunk, { stream: true });
+        let i: number;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          ctl.enqueue(enc.encode(`${fix(buf.slice(0, i))}\n`));
+          buf = buf.slice(i + 1);
+        }
+      },
+      flush(ctl) {
+        buf += dec.decode();
+        if (buf) ctl.enqueue(enc.encode(fix(buf)));
+      },
+    }),
+  );
+}
+
+/** fetch for Gemini (see above). */
+export const geminiFetch: typeof fetch = async (input, init) => {
+  if (typeof init?.body === "string") init = { ...init, body: prepareGeminiRequest(init.body) };
+  const res = await fetch(input, init);
+  const type = res.headers.get("content-type") ?? "";
+  if (!res.ok || !res.body || !type.includes("text/event-stream")) return res;
+  return new Response(normalizeSse(res.body), {
+    status: res.status,
+    statusText: res.statusText,
+    headers: res.headers,
+  });
 };
 
 /**
