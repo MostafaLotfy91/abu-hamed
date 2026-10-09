@@ -102,7 +102,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "theme-color", content: loaderData?.settings?.primary_color ?? "#111111" },
+      { name: "theme-color", content: loaderData?.settings?.primary_color ?? "#1c1a18" },
+      // iPhone: open from the Home Screen as a full-screen app.
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      ...(storeName(loaderData?.settings ?? null)
+        ? [{ name: "apple-mobile-web-app-title", content: storeName(loaderData?.settings ?? null) }]
+        : []),
       ...(storeName(loaderData?.settings ?? null)
         ? [{ property: "og:site_name", content: storeName(loaderData?.settings ?? null) }]
         : []),
@@ -124,12 +131,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preload", as: "style", href: FONTS_CSS },
       { rel: "stylesheet", href: FONTS_CSS },
       { rel: "stylesheet", href: appCss },
-      loaderData?.settings?.logo_url
-        ? { rel: "icon", href: loaderData.settings.logo_url }
-        : { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      ...(loaderData?.settings?.logo_url
-        ? [{ rel: "apple-touch-icon", href: loaderData.settings.logo_url }]
-        : []),
+      // App icon (also the installed app's icon): public/icons, made from the store mark.
+      { rel: "icon", href: "/icons/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+      // Installable storefront. The driver app links its own manifest (scope /driver) instead.
+      ...(matches.some((m) => m.pathname === "/driver" || m.pathname.startsWith("/driver/"))
+        ? []
+        : [{ rel: "manifest", href: "/manifest.webmanifest" }]),
     ],
   }),
   shellComponent: RootShell,

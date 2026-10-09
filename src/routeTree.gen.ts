@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ManifestDotwebmanifestRouteImport } from './routes/manifest[.]webmanifest'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
@@ -69,6 +70,11 @@ const CategoriesRoute = CategoriesRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestDotwebmanifestRoute = ManifestDotwebmanifestRouteImport.update({
+  id: '/manifest.webmanifest',
+  path: '/manifest.webmanifest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
+  '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/products': typeof ProductsRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
+  '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -289,6 +297,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
+  '/manifest.webmanifest': typeof ManifestDotwebmanifestRoute
   '/products': typeof ProductsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRoute
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/categories'
     | '/contact'
+    | '/manifest.webmanifest'
     | '/products'
     | '/admin'
     | '/account'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/categories'
     | '/contact'
+    | '/manifest.webmanifest'
     | '/products'
     | '/account'
     | '/checkout'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/categories'
     | '/contact'
+    | '/manifest.webmanifest'
     | '/products'
     | '/_authenticated/admin'
     | '/_authenticated/account'
@@ -425,6 +437,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
   ContactRoute: typeof ContactRoute
+  ManifestDotwebmanifestRoute: typeof ManifestDotwebmanifestRoute
   ProductsRoute: typeof ProductsRoute
   ApiAdminInsightsRoute: typeof ApiAdminInsightsRoute
   ApiAssistantRoute: typeof ApiAssistantRoute
@@ -475,6 +488,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifest.webmanifest': {
+      id: '/manifest.webmanifest'
+      path: '/manifest.webmanifest'
+      fullPath: '/manifest.webmanifest'
+      preLoaderRoute: typeof ManifestDotwebmanifestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -730,6 +750,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
   ContactRoute: ContactRoute,
+  ManifestDotwebmanifestRoute: ManifestDotwebmanifestRoute,
   ProductsRoute: ProductsRoute,
   ApiAdminInsightsRoute: ApiAdminInsightsRoute,
   ApiAssistantRoute: ApiAssistantRoute,

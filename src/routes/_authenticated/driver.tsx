@@ -171,6 +171,18 @@ function DriverApp() {
   const [deliverFor, setDeliverFor] = useState<DeliverOrder | null>(null);
   const balance = useDriverBalance(user?.id, enabled);
 
+  // "Add to Home Screen" here must install the driver app, even when this page was reached by an in-app
+  // navigation (the head keeps the storefront manifest link until a reload).
+  useEffect(() => {
+    const el = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (!el) return;
+    const prev = el.getAttribute("href");
+    el.setAttribute("href", "/driver.webmanifest");
+    return () => {
+      if (prev) el.setAttribute("href", prev);
+    };
+  }, []);
+
   // A device that already receives push is re-linked to whoever is signed in now; anything wrong with push on
   // this device is shown on the main screen (rechecked when the settings dialog closes).
   const [push, setPush] = useState<DevicePush | null>(null);
