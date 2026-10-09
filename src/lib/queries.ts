@@ -179,7 +179,7 @@ export const EMPTY_FACETS: Facets = {
 /** Filter options derived from the catalogue (catalog_facets RPC); nothing is hardcoded. */
 export async function fetchFacets(categoryIds?: string[]): Promise<Facets> {
   const { data, error } = await supabase.rpc("catalog_facets", {
-    _category_ids: categoryIds?.length ? categoryIds : null,
+    _category_ids: categoryIds?.length ? categoryIds : undefined,
   });
   if (error) throw error;
   return { ...EMPTY_FACETS, ...((data ?? {}) as Partial<Facets>) };

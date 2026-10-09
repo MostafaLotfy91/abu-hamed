@@ -230,6 +230,77 @@ export type Database = {
             referencedRelation: "categories";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "categories_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "category_display_images";
+            referencedColumns: ["category_id"];
+          },
+          {
+            foreignKeyName: "categories_profile_fkey";
+            columns: ["profile"];
+            isOneToOne: false;
+            referencedRelation: "product_profiles";
+            referencedColumns: ["key"];
+          },
+        ];
+      };
+      coupon_attempts: {
+        Row: {
+          created_at: string;
+          id: number;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: never;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: never;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      coupon_redemptions: {
+        Row: {
+          coupon_id: string;
+          created_at: string;
+          id: string;
+          order_id: string;
+          user_id: string;
+        };
+        Insert: {
+          coupon_id: string;
+          created_at?: string;
+          id?: string;
+          order_id: string;
+          user_id: string;
+        };
+        Update: {
+          coupon_id?: string;
+          created_at?: string;
+          id?: string;
+          order_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey";
+            columns: ["coupon_id"];
+            isOneToOne: false;
+            referencedRelation: "coupons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "coupon_redemptions_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: true;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
         ];
       };
       coupons: {
@@ -243,6 +314,7 @@ export type Database = {
           max_discount: number | null;
           max_uses: number | null;
           min_order: number;
+          per_user_limit: number | null;
           starts_at: string | null;
           used_count: number;
           value: number;
@@ -257,6 +329,7 @@ export type Database = {
           max_discount?: number | null;
           max_uses?: number | null;
           min_order?: number;
+          per_user_limit?: number | null;
           starts_at?: string | null;
           used_count?: number;
           value: number;
@@ -271,6 +344,7 @@ export type Database = {
           max_discount?: number | null;
           max_uses?: number | null;
           min_order?: number;
+          per_user_limit?: number | null;
           starts_at?: string | null;
           used_count?: number;
           value?: number;
@@ -285,9 +359,36 @@ export type Database = {
           last_offered_at: string | null;
           updated_at: string;
         };
-        Insert: never;
-        Update: never;
-        Relationships: [];
+        Insert: {
+          active_orders?: number;
+          current_offer_id?: string | null;
+          driver_id: string;
+          last_offered_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          active_orders?: number;
+          current_offer_id?: string | null;
+          driver_id?: string;
+          last_offered_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "driver_dispatch_state_current_offer_id_fkey";
+            columns: ["current_offer_id"];
+            isOneToOne: false;
+            referencedRelation: "order_dispatch_offers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "driver_dispatch_state_driver_id_fkey";
+            columns: ["driver_id"];
+            isOneToOne: true;
+            referencedRelation: "driver_profiles";
+            referencedColumns: ["user_id"];
+          },
+        ];
       };
       driver_locations: {
         Row: {
@@ -419,9 +520,35 @@ export type Database = {
           offer_id: string | null;
           order_id: string;
         };
-        Insert: never;
-        Update: never;
-        Relationships: [];
+        Insert: {
+          actor?: string | null;
+          created_at?: string;
+          driver_id?: string | null;
+          event: string;
+          id?: never;
+          note?: string | null;
+          offer_id?: string | null;
+          order_id: string;
+        };
+        Update: {
+          actor?: string | null;
+          created_at?: string;
+          driver_id?: string | null;
+          event?: string;
+          id?: never;
+          note?: string | null;
+          offer_id?: string | null;
+          order_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_dispatch_events_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       order_dispatch_offers: {
         Row: {
@@ -433,9 +560,33 @@ export type Database = {
           responded_at: string | null;
           status: string;
         };
-        Insert: never;
-        Update: never;
-        Relationships: [];
+        Insert: {
+          driver_id: string;
+          expires_at: string;
+          id?: string;
+          offered_at?: string;
+          order_id: string;
+          responded_at?: string | null;
+          status?: string;
+        };
+        Update: {
+          driver_id?: string;
+          expires_at?: string;
+          id?: string;
+          offered_at?: string;
+          order_id?: string;
+          responded_at?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_dispatch_offers_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       order_items: {
         Row: {
@@ -563,8 +714,8 @@ export type Database = {
           delivery_fee: number;
           delivery_slot: string;
           discount: number;
-          driver_accepted_at: string | null;
           dispatch_status: string;
+          driver_accepted_at: string | null;
           driver_id: string | null;
           id: string;
           notes: string | null;
@@ -585,8 +736,8 @@ export type Database = {
           delivery_fee?: number;
           delivery_slot?: string;
           discount?: number;
-          driver_accepted_at?: string | null;
           dispatch_status?: string;
+          driver_accepted_at?: string | null;
           driver_id?: string | null;
           id?: string;
           notes?: string | null;
@@ -607,8 +758,8 @@ export type Database = {
           delivery_fee?: number;
           delivery_slot?: string;
           discount?: number;
-          driver_accepted_at?: string | null;
           dispatch_status?: string;
+          driver_accepted_at?: string | null;
           driver_id?: string | null;
           id?: string;
           notes?: string | null;
@@ -843,6 +994,13 @@ export type Database = {
             referencedRelation: "categories";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "products_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "category_display_images";
+            referencedColumns: ["category_id"];
+          },
         ];
       };
       profiles: {
@@ -882,8 +1040,24 @@ export type Database = {
           user_agent: string | null;
           user_id: string;
         };
-        Insert: never;
-        Update: never;
+        Insert: {
+          created_at?: string;
+          endpoint: string;
+          id?: string;
+          keys: Json;
+          last_success_at?: string | null;
+          user_agent?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          endpoint?: string;
+          id?: string;
+          keys?: Json;
+          last_success_at?: string | null;
+          user_agent?: string | null;
+          user_id?: string;
+        };
         Relationships: [];
       };
       return_requests: {
@@ -1184,12 +1358,49 @@ export type Database = {
     };
     Views: {
       category_display_images: {
-        Row: { category_id: string; image_url: string | null; source: string };
+        Row: {
+          category_id: string | null;
+          image_url: string | null;
+          source: string | null;
+        };
         Relationships: [];
       };
     };
     Functions: {
+      _after_offer_closed: { Args: { _order_id: string }; Returns: string };
+      _close_offer: {
+        Args: { _note?: string; _offer: string; _status: string };
+        Returns: undefined;
+      };
+      _dispatch: {
+        Args: { _order_id: string; _skip_locked?: boolean };
+        Returns: string;
+      };
+      _dispatch_log: {
+        Args: {
+          _driver: string;
+          _event: string;
+          _note?: string;
+          _offer: string;
+          _order: string;
+        };
+        Returns: undefined;
+      };
+      _dispatch_waiting: { Args: never; Returns: number };
+      _refresh_driver_load: { Args: { _driver: string }; Returns: undefined };
       admin_add_driver: { Args: { _email: string }; Returns: string };
+      admin_dispatch_alerts: {
+        Args: never;
+        Returns: {
+          dispatch_status: string;
+          order_id: string;
+          order_number: number;
+          reason: string;
+          status: string;
+          waited_minutes: number;
+          waiting_since: string;
+        }[];
+      };
       admin_finish_import: {
         Args: { _extra_errors?: number; _job_id: string; _status: string };
         Returns: undefined;
@@ -1206,48 +1417,84 @@ export type Database = {
         Args: { _client_hash: string; _message_count: number };
         Returns: boolean;
       };
+      auto_dispatch_on: { Args: never; Returns: boolean };
       cancel_my_order: { Args: { _order_id: string }; Returns: undefined };
-      catalog_facets: { Args: { _category_ids?: string[] | null }; Returns: Json };
       catalog_count: { Args: { f?: Json }; Returns: number };
+      catalog_facets: { Args: { _category_ids?: string[] }; Returns: Json };
       catalog_filter_options: { Args: { f?: Json }; Returns: Json };
+      catalog_match: {
+        Args: {
+          f: Json;
+          p: Database["public"]["Tables"]["products"]["Row"];
+          skip?: string;
+        };
+        Returns: boolean;
+      };
       catalog_search: {
-        Args: { f?: Json; _sort?: string; _limit?: number; _offset?: number };
-        Returns: Database["public"]["Tables"]["products"]["Row"][];
+        Args: { _limit?: number; _offset?: number; _sort?: string; f?: Json };
+        Returns: {
+          base_notes: string | null;
+          brand: string | null;
+          care_ar: string | null;
+          care_en: string | null;
+          category_id: string | null;
+          concentration: string | null;
+          created_at: string;
+          description_ar: string | null;
+          description_en: string | null;
+          flash_ends_at: string | null;
+          flash_price: number | null;
+          gender: string | null;
+          id: string;
+          images: string[];
+          is_active: boolean;
+          is_featured: boolean;
+          material_ar: string | null;
+          material_en: string | null;
+          middle_notes: string | null;
+          name_ar: string;
+          name_en: string;
+          old_price: number | null;
+          price: number;
+          rating_avg: number;
+          rating_count: number;
+          season: string | null;
+          size_type: string | null;
+          sku: string | null;
+          sold_count: number;
+          stock: number;
+          thumbnails: string[];
+          top_notes: string | null;
+          updated_at: string;
+          volume_ml: number | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "products";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       category_profile: { Args: { _category_id: string }; Returns: string };
-      admin_dispatch_alerts: {
-        Args: never;
-        Returns: {
-          order_id: string;
-          order_number: number;
-          status: string;
-          dispatch_status: string;
-          waiting_since: string;
-          waited_minutes: number;
-          reason: string;
-        }[];
-      };
       dispatch_order: { Args: { _order_id: string }; Returns: string };
+      driver_accept_order: { Args: { _order_id: string }; Returns: undefined };
       driver_my_offers: {
         Args: never;
         Returns: {
+          area: string;
+          city: string;
+          cod_amount: number;
+          expires_at: string;
+          items: number;
           offer_id: string;
+          offered_at: string;
           order_id: string;
           order_number: number;
-          area: string | null;
-          city: string | null;
-          total: number;
           payment_method: string;
-          cod_amount: number;
-          items: number;
-          offered_at: string;
-          expires_at: string;
           server_now: string;
+          total: number;
         }[];
       };
-      driver_respond_to_offer: { Args: { _offer_id: string; _accept: boolean }; Returns: string };
-      expire_stale_offers: { Args: never; Returns: number };
-      driver_accept_order: { Args: { _order_id: string }; Returns: undefined };
       driver_order_customers: {
         Args: never;
         Returns: {
@@ -1256,10 +1503,20 @@ export type Database = {
           phone: string;
         }[];
       };
+      driver_respond_to_offer: {
+        Args: { _accept: boolean; _offer_id: string };
+        Returns: string;
+      };
       driver_set_status: {
         Args: { _order_id: string; _status: string };
         Returns: undefined;
       };
+      effective_price: {
+        Args: { p: Database["public"]["Tables"]["products"]["Row"] };
+        Returns: number;
+      };
+      expire_stale_offers: { Args: never; Returns: number };
+      grant_admin_by_email: { Args: { _email: string }; Returns: string };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
