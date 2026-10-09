@@ -509,6 +509,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      notification_log: {
+        Row: {
+          channel: string;
+          created_at: string;
+          devices: number | null;
+          error: string | null;
+          event: string;
+          id: string;
+          offer_id: string | null;
+          order_id: string | null;
+          recipient: string | null;
+          removed: number | null;
+          request_id: number | null;
+          sent: number | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          channel?: string;
+          created_at?: string;
+          devices?: number | null;
+          error?: string | null;
+          event: string;
+          id?: string;
+          offer_id?: string | null;
+          order_id?: string | null;
+          recipient?: string | null;
+          removed?: number | null;
+          request_id?: number | null;
+          sent?: number | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          devices?: number | null;
+          error?: string | null;
+          event?: string;
+          id?: string;
+          offer_id?: string | null;
+          order_id?: string | null;
+          recipient?: string | null;
+          removed?: number | null;
+          request_id?: number | null;
+          sent?: number | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       order_dispatch_events: {
         Row: {
           actor: string | null;
@@ -1036,6 +1087,8 @@ export type Database = {
           endpoint: string;
           id: string;
           keys: Json;
+          last_error: string | null;
+          last_failure_at: string | null;
           last_success_at: string | null;
           user_agent: string | null;
           user_id: string;
@@ -1045,6 +1098,8 @@ export type Database = {
           endpoint: string;
           id?: string;
           keys: Json;
+          last_error?: string | null;
+          last_failure_at?: string | null;
           last_success_at?: string | null;
           user_agent?: string | null;
           user_id?: string;
@@ -1054,6 +1109,8 @@ export type Database = {
           endpoint?: string;
           id?: string;
           keys?: Json;
+          last_error?: string | null;
+          last_failure_at?: string | null;
           last_success_at?: string | null;
           user_agent?: string | null;
           user_id?: string;
@@ -1537,6 +1594,17 @@ export type Database = {
           _payment_method: string;
         };
         Returns: string;
+      };
+      my_push_device: {
+        Args: { _endpoint: string };
+        Returns: {
+          created_at: string | null;
+          last_error: string | null;
+          last_failure_at: string | null;
+          last_success_at: string | null;
+          other_account: boolean;
+          registered: boolean;
+        }[];
       };
       register_push_subscription: {
         Args: { _endpoint: string; _keys: Json; _user_agent?: string };

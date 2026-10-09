@@ -1,48 +1,59 @@
 import { useEffect, useState } from "react";
-import { BellOff, BellRing, Share, Smartphone } from "lucide-react";
+import { AlertTriangle, BellOff, BellRing, RefreshCw, Share, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
-  currentSubscription,
+  devicePushStatus,
   disablePush,
   enablePush,
   pushSupport,
   sendTestPush,
+  type DevicePush,
   type PushSupport,
 } from "@/lib/push";
+import { ageText, devicePushProblem } from "@/lib/push-status";
 
 /** Driver settings: push notifications on this device (works with the app closed or the screen locked). */
 export function PushSettings({ ar }: { ar: boolean }) {
   const [support, setSupport] = useState<PushSupport | null>(null);
-  const [on, setOn] = useState(false);
+  const [device, setDevice] = useState<DevicePush | null>(null);
   const [busy, setBusy] = useState(false);
-  const [blocked, setBlocked] = useState(false);
 
+  const reload = () =>
+    devicePushStatus()
+      .then(setDevice)
+      .catch(() => setDevice(null));
   useEffect(() => {
     const s = pushSupport();
     setSupport(s);
-    if (s !== "ok") return;
-    setBlocked(Notification.permission === "denied");
-    currentSubscription()
-      .then((sub) => setOn(!!sub))
-      .catch(() => setOn(false));
+    if (s === "ok") reload();
   }, []);
 
+  const on = !!device && device.state !== "off" && device.state !== "blocked";
+  const turnOn = async (fresh: boolean) => {
+    const r = await enablePush({ fresh });
+    if (r === "error")
+      toast.error(ar ? "تعذر تفعيل الإشعارات، حاول تاني" : "Could not turn on notifications");
+    else if (r === "enabled" && fresh)
+      toast.success(ar ? "تم تجديد الاشتراك" : "Subscription renewed");
+    await reload();
+  };
   const toggle = async (next: boolean) => {
     setBusy(true);
-    if (next) {
-      const r = await enablePush();
-      setOn(r === "enabled");
-      setBlocked(r === "denied");
-      if (r === "error")
-        toast.error(ar ? "تعذر تفعيل الإشعارات، حاول تاني" : "Could not turn on notifications");
-    } else {
+    if (next) await turnOn(false);
+    else {
       await disablePush();
-      setOn(false);
+      await reload();
     }
     setBusy(false);
   };
+  const resubscribe = async () => {
+    setBusy(true);
+    await turnOn(true);
+    setBusy(false);
+  };
+  const problem = devicePushProblem(device, ar);
 
   const test = async () => {
     setBusy(true);
@@ -54,6 +65,7 @@ export function PushSettings({ ar }: { ar: boolean }) {
         ar ? "تم الإرسال، هيوصلك خلال ثواني" : "Sent, it should arrive in a few seconds",
       );
     else toast.error(ar ? "مفيش جهاز مسجل للإشعارات" : "No device is registered for notifications");
+    await reload();
   };
 
   if (support === null) return null;
@@ -126,12 +138,56 @@ export function PushSettings({ ar }: { ar: boolean }) {
           aria-label={ar ? "إشعارات الطلبات" : "Order notifications"}
         />
       </label>
-      {blocked && (
-        <p className="rounded-xl bg-destructive/10 p-2 text-destructive">
-          {ar
-            ? "الإشعارات مرفوضة من المتصفح. فعّلها من إعدادات الموقع/التطبيق ثم جرّب تاني."
-            : "Notifications are blocked by the browser. Allow them in the site/app settings, then try again."}
+      <dl className="space-y-1 rounded-xl bg-muted/50 p-2 text-xs" data-testid="push-device-status">
+        <div className="flex justify-between gap-2">
+          <dt>{ar ? "الحالة على الجهاز ده" : "This device"}</dt>
+          <dd className="font-semibold">
+            {device?.state === "ok"
+              ? ar
+                ? "مفعّلة ✓"
+                : "On ✓"
+              : on
+                ? ar
+                  ? "فيها مشكلة"
+                  : "Needs attention"
+                : ar
+                  ? "مش مفعّلة"
+                  : "Off"}
+          </dd>
+        </div>
+        {(device?.state === "ok" || device?.state === "failing") && (
+          <>
+            {device.createdAt && (
+              <div className="flex justify-between gap-2">
+                <dt>{ar ? "مسجّلة" : "Registered"}</dt>
+                <dd>{ageText(device.createdAt, ar)}</dd>
+              </div>
+            )}
+            <div className="flex justify-between gap-2">
+              <dt>{ar ? "آخر إشعار وصل" : "Last delivered"}</dt>
+              <dd>
+                {device.lastSuccessAt ? ageText(device.lastSuccessAt, ar) : ar ? "لسه" : "Not yet"}
+              </dd>
+            </div>
+            {device.state === "failing" && device.lastError && (
+              <div className="text-destructive" dir="ltr">
+                {device.lastError}
+              </div>
+            )}
+          </>
+        )}
+      </dl>
+      {problem && device?.state !== "off" && (
+        <p className="flex gap-2 rounded-xl bg-destructive/10 p-2 text-destructive" role="alert">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          {problem}
         </p>
+      )}
+      {device?.state !== "blocked" && (
+        <Button variant="outline" className="w-full" disabled={busy} onClick={resubscribe}>
+          <RefreshCw className="h-4 w-4" />
+          {ar ? "إعادة الاشتراك" : "Re-subscribe"}
+        </Button>
       )}
       <Button variant="outline" className="w-full" disabled={!on || busy} onClick={test}>
         {ar ? "إرسال إشعار تجريبي" : "Send a test notification"}

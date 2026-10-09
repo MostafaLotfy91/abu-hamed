@@ -977,3 +977,41 @@ export async function deletePhoneAccount(normalizedPhone: string) {
     if (!data || data.users.length < 200) return;
   }
 }
+
+/* ------------------------------------------------------- notifications -- */
+
+export type NotificationRow = {
+  event: string;
+  recipient: string | null;
+  status: string;
+  error: string | null;
+};
+
+/** notification_log rows for one order, oldest first. */
+export async function notificationsFor(orderId: string) {
+  return (must(
+    await service()
+      .from("notification_log")
+      .select("event,recipient,status,error")
+      .eq("order_id", orderId)
+      .order("created_at"),
+    "notification_log",
+  ) ?? []) as NotificationRow[];
+}
+
+/** The user's saved push endpoints that start with `prefix` (the fake endpoints a spec created). */
+export async function pushEndpoints(userId: string, prefix: string) {
+  const rows = (must(
+    await service().from("push_subscriptions").select("endpoint").eq("user_id", userId),
+    "push_subscriptions",
+  ) ?? []) as { endpoint: string }[];
+  return rows.map((r) => r.endpoint).filter((e) => e.startsWith(prefix));
+}
+
+/** Removes push endpoints starting with `prefix` (simulates the push service reporting them gone). */
+export async function deletePushEndpoints(prefix: string) {
+  must(
+    await service().from("push_subscriptions").delete().like("endpoint", `${prefix}%`),
+    "delete push endpoints",
+  );
+}

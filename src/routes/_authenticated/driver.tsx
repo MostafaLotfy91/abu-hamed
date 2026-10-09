@@ -15,6 +15,7 @@ import {
   Settings,
   Sun,
   Volume2,
+  BellOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +44,8 @@ import {
 import { OfferAlert, OfferClosedNotice } from "@/components/driver/OfferAlert";
 import { AlertsOnboarding } from "@/components/driver/AlertsOnboarding";
 import { PushSettings } from "@/components/driver/PushSettings";
-import { refreshPushRegistration } from "@/lib/push";
+import { devicePushProblem } from "@/lib/push-status";
+import { refreshPushRegistration, type DevicePush } from "@/lib/push";
 import {
   Dialog,
   DialogContent,
@@ -163,10 +165,16 @@ function DriverApp() {
   const [needsTap, setNeedsTap] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // A device that already receives push is re-linked to whoever is signed in now.
+  // A device that already receives push is re-linked to whoever is signed in now; anything wrong with push on
+  // this device is shown on the main screen (rechecked when the settings dialog closes).
+  const [push, setPush] = useState<DevicePush | null>(null);
   useEffect(() => {
-    if (offersOn) refreshPushRegistration().catch(() => {});
-  }, [offersOn]);
+    if (offersOn && !settingsOpen)
+      refreshPushRegistration()
+        .then(setPush)
+        .catch(() => setPush(null));
+  }, [offersOn, settingsOpen]);
+  const pushProblem = offersOn ? devicePushProblem(push, ar) : null;
 
   // Ring and vibrate when a new offer arrives; a system notification too if the app is in the background.
   const seen = useRef(new Set<string>());
@@ -348,6 +356,18 @@ function DriverApp() {
             ar={ar}
             onDismiss={offers.dismissClosed}
           />
+        )}
+        {pushProblem && !deactivated && (
+          <button
+            type="button"
+            role="alert"
+            onClick={() => setSettingsOpen(true)}
+            className="flex w-full items-center gap-2 rounded-2xl bg-destructive/10 p-3 text-start text-sm text-destructive"
+          >
+            <BellOff className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{pushProblem}</span>
+            <span className="font-semibold underline">{ar ? "الإعدادات" : "Settings"}</span>
+          </button>
         )}
         {needsTap && !deactivated && (
           <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-sm">

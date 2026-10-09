@@ -11,7 +11,8 @@ import {
   testPayload,
   ttlSeconds,
 } from "../../../supabase/functions/send-driver-push/logic";
-import { isIos, urlBase64ToUint8Array } from "../push";
+import { isIos, sameServerKey, urlBase64ToUint8Array } from "../push";
+import { ageText, devicePushProblem } from "../push-status";
 
 describe("send-driver-push payloads", () => {
   it("offer payload: short Arabic title with the order number, opens /driver, no customer data", () => {
@@ -96,6 +97,41 @@ describe("send-driver-push payloads", () => {
 });
 
 describe("push client helpers", () => {
+  it("detects a subscription made with another VAPID key", () => {
+    const key = "BAEC"; // bytes 04 01 02
+    const sub = (bytes: number[] | null) =>
+      ({
+        options: { applicationServerKey: bytes ? new Uint8Array(bytes).buffer : null },
+      }) as unknown as PushSubscription;
+    expect(sameServerKey(sub([4, 1, 2]), key)).toBe(true);
+    expect(sameServerKey(sub([4, 1, 3]), key)).toBe(false);
+    expect(sameServerKey(sub([4, 1]), key)).toBe(false);
+    expect(sameServerKey(sub(null), key)).toBe(true); // browser doesn't expose it
+  });
+
+  it("tells the driver what is wrong, and nothing when push works", () => {
+    for (const state of ["off", "stale", "key_mismatch", "failing", "blocked"] as const)
+      expect(devicePushProblem({ state } as never, true)).toBeTruthy();
+    expect(devicePushProblem({ state: "stale" }, false)).toMatch(/Re-subscribe/);
+    expect(
+      devicePushProblem(
+        { state: "ok", createdAt: null, lastSuccessAt: null, lastFailureAt: null, lastError: null },
+        true,
+      ),
+    ).toBeNull();
+    expect(devicePushProblem({ state: "unsupported" }, true)).toBeNull(); // shown in settings instead
+    expect(devicePushProblem(null, true)).toBeNull();
+  });
+
+  it("formats the subscription age", () => {
+    const now = Date.parse("2026-10-09T12:00:00Z");
+    expect(ageText("2026-10-09T11:55:00Z", false, now)).toBe("5 min ago");
+    expect(ageText("2026-10-09T09:00:00Z", true, now)).toBe("من 3 ساعات");
+    expect(ageText("2026-10-06T12:00:00Z", false, now)).toBe("3 d ago");
+    expect(ageText("2026-10-07T12:00:00Z", true, now)).toBe("من يومين");
+    expect(ageText("2026-10-09T11:59:50Z", true, now)).toBe("دلوقتي");
+  });
+
   it("decodes the base64url VAPID key", () => {
     expect([...urlBase64ToUint8Array("AQID_-8")]).toEqual([1, 2, 3, 255, 239]);
   });
