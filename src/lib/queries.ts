@@ -144,7 +144,8 @@ export async function fetchCategoryImages() {
 export const categoryImagesQuery = {
   queryKey: ["category_display_images"],
   queryFn: fetchCategoryImages,
-  staleTime: 5 * 60_000,
+  // Not cached for long: a picture changed in admin (maybe in another tab) shows when the shop tab is focused.
+  staleTime: 0,
 };
 
 export const profilesQuery = {

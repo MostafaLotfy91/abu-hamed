@@ -33,6 +33,7 @@ function Page() {
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["categories"] });
     qc.invalidateQueries({ queryKey: ["admin", "categories"] });
+    qc.invalidateQueries({ queryKey: ["category_display_images"] });
   };
 
   const notice = (

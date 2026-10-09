@@ -94,3 +94,39 @@ test.describe("category images (admin)", () => {
     }
   });
 });
+
+test.describe("category images (admin -> shop, same session)", () => {
+  test.use({ lang: "ar" });
+
+  test("a picture saved in admin shows in the shop without reloading", async ({
+    page,
+    catalog,
+  }) => {
+    try {
+      // Shop first, so the browser holds the old (no-picture) data.
+      await login(page, "admin", "/");
+      const tile = page.locator(`[data-category-card="${catalog.categoryId}"]`);
+      await expect(tile.locator('[data-category-image="fallback"]')).toBeVisible();
+
+      // In-app navigation to admin (no reload), upload and save.
+      await page.getByRole("link", { name: "لوحة التحكم" }).first().click();
+      await page.getByRole("link", { name: "الأقسام", exact: true }).click();
+      await page.getByPlaceholder("بحث").fill(catalog.tag);
+      const row = adminRow(page, catalog.category.ar);
+      await row.getByRole("button", { name: "تعديل" }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.locator('input[type="file"]').first().setInputFiles(pngFile());
+      await expect(toast(page, "تم رفع الصورة")).toBeVisible({ timeout: 30_000 });
+      await dialog.getByRole("button", { name: "حفظ" }).click();
+      await expect(toast(page, "✓")).toBeVisible();
+      await expect.poll(() => categoryImage(catalog.categoryId)).toMatch(/\.webp$/);
+      const saved = (await categoryImage(catalog.categoryId))!;
+
+      // Back to the shop through the admin menu (still no reload): the new picture is shown.
+      await page.getByRole("link", { name: "المتجر", exact: true }).click();
+      await expect(tile.locator('[data-category-image="photo"]')).toHaveAttribute("src", saved);
+    } finally {
+      await setCategoryImage(catalog.categoryId, null);
+    }
+  });
+});

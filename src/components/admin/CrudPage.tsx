@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,17 @@ export type Field = {
   default?: unknown;
   /** Show this field in the form only when it returns true for the row being edited (values are kept either way). */
   show?: (row: Record<string, unknown>) => boolean;
+};
+
+/**
+ * Storefront data that shows each table, refreshed after an admin change so the shop (same browser session)
+ * never keeps showing the old value.
+ */
+const SHOP_QUERIES: Partial<Record<AnyTable, QueryKey[]>> = {
+  categories: [["categories"], ["category_display_images"], ["category-seo"]],
+  products: [["products"], ["products-count"], ["home"], ["product"], ["category_display_images"]],
+  banners: [["banners"]],
+  coupons: [],
 };
 
 type AnyTable = "categories" | "products" | "banners" | "coupons" | "product_variants" | "branches";
@@ -127,7 +138,13 @@ export function CrudPage({
   renderCell?: (f: Field, row: Record<string, unknown>) => ReactNode | undefined;
 }) {
   const bi = useBi();
+  const qc = useQueryClient();
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
+  // Reloads this list and the storefront queries that show this table.
+  const changed = () => {
+    q.refetch();
+    for (const key of SHOP_QUERIES[table] ?? []) qc.invalidateQueries({ queryKey: key });
+  };
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
   useEffect(() => {
@@ -191,7 +208,7 @@ export function CrudPage({
     if (res.error) return toast.error(res.error.message);
     toast.success(`✓ ${ids.length}`);
     setSel(new Set());
-    q.refetch();
+    changed();
   };
 
   const save = async () => {
@@ -219,7 +236,7 @@ export function CrudPage({
     if (res.error) return toast.error(res.error.message);
     toast.success("✓");
     setEditing(null);
-    q.refetch();
+    changed();
   };
   const del = async (id: string) => {
     if (
@@ -233,7 +250,7 @@ export function CrudPage({
       return;
     const { error } = await supabase.from(table).delete().eq("id", id);
     if (error) toast.error(error.message);
-    else q.refetch();
+    else changed();
   };
   const blank = () =>
     Object.fromEntries(
