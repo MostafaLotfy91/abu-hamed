@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ContactSocialSettings } from "@/components/admin/ContactSocialSettings";
 import { useBi } from "@/lib/bilingual";
+import { financeSettingsError } from "@/lib/finance-settings";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({ component: Page });
 
@@ -89,6 +90,8 @@ function Page() {
       return !Number.isInteger(v) || v < min || v > max;
     });
     if (bad) return toast.error(`${bi(bad[3])}: ${bad[1]}–${bad[2]}`);
+    const financeError = financeSettingsError(s);
+    if (financeError) return toast.error(bi(financeError));
     const { id: _id, updated_at: _u, ...rest } = s;
     const { error } = await supabase.from("store_settings").update(rest).eq("id", 1);
     if (error) return toast.error(error.message);
@@ -259,6 +262,76 @@ function Page() {
             />
           </div>
         ))}
+      </Section>
+      <Section title={bi("مستحقات المناديب / Driver payments")}>
+        <div>
+          <Label htmlFor="settings-driver_commission_type">
+            {bi("نوع العمولة / Commission type")}
+          </Label>
+          <select
+            id="settings-driver_commission_type"
+            className="h-9 w-full rounded-md border bg-background px-2"
+            value={s.driver_commission_type}
+            onChange={(e) => set("driver_commission_type", e.target.value)}
+          >
+            <option value="fixed">{bi("مبلغ ثابت لكل طلب / Fixed per order")}</option>
+            <option value="percent_of_delivery_fee">
+              {bi("نسبة من رسوم التوصيل / Percent of delivery fee")}
+            </option>
+          </select>
+        </div>
+        {txt(
+          "driver_commission_value",
+          s.driver_commission_type === "percent_of_delivery_fee"
+            ? "النسبة % / Percent %"
+            : "قيمة العمولة / Commission amount",
+          "number",
+        )}
+        <div className="flex items-center justify-between rounded-xl border p-3 sm:col-span-2">
+          <span>
+            <span id="settings-keeps" className="block text-sm font-semibold">
+              {bi("المندوب يخصم عمولته من الكاش / Driver keeps commission from cash")}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {bi(
+                "لو مقفولة: يسلّم الكاش كله والعمولة تتصرف منفصلة / Off: hands over all cash, commission paid separately",
+              )}
+            </span>
+          </span>
+          <Switch
+            aria-labelledby="settings-keeps"
+            checked={s.driver_keeps_commission_from_cash}
+            onCheckedChange={(v) => set("driver_keeps_commission_from_cash", v)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="settings-settlement_mode">{bi("التسوية / Settlement")}</Label>
+          <select
+            id="settings-settlement_mode"
+            className="h-9 w-full rounded-md border bg-background px-2"
+            value={s.settlement_mode}
+            onChange={(e) => set("settlement_mode", e.target.value)}
+          >
+            <option value="end_of_day">{bi("آخر اليوم / End of day")}</option>
+            <option value="per_order">{bi("بعد كل طلب / Per order")}</option>
+          </select>
+        </div>
+        {txt(
+          "driver_cash_limit",
+          "حد الكاش مع المندوب (٠ = بدون) / Driver cash limit (0 = none)",
+          "number",
+        )}
+        {txt("timezone", "المنطقة الزمنية لليوم / Timezone for the day")}
+        <div className="flex items-center justify-between rounded-xl border p-3">
+          <span id="settings-staff-settle" className="text-sm font-semibold">
+            {bi("الموظفين يقدروا يستلموا تسويات / Staff may record settlements")}
+          </span>
+          <Switch
+            aria-labelledby="settings-staff-settle"
+            checked={s.staff_can_record_settlements}
+            onCheckedChange={(v) => set("staff_can_record_settlements", v)}
+          />
+        </div>
       </Section>
       <Section title={bi("التواصل / Contact")}>
         {txt("contact_phone", "Phone")}

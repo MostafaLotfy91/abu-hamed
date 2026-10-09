@@ -216,3 +216,21 @@
     display: none !important;
   }
 }
+
+/* Printing a single receipt (settlement dialog): everything else is hidden while it prints. */
+@media print {
+  body.print-receipt-only * {
+    visibility: hidden !important;
+  }
+  body.print-receipt-only .print-receipt,
+  body.print-receipt-only .print-receipt * {
+    visibility: visible !important;
+  }
+  body.print-receipt-only .print-receipt {
+    position: fixed;
+    inset: 0;
+    padding: 24px;
+    background: white;
+    color: black;
+  }
+}

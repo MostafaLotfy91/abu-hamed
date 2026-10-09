@@ -37,6 +37,8 @@ import { Route as AuthenticatedAdminReturnsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders.index'
 import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticated/orders.$id'
+import { Route as AuthenticatedAdminCashIndexRouteImport } from './routes/_authenticated/admin/cash.index'
+import { Route as AuthenticatedAdminCashDriverIdRouteImport } from './routes/_authenticated/admin/cash.$driverId'
 import { Route as AuthenticatedAdminOrdersIndexRouteImport } from './routes/_authenticated/admin/orders.index'
 import { Route as AuthenticatedAdminOrdersIdRouteImport } from './routes/_authenticated/admin/orders.$id'
 
@@ -189,6 +191,18 @@ const AuthenticatedOrdersIdRoute = AuthenticatedOrdersIdRouteImport.update({
   path: '/orders/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminCashIndexRoute =
+  AuthenticatedAdminCashIndexRouteImport.update({
+    id: '/cash/',
+    path: '/cash/',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminCashDriverIdRoute =
+  AuthenticatedAdminCashDriverIdRouteImport.update({
+    id: '/cash/$driverId',
+    path: '/cash/$driverId',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminOrdersIndexRoute =
   AuthenticatedAdminOrdersIndexRouteImport.update({
     id: '/orders/',
@@ -230,7 +244,9 @@ export interface FileRoutesByFullPath {
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/orders/': typeof AuthenticatedOrdersIndexRoute
+  '/admin/cash/$driverId': typeof AuthenticatedAdminCashDriverIdRoute
   '/admin/orders/$id': typeof AuthenticatedAdminOrdersIdRoute
+  '/admin/cash/': typeof AuthenticatedAdminCashIndexRoute
   '/admin/orders/': typeof AuthenticatedAdminOrdersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -260,7 +276,9 @@ export interface FileRoutesByTo {
   '/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/orders': typeof AuthenticatedOrdersIndexRoute
+  '/admin/cash/$driverId': typeof AuthenticatedAdminCashDriverIdRoute
   '/admin/orders/$id': typeof AuthenticatedAdminOrdersIdRoute
+  '/admin/cash': typeof AuthenticatedAdminCashIndexRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersIndexRoute
 }
 export interface FileRoutesById {
@@ -293,7 +311,9 @@ export interface FileRoutesById {
   '/_authenticated/orders/$id': typeof AuthenticatedOrdersIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/orders/': typeof AuthenticatedOrdersIndexRoute
+  '/_authenticated/admin/cash/$driverId': typeof AuthenticatedAdminCashDriverIdRoute
   '/_authenticated/admin/orders/$id': typeof AuthenticatedAdminOrdersIdRoute
+  '/_authenticated/admin/cash/': typeof AuthenticatedAdminCashIndexRoute
   '/_authenticated/admin/orders/': typeof AuthenticatedAdminOrdersIndexRoute
 }
 export interface FileRouteTypes {
@@ -326,7 +346,9 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/admin/'
     | '/orders/'
+    | '/admin/cash/$driverId'
     | '/admin/orders/$id'
+    | '/admin/cash/'
     | '/admin/orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -356,7 +378,9 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/admin'
     | '/orders'
+    | '/admin/cash/$driverId'
     | '/admin/orders/$id'
+    | '/admin/cash'
     | '/admin/orders'
   id:
     | '__root__'
@@ -388,7 +412,9 @@ export interface FileRouteTypes {
     | '/_authenticated/orders/$id'
     | '/_authenticated/admin/'
     | '/_authenticated/orders/'
+    | '/_authenticated/admin/cash/$driverId'
     | '/_authenticated/admin/orders/$id'
+    | '/_authenticated/admin/cash/'
     | '/_authenticated/admin/orders/'
   fileRoutesById: FileRoutesById
 }
@@ -605,6 +631,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrdersIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/cash/': {
+      id: '/_authenticated/admin/cash/'
+      path: '/cash'
+      fullPath: '/admin/cash/'
+      preLoaderRoute: typeof AuthenticatedAdminCashIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/cash/$driverId': {
+      id: '/_authenticated/admin/cash/$driverId'
+      path: '/cash/$driverId'
+      fullPath: '/admin/cash/$driverId'
+      preLoaderRoute: typeof AuthenticatedAdminCashDriverIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/orders/': {
       id: '/_authenticated/admin/orders/'
       path: '/orders'
@@ -633,7 +673,9 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminReturnsRoute: typeof AuthenticatedAdminReturnsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminCashDriverIdRoute: typeof AuthenticatedAdminCashDriverIdRoute
   AuthenticatedAdminOrdersIdRoute: typeof AuthenticatedAdminOrdersIdRoute
+  AuthenticatedAdminCashIndexRoute: typeof AuthenticatedAdminCashIndexRoute
   AuthenticatedAdminOrdersIndexRoute: typeof AuthenticatedAdminOrdersIndexRoute
 }
 
@@ -649,7 +691,9 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminReturnsRoute: AuthenticatedAdminReturnsRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+    AuthenticatedAdminCashDriverIdRoute: AuthenticatedAdminCashDriverIdRoute,
     AuthenticatedAdminOrdersIdRoute: AuthenticatedAdminOrdersIdRoute,
+    AuthenticatedAdminCashIndexRoute: AuthenticatedAdminCashIndexRoute,
     AuthenticatedAdminOrdersIndexRoute: AuthenticatedAdminOrdersIndexRoute,
   }
 

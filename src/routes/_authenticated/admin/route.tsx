@@ -7,6 +7,7 @@ import {
   FileSpreadsheet,
   Sparkles,
   Bike,
+  Wallet,
   FolderTree,
   Image,
   Package,
@@ -47,6 +48,7 @@ const LINKS = [
   { to: "/admin/orders", icon: ReceiptText, ar: "الطلبات", en: "Orders" },
   { to: "/admin/returns", icon: Undo2, ar: "الاسترجاع", en: "Returns" },
   { to: "/admin/drivers", icon: Bike, ar: "المندوبين", en: "Drivers" },
+  { to: "/admin/cash", icon: Wallet, ar: "كاش المناديب", en: "Drivers cash", adminOnly: true },
   { to: "/admin/products", icon: Package, ar: "المنتجات", en: "Products" },
   {
     to: "/admin/import",
