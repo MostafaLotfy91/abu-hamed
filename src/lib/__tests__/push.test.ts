@@ -2,9 +2,12 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  assignedPayload,
   bearerMatches,
   isGone,
   offerPayload,
+  statusPayload,
+  summarize,
   testPayload,
   ttlSeconds,
 } from "../../../supabase/functions/send-driver-push/logic";
@@ -41,6 +44,46 @@ describe("send-driver-push payloads", () => {
     expect(isGone(429)).toBe(false);
     expect(isGone(500)).toBe(false);
     expect(isGone(undefined)).toBe(false);
+  });
+
+  it("assigned and status payloads: order number only, open /driver", () => {
+    const a = assignedPayload(77, "o-1");
+    expect(a).toMatchObject({ title: "أوردر #77 اتسلّم لك", url: "/driver", tag: "order-o-1" });
+    expect(Object.keys(a).sort()).toEqual(["body", "requireInteraction", "tag", "title", "url"]);
+    expect(statusPayload(77, "o-1", "preparing").title).toBe("أوردر #77 بيتجهز");
+    expect(statusPayload(77, "o-1", "confirmed").title).toBe("أوردر #77 اتأكد");
+  });
+
+  it("summarizes the result for notification_log, with a reason for every failure", () => {
+    expect(summarize([])).toEqual({
+      status: "no_subscription",
+      error: "driver has no registered device (enable notifications in the driver app settings)",
+      devices: 0,
+      sent: 0,
+      removed: 0,
+    });
+    expect(summarize([{ id: "a", ok: true, status: 201 }])).toMatchObject({
+      status: "sent",
+      error: null,
+      sent: 1,
+    });
+    const mixed = summarize([
+      { id: "a", ok: true, status: 201 },
+      { id: "b", ok: false, status: 410 },
+      { id: "c", ok: false, status: 403 },
+    ]);
+    expect(mixed).toMatchObject({ status: "partial", devices: 3, sent: 1, removed: 1 });
+    expect(mixed.error).toContain("410 subscription expired");
+    expect(mixed.error).toContain("403 VAPID key mismatch");
+    const allGone = summarize([
+      { id: "a", ok: false, status: 404 },
+      { id: "b", ok: false, status: 404 },
+    ]);
+    expect(allGone).toMatchObject({ status: "failed", removed: 2 });
+    expect(allGone.error).toMatch(/×2$/);
+    expect(
+      summarize([{ id: "a", ok: false, message: "x".repeat(900) }]).error!.length,
+    ).toBeLessThanOrEqual(500);
   });
 
   it("checks the webhook bearer secret", () => {
