@@ -89,3 +89,31 @@ describe("request sent to the provider", () => {
     expect(tools[0]).toMatchObject({ type: "function", function: { name: "search_products" } });
   });
 });
+
+describe("server settings for the AI endpoints", () => {
+  it("falls back to the VITE_ copies of the Supabase settings", async () => {
+    const { serverSupabaseEnv } = await import("../ai-provider.server");
+    expect(
+      serverSupabaseEnv({ VITE_SUPABASE_URL: "u", VITE_SUPABASE_PUBLISHABLE_KEY: "k" }),
+    ).toEqual({
+      url: "u",
+      anon: "k",
+    });
+    expect(serverSupabaseEnv({ SUPABASE_URL: "s", VITE_SUPABASE_URL: "v" }).url).toBe("s");
+  });
+
+  it("names the missing settings, never their values", async () => {
+    const { missingAiSettings } = await import("../ai-provider.server");
+    expect(missingAiSettings({})).toEqual([
+      "AI_API_KEY",
+      "SUPABASE_URL",
+      "SUPABASE_PUBLISHABLE_KEY",
+    ]);
+    expect(
+      missingAiSettings({ VITE_SUPABASE_URL: "u", VITE_SUPABASE_PUBLISHABLE_KEY: "k" }),
+    ).toEqual(["AI_API_KEY"]);
+    expect(
+      missingAiSettings({ AI_API_KEY: "x", SUPABASE_URL: "u", SUPABASE_PUBLISHABLE_KEY: "k" }),
+    ).toEqual([]);
+  });
+});

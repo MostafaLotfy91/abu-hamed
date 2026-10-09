@@ -4,7 +4,7 @@ import { z } from "zod";
 import { effectivePrice } from "./format";
 import { checkRateLimit, rateLimitResponse, visitorKey } from "./rate-limit.server";
 import type { AssistantEvent, AssistantProduct } from "./assistant-types";
-import { aiConfig, aiModel } from "./ai-provider.server";
+import { aiConfig, aiModel, missingAiSettings, serverSupabaseEnv } from "./ai-provider.server";
 
 export type { AssistantProduct };
 
@@ -84,10 +84,9 @@ const SIZE_GUIDE = `دليل المقاسات (سم): ملابس كبار حسب
 
 export async function handleAssistant(request: Request): Promise<Response> {
   const ai = aiConfig();
-  const url = process.env["SUPABASE_URL"];
-  const anon =
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
-  if (!ai || !url || !anon) return json(500, { error: "config" });
+  const { url, anon } = serverSupabaseEnv();
+  // 503 + the names of the missing settings (never their values) so the host's config is easy to fix.
+  if (!ai || !url || !anon) return json(503, { error: "config", missing: missingAiSettings() });
 
   let body: z.infer<typeof bodySchema>;
   try {

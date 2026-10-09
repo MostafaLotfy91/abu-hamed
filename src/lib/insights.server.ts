@@ -9,7 +9,13 @@ import {
 } from "./insights-types";
 import type { Json } from "@/integrations/supabase/types";
 import { checkRateLimit, rateLimitResponse } from "./rate-limit.server";
-import { aiConfig, aiModel, type AiConfig } from "./ai-provider.server";
+import {
+  aiConfig,
+  aiModel,
+  missingAiSettings,
+  serverSupabaseEnv,
+  type AiConfig,
+} from "./ai-provider.server";
 
 const WEEK_MS = 7 * 24 * 3600_000;
 
@@ -75,11 +81,9 @@ function statusOf(err: unknown) {
 }
 
 async function authorize(request: Request) {
-  const url = process.env["SUPABASE_URL"];
-  const anon =
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+  const { url, anon } = serverSupabaseEnv();
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!url || !anon) return { error: json(500, { error: "config" }) };
+  if (!url || !anon) return { error: json(503, { error: "config", missing: missingAiSettings() }) };
   if (!token) return { error: json(401, { error: "unauthorized" }) };
   const db = createClient(url, anon, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -134,7 +138,7 @@ function runModel(
 
 export async function handleInsights(request: Request): Promise<Response> {
   const ai = aiConfig();
-  if (!ai) return json(500, { error: "config" });
+  if (!ai) return json(503, { error: "config", missing: missingAiSettings() });
   const auth = await authorize(request);
   if (auth.error) return auth.error;
   const db = auth.db!;

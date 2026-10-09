@@ -29,6 +29,11 @@ function errorText(status: number, ar: boolean) {
   if (status === 429)
     return ar ? "بعت رسايل كتير، استنى شوية وجرب تاني." : "Too many messages, please wait a bit.";
   if (status === 403) return ar ? "المساعد مش متاح حالياً." : "The stylist is not available.";
+  // Server not configured yet (e.g. no AI key on the host).
+  if (status === 503)
+    return ar
+      ? "المساعد لسه مش متفعّل على المتجر."
+      : "The stylist is not set up on this store yet.";
   return ar ? "حصلت مشكلة، جرب تاني." : "Something went wrong, try again.";
 }
 

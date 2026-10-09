@@ -43,3 +43,23 @@ export function aiModel(cfg: AiConfig) {
     cfg.model,
   );
 }
+
+/**
+ * Supabase settings the AI endpoints need on the server. The VITE_ copies (which every deployment has) are used
+ * when the server-only names aren't set.
+ */
+export function serverSupabaseEnv(env: Record<string, string | undefined> = process.env) {
+  const url = env["SUPABASE_URL"] || env["VITE_SUPABASE_URL"];
+  const anon = env["SUPABASE_PUBLISHABLE_KEY"] || env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+  return { url, anon };
+}
+
+/** Names (never values) of the settings an AI endpoint is missing, for a clear "not configured" answer. */
+export function missingAiSettings(env: Record<string, string | undefined> = process.env) {
+  const { url, anon } = serverSupabaseEnv(env);
+  return [
+    ...(aiConfig(env) ? [] : ["AI_API_KEY"]),
+    ...(url ? [] : ["SUPABASE_URL"]),
+    ...(anon ? [] : ["SUPABASE_PUBLISHABLE_KEY"]),
+  ];
+}
