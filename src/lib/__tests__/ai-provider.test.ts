@@ -117,3 +117,71 @@ describe("server settings for the AI endpoints", () => {
     ).toEqual([]);
   });
 });
+
+describe("Gemini compatibility", () => {
+  it("strips schema keywords Gemini rejects, at every level", async () => {
+    const { stripUnsupportedSchema } = await import("../ai-provider.server");
+    const schema = {
+      $schema: "http://json-schema.org/draft-07/schema#",
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        q: { type: "string" },
+        filters: {
+          type: "object",
+          additionalProperties: false,
+          properties: { a: { type: "string" } },
+        },
+        list: { type: "array", items: [{ type: "object", additionalProperties: false }] },
+      },
+    };
+    expect(stripUnsupportedSchema(schema)).toEqual({
+      type: "object",
+      properties: {
+        q: { type: "string" },
+        filters: { type: "object", properties: { a: { type: "string" } } },
+        list: { type: "array", items: [{ type: "object" }] },
+      },
+    });
+  });
+
+  it("the Gemini request carries clean tool schemas", async () => {
+    const { geminiFetch } = await import("../ai-provider.server");
+    let sent = "";
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (_i: unknown, init?: RequestInit) => {
+      sent = String(init?.body);
+      return new Response("{}");
+    }) as typeof fetch;
+    try {
+      await geminiFetch("https://x/v1/chat/completions", {
+        method: "POST",
+        body: JSON.stringify({
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "t",
+                parameters: { $schema: "s", additionalProperties: false, type: "object" },
+              },
+            },
+          ],
+        }),
+      });
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    expect(JSON.parse(sent).tools[0].function.parameters).toEqual({ type: "object" });
+  });
+
+  it("diagnostic reason never contains a key", async () => {
+    const { safeReason } = await import("../ai-provider.server");
+    expect(safeReason({ message: "API key not valid: AIzaSyABCDEFGHIJKLMNOPQRST" })).toBe(
+      "API key not valid: [key]",
+    );
+    expect(
+      safeReason({ responseBody: '[{"error":{"message":"Unknown name \\"$schema\\""}}]' }),
+    ).toContain("Unknown name");
+    expect(safeReason(null)).toBeUndefined();
+  });
+});

@@ -26,4 +26,4 @@ export type AssistantProduct = {
 export type AssistantEvent =
   | { type: "text"; delta: string }
   | { type: "products"; items: AssistantProduct[] }
-  | { type: "error"; status: number };
+  | { type: "error"; status: number; reason?: string };

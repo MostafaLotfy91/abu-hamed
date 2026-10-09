@@ -13,6 +13,7 @@ import {
   aiConfig,
   aiModel,
   missingAiSettings,
+  safeReason,
   serverSupabaseEnv,
   type AiConfig,
 } from "./ai-provider.server";
@@ -184,7 +185,7 @@ export async function handleInsights(request: Request): Promise<Response> {
       if (request.signal.aborted) return json(499, { error: "aborted" });
       const status = statusOf(e);
       console.error("insights weekly error", status, (e as AiError | null)?.message);
-      return json(status, { error: "ai_error" });
+      return json(status, { error: "ai_error", reason: safeReason(e) });
     }
   }
 
@@ -208,7 +209,7 @@ export async function handleInsights(request: Request): Promise<Response> {
         if (!request.signal.aborted) {
           const status = statusOf(e);
           console.error("insights ask error", status, (e as AiError | null)?.message);
-          send({ type: "error", status });
+          send({ type: "error", status, reason: safeReason(e) });
         }
       } finally {
         controller.close();

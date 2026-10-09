@@ -39,10 +39,44 @@ export function aiConfig(env: Record<string, string | undefined> = process.env):
 
 /** Chat-completions model (the endpoint every OpenAI-compatible provider implements, incl. tool calls). */
 export function aiModel(cfg: AiConfig) {
-  return createOpenAI({ baseURL: cfg.baseURL, apiKey: cfg.apiKey, name: cfg.provider }).chat(
-    cfg.model,
-  );
+  return createOpenAI({
+    baseURL: cfg.baseURL,
+    apiKey: cfg.apiKey,
+    name: cfg.provider,
+    fetch: cfg.provider === "gemini" ? geminiFetch : undefined,
+  }).chat(cfg.model);
 }
+
+/** Schema keywords the Gemini OpenAI-compatible endpoint rejects ("Unknown name ..."). */
+const GEMINI_UNSUPPORTED = new Set(["$schema", "additionalProperties"]);
+
+/** Removes unsupported keywords from tool parameter schemas (recursively). Tool input is still validated by zod. */
+export function stripUnsupportedSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripUnsupportedSchema);
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([k]) => !GEMINI_UNSUPPORTED.has(k))
+        .map(([k, v]) => [k, stripUnsupportedSchema(v)]),
+    );
+  return value;
+}
+
+/** fetch for Gemini: same request, with tool schemas cleaned of keywords it rejects. */
+export const geminiFetch: typeof fetch = (input, init) => {
+  if (typeof init?.body === "string" && init.body.includes('"tools"')) {
+    try {
+      const body = JSON.parse(init.body) as { tools?: { function?: { parameters?: unknown } }[] };
+      for (const t of body.tools ?? [])
+        if (t.function?.parameters)
+          t.function.parameters = stripUnsupportedSchema(t.function.parameters);
+      init = { ...init, body: JSON.stringify(body) };
+    } catch {
+      /* not JSON: send unchanged */
+    }
+  }
+  return fetch(input, init);
+};
 
 /**
  * Supabase settings the AI endpoints need on the server. The VITE_ copies (which every deployment has) are used
@@ -62,4 +96,23 @@ export function missingAiSettings(env: Record<string, string | undefined> = proc
     ...(url ? [] : ["SUPABASE_URL"]),
     ...(anon ? [] : ["SUPABASE_PUBLISHABLE_KEY"]),
   ];
+}
+
+/**
+ * Short provider error for diagnostics in the error event (the UI still shows a friendly message). Provider
+ * messages don't contain the key, but anything key-shaped is redacted anyway.
+ */
+export function safeReason(e: unknown): string | undefined {
+  const err = e as {
+    message?: string;
+    responseBody?: string;
+    lastError?: { message?: string };
+  } | null;
+  const text = err?.responseBody || err?.lastError?.message || err?.message;
+  if (!text) return undefined;
+  return text
+    .replace(/AIza[0-9A-Za-z_-]{10,}/g, "[key]")
+    .replace(/\b(sk|gsk|sk-or)[-_][0-9A-Za-z_-]{10,}/g, "[key]")
+    .replace(/\s+/g, " ")
+    .slice(0, 300);
 }

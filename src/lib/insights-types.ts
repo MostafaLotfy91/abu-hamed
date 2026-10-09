@@ -16,7 +16,7 @@ export type InsightRow = Record<string, string | number | null>;
 export type InsightEvent =
   | { type: "text"; delta: string }
   | { type: "data"; name: InsightName; rows: InsightRow[] }
-  | { type: "error"; status: number };
+  | { type: "error"; status: number; reason?: string };
 
 export type WeeklySummary = { text: string; created_at: string; cached: boolean };
 

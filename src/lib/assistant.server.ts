@@ -4,7 +4,13 @@ import { z } from "zod";
 import { effectivePrice } from "./format";
 import { checkRateLimit, rateLimitResponse, visitorKey } from "./rate-limit.server";
 import type { AssistantEvent, AssistantProduct } from "./assistant-types";
-import { aiConfig, aiModel, missingAiSettings, serverSupabaseEnv } from "./ai-provider.server";
+import {
+  aiConfig,
+  aiModel,
+  missingAiSettings,
+  safeReason,
+  serverSupabaseEnv,
+} from "./ai-provider.server";
 
 export type { AssistantProduct };
 
@@ -252,7 +258,11 @@ ${SIZE_GUIDE}
           } | null;
           const status = Number(err?.statusCode ?? err?.lastError?.statusCode) || 500;
           console.error("assistant error", status, err?.message);
-          send({ type: "error", status: [402, 403, 429].includes(status) ? status : 500 });
+          send({
+            type: "error",
+            status: [402, 403, 429].includes(status) ? status : 500,
+            reason: safeReason(e),
+          });
         }
       } finally {
         controller.close();
