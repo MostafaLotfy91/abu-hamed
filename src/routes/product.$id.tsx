@@ -39,6 +39,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/lib/store-settings";
+import { Ornament, SectionTitle } from "@/components/luxe/Ornament";
+import { Reveal } from "@/components/luxe/Reveal";
 import { usePublishWaContext } from "@/lib/whatsapp";
 import { countLabel } from "@/lib/format";
 
@@ -73,6 +76,7 @@ function ProductPage() {
   const { product: loaded } = Route.useLoaderData();
   const { t, tx, lang } = useI18n();
   const money = useMoney();
+  const { settings } = useSettings();
   const cart = useCart();
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -124,6 +128,22 @@ function ProductPage() {
         .eq("is_active", true)
         .neq("id", id)
         .limit(10);
+      return (data ?? []) as Product[];
+    },
+  });
+  const look = useQuery({
+    queryKey: ["complete-look", id, p?.gender, p?.category_id],
+    enabled: !!p?.gender && !!p?.category_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select(PRODUCT_FIELDS)
+        .eq("is_active", true)
+        .in("gender", [p!.gender!, "unisex"])
+        .neq("category_id", p!.category_id!)
+        .gt("stock", 0)
+        .order("sold_count", { ascending: false })
+        .limit(8);
       return (data ?? []) as Product[];
     },
   });
@@ -199,6 +219,14 @@ function ProductPage() {
   const name = tx(p, "name");
   const g = GENDERS.find((x) => x.value === p.gender),
     se = SEASONS.find((x) => x.value === p.season);
+  const returnDays = Number(settings?.return_window_days ?? 0);
+  const notes = (
+    [
+      ["top_notes", p.top_notes],
+      ["middle_notes", p.middle_notes],
+      ["base_notes", p.base_notes],
+    ] as const
+  ).filter((n): n is readonly ["top_notes" | "middle_notes" | "base_notes", string] => !!n[1]);
   const isPerfume =
     (profile.fields.includes("notes") || profile.fields.includes("volume")) &&
     !!(p.top_notes || p.middle_notes || p.base_notes || p.volume_ml || p.concentration);
@@ -242,37 +270,32 @@ function ProductPage() {
   };
 
   return (
-    <div className="space-y-10 pb-24 md:pb-0">
-      <div className="grid gap-6 md:grid-cols-[1.2fr_1fr] md:gap-10">
+    <div className="space-y-16 pb-24 md:space-y-24 md:pb-0">
+      <div className="grid gap-8 md:grid-cols-[1.25fr_1fr] md:gap-14 lg:gap-20">
         <ProductGallery
           images={images}
           alt={name}
           overlay={
             <>
               {pricing.pct > 0 && (
-                <span className="absolute start-3 top-3 rounded-sm bg-deal px-2 py-0.5 text-xs font-bold text-deal-foreground">
-                  -{pricing.pct}%
-                </span>
+                <span className="label-gold absolute start-4 top-4 text-deal">-{pricing.pct}%</span>
               )}
               <button
                 onClick={toggleWish}
                 aria-label={t("wishlist")}
-                className="absolute end-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-background/90 shadow-sm"
+                aria-pressed={!!wish.data}
+                className="absolute end-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-background/75 backdrop-blur-sm transition-colors hover:bg-background"
               >
-                <Heart className={cn("h-5 w-5", wish.data && "fill-deal text-deal")} />
+                <Heart className={cn("h-5 w-5", wish.data && "fill-current")} strokeWidth={1.25} />
               </button>
             </>
           }
         />
 
-        <div className="space-y-5 md:sticky md:top-20 md:self-start">
-          <div className="space-y-1">
-            {p.brand && (
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {p.brand}
-              </p>
-            )}
-            <h1 className="text-xl font-semibold leading-snug md:text-2xl">{name}</h1>
+        <div className="space-y-6 md:sticky md:top-24 md:self-start">
+          <div className="space-y-3">
+            {p.brand && <p className="eyebrow">{p.brand}</p>}
+            <h1 className="font-display text-3xl md:text-4xl">{name}</h1>
             {Number(p.rating_count) > 0 && (
               <a href="#reviews" className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Star className="h-4 w-4 fill-foreground text-foreground" />
@@ -281,7 +304,7 @@ function ProductPage() {
             )}
           </div>
           <div className="flex flex-wrap items-baseline gap-3">
-            <span className={cn("text-2xl font-bold", pricing.was && "text-deal")}>
+            <span className={cn("text-xl font-medium tabular-nums", pricing.was && "text-deal")}>
               {money(pricing.current)}
             </span>
             {pricing.was && (
@@ -291,14 +314,16 @@ function ProductPage() {
             )}
           </div>
           {pricing.flashActive && p.flash_ends_at && (
-            <div className="flex items-center gap-2 text-sm font-semibold text-deal">
-              {t("flash_deals")} · {t("ends_in")} <Countdown to={p.flash_ends_at} />
+            <div>
+              <span className="label-gold">
+                {t("flash_deals")} · {t("ends_in")} <Countdown to={p.flash_ends_at} />
+              </span>
             </div>
           )}
           {needColor && (
             <div>
-              <p className="mb-2 text-sm font-semibold">
-                {t("color")}:{" "}
+              <p className="mb-3 text-sm">
+                <span className="eyebrow me-1 text-foreground">{t("color")}</span>{" "}
                 <span className="font-normal text-muted-foreground">
                   {lang === "ar"
                     ? colors.find((c) => c.color_en === pickedColor)?.color_ar
@@ -343,12 +368,12 @@ function ProductPage() {
               aria-labelledby="size-label"
               data-nudge={nudge || undefined}
               className={cn(
-                "scroll-mt-24 rounded-lg transition-shadow",
+                "scroll-mt-24 transition-shadow",
                 nudge && "animate-nudge ring-2 ring-deal ring-offset-4 ring-offset-background",
               )}
             >
               <div className="mb-2 flex items-center justify-between">
-                <p id="size-label" className="text-sm font-semibold">
+                <p id="size-label" className="eyebrow text-foreground">
                   {sizeAxisLabel}
                 </p>
                 {profile.size_guide && <SizeGuide type={profile.size_guide} />}
@@ -367,10 +392,10 @@ function ProductPage() {
                         setQty(1);
                       }}
                       className={cn(
-                        "h-11 rounded-md border px-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:text-muted-foreground disabled:line-through",
+                        "h-12 border px-2 text-sm transition-colors duration-300 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:line-through",
                         s === pickedSize
                           ? "border-foreground bg-foreground text-background"
-                          : "border-border bg-card hover:border-foreground",
+                          : "border-border hover:border-foreground",
                       )}
                     >
                       {sizeLabel(s, lang)}
@@ -413,13 +438,17 @@ function ProductPage() {
                   onChange={(n) => setQty(Math.max(1, n))}
                 />
               </div>
-              <Button size="lg" className="h-12 flex-1 font-semibold" onClick={add}>
+              <Button size="xl" className="flex-1" onClick={add}>
                 {t("add_to_cart")} · {money(pricing.current * curQty)}
               </Button>
             </div>
           )}
 
-          <Accordion type="multiple" defaultValue={["description"]} className="border-t">
+          <Accordion
+            type="multiple"
+            defaultValue={["description"]}
+            className="border-t [&_button]:text-sm [&_button]:font-normal [&_button]:tracking-wide"
+          >
             {tx(p, "description") && (
               <AccordionItem value="description">
                 <AccordionTrigger className="text-sm font-semibold">
@@ -430,7 +459,7 @@ function ProductPage() {
                 </AccordionContent>
               </AccordionItem>
             )}
-            {(g || se || p.material_ar || p.sku || tx(p, "care") || p.brand) && (
+            {(g || se || p.sku || p.brand) && (
               <AccordionItem value="details">
                 <AccordionTrigger className="text-sm font-semibold">
                   {t("details")}
@@ -441,12 +470,6 @@ function ProductPage() {
                       <>
                         <dt className="text-muted-foreground">{t("brand")}</dt>
                         <dd>{p.brand}</dd>
-                      </>
-                    )}
-                    {tx(p, "material") && (
-                      <>
-                        <dt className="text-muted-foreground">{t("material")}</dt>
-                        <dd>{tx(p, "material")}</dd>
                       </>
                     )}
                     {g && (
@@ -470,6 +493,16 @@ function ProductPage() {
                       </>
                     )}
                   </dl>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+            {tx(p, "material") && (
+              <AccordionItem value="material">
+                <AccordionTrigger className="text-sm font-semibold">
+                  {t("material")}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-sm leading-7 text-muted-foreground">{tx(p, "material")}</p>
                 </AccordionContent>
               </AccordionItem>
             )}
@@ -499,26 +532,20 @@ function ProductPage() {
                       </span>
                     )}
                   </div>
-                  <dl className="space-y-1">
-                    {p.top_notes && (
-                      <div>
-                        <dt className="inline font-semibold">{t("top_notes")}: </dt>
-                        <dd className="inline text-muted-foreground">{p.top_notes}</dd>
-                      </div>
-                    )}
-                    {p.middle_notes && (
-                      <div>
-                        <dt className="inline font-semibold">{t("middle_notes")}: </dt>
-                        <dd className="inline text-muted-foreground">{p.middle_notes}</dd>
-                      </div>
-                    )}
-                    {p.base_notes && (
-                      <div>
-                        <dt className="inline font-semibold">{t("base_notes")}: </dt>
-                        <dd className="inline text-muted-foreground">{p.base_notes}</dd>
-                      </div>
-                    )}
-                  </dl>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+            {returnDays > 0 && (
+              <AccordionItem value="returns">
+                <AccordionTrigger className="text-sm font-semibold">
+                  {lang === "ar" ? "الاسترجاع والاستبدال" : "Returns & exchanges"}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-sm leading-7 text-muted-foreground">
+                    {lang === "ar"
+                      ? `تقدر ترجّع أو تستبدل خلال ${countLabel(returnDays, "ar", "day")} من الاستلام، من صفحة طلباتك.`
+                      : `Return or exchange within ${countLabel(returnDays, "en", "day")} of delivery, from your orders page.`}
+                  </p>
                 </AccordionContent>
               </AccordionItem>
             )}
@@ -526,8 +553,44 @@ function ProductPage() {
         </div>
       </div>
 
+      {notes.length > 0 && (
+        // Perfumes: the fragrance pyramid as its own quiet, dark editorial block.
+        <section
+          aria-labelledby="notes-title"
+          className="surface-dark -mx-3 px-6 py-16 md:mx-0 md:py-24"
+        >
+          <Reveal className="mx-auto max-w-4xl text-center">
+            <p className="eyebrow text-on-dark/60">
+              {lang === "ar" ? "الهرم العطري" : "The fragrance"}
+            </p>
+            <h2 id="notes-title" className="mt-3 font-display text-3xl text-on-dark md:text-4xl">
+              {lang === "ar" ? "مكوّنات العطر" : "Fragrance notes"}
+            </h2>
+            <Ornament className="mt-5" />
+            <dl className={cn("mt-12 grid gap-10", notes.length > 1 && "md:grid-cols-3")}>
+              {notes.map(([k, v]) => (
+                <div key={k} className="space-y-3">
+                  <dt className="flex flex-col items-center gap-3 font-display text-2xl text-on-dark">
+                    <span aria-hidden className="h-px w-8 bg-gold" />
+                    {t(k)}
+                  </dt>
+                  <dd className="leading-loose text-on-dark/80">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            {(p.volume_ml || p.concentration) && (
+              <p className="mt-12 text-sm tracking-wide text-on-dark/60">
+                {[p.concentration, p.volume_ml && `${p.volume_ml} ${lang === "ar" ? "مل" : "ml"}`]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </Reveal>
+        </section>
+      )}
+
       {stock > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t bg-background/95 p-3 backdrop-blur md:hidden">
+        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t bg-background/95 px-4 py-3 backdrop-blur md:hidden">
           <WhatsAppInlineIcon />
           <div className="min-w-0">
             <p className="truncate text-xs text-muted-foreground">
@@ -538,9 +601,9 @@ function ProductPage() {
                 .filter(Boolean)
                 .join(" · ") || name}
             </p>
-            <p className="font-bold">{money(pricing.current)}</p>
+            <p className="font-medium tabular-nums">{money(pricing.current)}</p>
           </div>
-          <Button size="lg" className="h-12 flex-1 font-semibold" onClick={add}>
+          <Button size="lg" className="h-12 flex-1" onClick={add}>
             {ready ? t("add_to_cart") : t("choose_size")}
           </Button>
         </div>
@@ -548,18 +611,16 @@ function ProductPage() {
 
       <Reviews productId={p.id} />
 
-      {!!related.data?.length && (
-        <section>
-          <SectionHeader title={t("related")} />
-          <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-2 scrollbar-none">
-            {related.data.map((r) => (
-              <div key={r.id} className="w-40 shrink-0 snap-start md:w-56">
-                <ProductCard p={r} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <ProductRow
+        eyebrow={lang === "ar" ? "نسّقها مع" : "Style it with"}
+        title={lang === "ar" ? "أكمل الإطلالة" : "Complete the look"}
+        products={look.data}
+      />
+      <ProductRow
+        eyebrow={lang === "ar" ? "من نفس القسم" : "From the same department"}
+        title={t("related")}
+        products={related.data}
+      />
     </div>
   );
 }
@@ -670,6 +731,33 @@ function Reviews({ productId }: { productId: string }) {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/** A titled row of product cards at the bottom of the product page; hidden when empty. */
+function ProductRow({
+  eyebrow,
+  title,
+  products,
+}: {
+  eyebrow: string;
+  title: string;
+  products?: Product[];
+}) {
+  if (!products?.length) return null;
+  return (
+    <section>
+      <Reveal>
+        <SectionTitle eyebrow={eyebrow} title={title} />
+      </Reveal>
+      <div className="-mx-3 mt-10 flex snap-x gap-4 overflow-x-auto px-3 pb-2 scrollbar-none md:mx-0 md:gap-6 md:px-0">
+        {products.map((r) => (
+          <div key={r.id} className="w-[62%] shrink-0 snap-start sm:w-[38%] lg:w-[23%]">
+            <ProductCard p={r} />
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

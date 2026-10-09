@@ -145,83 +145,96 @@ export function ProductCard({ p }: { p: Product }) {
     toast.success(t("added_to_cart"));
   };
 
+  const label = pct > 0 ? `-${pct}%` : isNew ? t("badge_new") : null;
+  const lowStock = stock > 0 && stock <= LOW_STOCK;
+
   return (
     <div className="group flex h-full flex-col">
-      <div className="relative overflow-hidden rounded-md bg-muted">
+      <div className="relative overflow-hidden bg-muted">
         <Link to="/product/$id" params={{ id: p.id }} className="block aspect-[4/5]">
-          <ProductImage src={img1} alt={name} className="absolute inset-0 h-full w-full" />
+          <ProductImage
+            src={img1}
+            alt={name}
+            className={cn("absolute inset-0 h-full w-full", !img2 && "img-zoom")}
+          />
           {img2 && (
+            // Second photo on hover (desktop), crossfading slowly.
             <img
               src={img2}
               alt=""
               loading="lazy"
+              decoding="async"
               aria-hidden
-              className="absolute inset-0 hidden h-full w-full object-cover opacity-0 transition-opacity duration-500 md:block md:group-hover:opacity-100"
+              className="absolute inset-0 hidden h-full w-full object-cover opacity-0 transition-opacity duration-700 ease-[var(--ease-luxe)] md:block md:group-hover:opacity-100"
             />
           )}
         </Link>
-        <div className="pointer-events-none absolute start-2 top-2 flex flex-col items-start gap-1">
-          {pct > 0 && (
-            <span className="rounded-sm bg-deal px-1.5 py-0.5 text-[11px] font-bold text-deal-foreground">
-              -{pct}%
-            </span>
-          )}
-          {isNew && (
-            <span className="rounded-sm bg-card px-1.5 py-0.5 text-[11px] font-bold">
-              {t("badge_new")}
-            </span>
-          )}
-          {stock > 0 && stock <= LOW_STOCK && (
-            <span className="rounded-sm bg-brand-secondary px-1.5 py-0.5 text-[11px] font-bold text-brand-secondary-foreground">
-              {t("only_left").replace("{n}", countLabel(stock, lang, "piece"))}
-            </span>
-          )}
-        </div>
+        {label && (
+          <span
+            className={cn(
+              "label-gold pointer-events-none absolute start-3 top-3",
+              pct > 0 && "text-deal",
+            )}
+          >
+            {label}
+          </span>
+        )}
         <button
           onClick={toggleWish}
           disabled={wishUnknown}
           aria-label={t("wishlist")}
           aria-pressed={liked}
-          className="absolute end-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-foreground transition hover:scale-110"
+          className="absolute end-1 top-1 flex h-11 w-11 items-center justify-center text-foreground"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-card/90">
-            <Heart className={cn("h-4 w-4", liked && "fill-deal text-deal")} />
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-background/75 backdrop-blur-sm transition-colors duration-300 hover:bg-background">
+            <Heart className={cn("h-4 w-4", liked && "fill-current")} strokeWidth={1.25} />
           </span>
         </button>
         {stock > 0 ? (
+          // Discreet: a small square on phones; a bar that rises from the bottom of the photo on hover (desktop).
           <button
             onClick={quickAdd}
             aria-label={t("quick_add")}
-            className="absolute bottom-2 end-2 flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-card transition hover:bg-foreground hover:text-background md:h-10 md:w-auto md:translate-y-2 md:gap-1 md:px-3 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+            className="absolute bottom-2 end-2 flex h-10 w-10 items-center justify-center bg-background/85 text-foreground backdrop-blur-sm transition-[transform,opacity,background-color] duration-500 ease-[var(--ease-luxe)] hover:bg-foreground hover:text-background md:inset-x-0 md:bottom-0 md:end-auto md:h-11 md:w-full md:translate-y-full md:gap-2 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:focus-visible:translate-y-0 md:focus-visible:opacity-100"
           >
-            <Plus className="h-4 w-4" />
-            <span className="hidden text-xs font-bold md:inline">{t("quick_add")}</span>
+            <Plus className="h-4 w-4" strokeWidth={1.25} />
+            <span className="hidden text-xs tracking-[0.1em] md:inline rtl:tracking-normal">
+              {t("quick_add")}
+            </span>
           </button>
         ) : (
-          <span className="absolute inset-x-0 bottom-0 bg-background/85 py-2 text-center text-xs font-bold">
+          <span className="absolute inset-x-0 bottom-0 bg-background/85 py-2 text-center text-xs tracking-wide text-muted-foreground">
             {t("out_of_stock")}
           </span>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-1 pt-2">
+      <div className="flex flex-1 flex-col gap-1 pt-3">
+        {p.brand && <p className="eyebrow !text-[10px] rtl:!text-xs">{p.brand}</p>}
         <Link
           to="/product/$id"
           params={{ id: p.id }}
-          className="line-clamp-1 text-sm leading-5 hover:underline"
+          className="line-clamp-1 text-[13px] leading-5 text-foreground/90 transition-colors hover:text-foreground"
         >
           {name}
         </Link>
         <div className="flex flex-wrap items-baseline gap-x-2">
-          <span className={cn("text-sm font-bold", was && "text-deal")}>{money(current)}</span>
+          <span className={cn("text-sm font-medium tabular-nums", was && "text-deal")}>
+            {money(current)}
+          </span>
           {was && <span className="text-xs text-muted-foreground line-through">{money(was)}</span>}
         </div>
+        {lowStock && (
+          <p className="text-[11px] text-deal">
+            {t("only_left").replace("{n}", countLabel(stock, lang, "piece"))}
+          </p>
+        )}
         {colors.length > 1 && (
-          <div className="flex items-center gap-1 pt-0.5">
+          <div className="flex items-center gap-1.5 pt-1">
             {colors.slice(0, 5).map((c) => (
               <span
                 key={c.color_hex}
                 title={tx(c, "color")}
-                className="h-3 w-3 rounded-full border border-border"
+                className="h-2.5 w-2.5 rounded-full ring-1 ring-border"
                 style={{ background: c.color_hex ?? undefined }}
               />
             ))}

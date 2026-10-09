@@ -37,12 +37,12 @@ export function ProductGallery({
   };
 
   return (
-    <div className="flex gap-3 md:flex-row-reverse rtl:md:flex-row">
+    <div className="flex gap-4 md:flex-row-reverse rtl:md:flex-row">
       <div className="relative min-w-0 flex-1">
         <div
           ref={track}
           onScroll={onScroll}
-          className="flex snap-x snap-mandatory overflow-x-auto rounded-md bg-muted scrollbar-none"
+          className="-mx-3 flex snap-x snap-mandatory overflow-x-auto bg-muted scrollbar-none md:mx-0"
         >
           {images.map((src, i) => (
             <button
@@ -73,13 +73,13 @@ export function ProductGallery({
           />
         )}
         {images.length > 1 && (
-          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden">
+          <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 md:hidden">
             {images.map((_, i) => (
               <span
                 key={i}
                 className={cn(
-                  "h-1.5 rounded-full bg-foreground/40 transition-all",
-                  i === idx ? "w-5 bg-foreground" : "w-1.5",
+                  "h-px bg-foreground transition-all duration-500",
+                  i === idx ? "w-8 opacity-90" : "w-4 opacity-35",
                 )}
               />
             ))}
@@ -87,7 +87,7 @@ export function ProductGallery({
         )}
       </div>
       {images.length > 1 && (
-        <div className="hidden w-16 shrink-0 flex-col gap-2 md:flex">
+        <div className="hidden w-20 shrink-0 flex-col gap-3 md:flex">
           {images.map((src, i) => (
             <button
               key={i}
@@ -95,8 +95,8 @@ export function ProductGallery({
               onClick={() => go(i)}
               aria-label={`${i + 1}`}
               className={cn(
-                "overflow-hidden rounded-sm border transition",
-                i === idx ? "border-foreground" : "border-transparent opacity-70 hover:opacity-100",
+                "overflow-hidden border transition-[opacity,border-color] duration-300",
+                i === idx ? "border-foreground" : "border-transparent opacity-60 hover:opacity-100",
               )}
             >
               <ProductImage src={src} alt="" className="aspect-[4/5] w-full" />

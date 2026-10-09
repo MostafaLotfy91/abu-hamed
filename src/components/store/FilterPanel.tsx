@@ -13,8 +13,10 @@ export type TypeOption = { id: string; label: string; count: number };
 
 const pill = (on: boolean) =>
   cn(
-    "rounded-full border px-3 py-1 text-sm transition",
-    on ? "border-foreground bg-foreground text-background" : "bg-card hover:border-foreground",
+    "border px-3 py-1.5 text-[13px] transition-colors duration-300",
+    on
+      ? "border-foreground bg-foreground text-background"
+      : "border-border hover:border-foreground",
   );
 // Isolated so a count never runs into Latin labels in RTL ("EDP (2)", not "EDP2").
 const Count = ({ n }: { n: number }) => (
@@ -24,8 +26,8 @@ const Count = ({ n }: { n: number }) => (
 function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section>
-      <Label className="text-xs font-semibold uppercase tracking-wide">{label}</Label>
-      <div className="mt-2 flex flex-wrap gap-2">{children}</div>
+      <Label className="eyebrow block text-foreground">{label}</Label>
+      <div className="mt-3 flex flex-wrap gap-2">{children}</div>
     </section>
   );
 }
@@ -70,7 +72,7 @@ export function FilterPanel({
   const typeOptions = types.filter((x) => x.count > 0 || v.type === x.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {has("type") && typeOptions.length > 0 && (
         <Section label={ar ? "النوع" : "Type"}>
           {typeOptions.map((x) => (
@@ -110,10 +112,10 @@ export function FilterPanel({
               onClick={() => toggle("size", s.value)}
               title={`${s.count}`}
               className={cn(
-                "min-w-10 rounded-md border px-2 py-1 text-xs font-semibold transition",
+                "h-9 min-w-11 border px-2 text-xs font-medium transition-colors duration-300",
                 v.size === s.value
                   ? "border-foreground bg-foreground text-background"
-                  : "bg-card hover:border-foreground",
+                  : "border-border hover:border-foreground",
               )}
             >
               {sizeLabel(s.value, lang)}
@@ -208,7 +210,7 @@ export function FilterPanel({
       )}
       {has("price") && (
         <section>
-          <Label className="text-xs font-semibold uppercase tracking-wide">{t("price")}</Label>
+          <Label className="eyebrow block text-foreground">{t("price")}</Label>
           <div className="mt-2 flex gap-2">
             <Input
               type="number"

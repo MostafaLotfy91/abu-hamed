@@ -5,7 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/seo";
 import { parseListSearch, profileOf, toListSearch, type ListState } from "@/lib/catalog";
-import { descendantIds, fetchCategories, fetchProfiles, profilesQuery } from "@/lib/queries";
+import {
+  categoryImagesQuery,
+  descendantIds,
+  fetchCategories,
+  fetchProfiles,
+  profilesQuery,
+} from "@/lib/queries";
+import { usableImage } from "@/lib/category-image";
 import { isServer, listingFiltersFor, loadInitialListing } from "@/lib/listing-ssr";
 import { ProductListing } from "@/components/store/ProductListing";
 import { ProductGridSkeleton, ErrorState, EmptyState } from "@/components/store/states";
@@ -63,6 +70,7 @@ function CategoryPage() {
     [navigate],
   );
   const { ssr } = Route.useLoaderData();
+  const images = useQuery(categoryImagesQuery);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
@@ -85,11 +93,12 @@ function CategoryPage() {
     chain.unshift(p);
   }
   const kids = all.filter((c) => c.parent_id === id && c.is_active);
+  const banner = usableImage(images.data?.get(id) ?? cat.image_url);
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <nav
         aria-label={t("categories")}
-        className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground"
+        className="flex flex-wrap items-center justify-center gap-1 text-xs tracking-wide text-muted-foreground"
       >
         <Link to="/categories" className="inline-flex min-h-8 items-center hover:text-foreground">
           {t("categories")}
@@ -107,14 +116,31 @@ function CategoryPage() {
           </span>
         ))}
       </nav>
+      {banner && (
+        // Category banner: the department's own picture with its name in the display face.
+        <section className="relative -mx-3 overflow-hidden bg-muted md:mx-0">
+          <img
+            src={banner}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            className="aspect-[16/9] w-full object-cover md:aspect-[21/7]"
+          />
+          <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/55 via-black/10 to-transparent pb-8 md:pb-14">
+            <h1 className="px-4 text-center font-display text-4xl text-white md:text-6xl">
+              {tx(cat, "name")}
+            </h1>
+          </div>
+        </section>
+      )}
       {kids.length > 0 && (
-        <div className="-mx-3 flex gap-2 overflow-x-auto px-3 scrollbar-none">
+        <div className="-mx-3 flex gap-2 overflow-x-auto px-3 scrollbar-none md:justify-center">
           {kids.map((k) => (
             <Link
               key={k.id}
               to="/category/$id"
               params={{ id: k.id }}
-              className="inline-flex h-10 shrink-0 items-center rounded-full border bg-card px-4 text-sm font-semibold hover:border-primary"
+              className="inline-flex h-10 shrink-0 items-center border px-5 text-sm transition-colors duration-300 hover:border-foreground"
             >
               {tx(k, "name")}
             </Link>
@@ -124,7 +150,7 @@ function CategoryPage() {
       <ProductListing
         key={id}
         base={{ categoryIds: descendantIds(all, id) }}
-        title={tx(cat, "name")}
+        title={banner ? undefined : tx(cat, "name")}
         profile={profileOf(id, all, profiles.data ?? [])}
         types={kids.map((k) => ({ id: k.id, label: tx(k, "name"), ids: descendantIds(all, k.id) }))}
         state={parseListSearch(search)}

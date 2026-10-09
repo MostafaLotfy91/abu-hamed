@@ -193,9 +193,12 @@ export function ProductListing({
 
   return (
     <div className="space-y-4">
-      {title && <h1 className="text-xl font-bold tracking-tight md:text-2xl">{title}</h1>}
+      {title && (
+        <h1 className="py-4 text-center font-display text-3xl md:py-8 md:text-5xl">{title}</h1>
+      )}
 
-      <div className="sticky top-14 z-20 -mx-3 flex items-center justify-between gap-2 border-b bg-background/95 px-3 py-2 backdrop-blur lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0">
+      {/* Minimal bar under the header: filters, result count, sort. */}
+      <div className="sticky top-[60px] z-20 -mx-3 flex items-center justify-between gap-2 border-y bg-background/95 px-3 py-2 backdrop-blur md:top-[68px] lg:static lg:mx-0 lg:border-x-0 lg:bg-transparent lg:px-0">
         <div className="flex items-center gap-2">
           <Sheet
             open={open}
@@ -205,17 +208,22 @@ export function ProductListing({
             }}
           >
             <SheetTrigger asChild>
-              <Button variant="outline" className="h-10 gap-1 lg:hidden">
+              <Button variant="ghost" className="h-10 gap-2 px-2 lg:hidden">
                 <SlidersHorizontal className="h-4 w-4" />
                 {t("filters")}
                 {chips.length > 0 && ` (${chips.length})`}
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="flex max-h-[88vh] flex-col rounded-t-lg p-0">
-              <SheetHeader className="border-b p-4 text-start">
-                <SheetTitle>{t("filters")}</SheetTitle>
+            <SheetContent
+              side={ar ? "right" : "left"}
+              className="flex w-full flex-col gap-0 p-0 sm:max-w-sm"
+            >
+              <SheetHeader className="border-b p-5 text-start">
+                <SheetTitle className="font-display text-2xl font-normal">
+                  {t("filters")}
+                </SheetTitle>
               </SheetHeader>
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-5">
                 <FilterPanel
                   value={draft}
                   onChange={setDraft}
@@ -224,7 +232,7 @@ export function ProductListing({
                   types={typeOptions(draftOptions.data ?? options)}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2 border-t p-4">
+              <div className="grid grid-cols-2 gap-2 border-t p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 <Button variant="outline" onClick={() => setDraft({ sort: f.sort })}>
                   {t("reset")}
                 </Button>
@@ -242,7 +250,7 @@ export function ProductListing({
               </div>
             </SheetContent>
           </Sheet>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs tracking-wide text-muted-foreground">
             {total.data != null && countLabel(total.data, lang, "product")}
           </span>
         </div>
@@ -250,7 +258,10 @@ export function ProductListing({
           value={f.sort ?? "newest"}
           onValueChange={(v) => setF({ ...f, sort: v as ListState["sort"] })}
         >
-          <SelectTrigger className="h-10 w-44" aria-label={t("sort")}>
+          <SelectTrigger
+            className="h-10 w-44 border-0 bg-transparent shadow-none"
+            aria-label={t("sort")}
+          >
             <SelectValue placeholder={t("sort")} />
           </SelectTrigger>
           <SelectContent>
@@ -268,24 +279,21 @@ export function ProductListing({
             <button
               key={c.key}
               onClick={() => setF({ ...f, ...c.clear })}
-              className="flex items-center gap-1 rounded-full border bg-card px-3 py-1 text-xs font-medium hover:border-foreground"
+              className="flex items-center gap-1.5 border px-3 py-1.5 text-xs transition-colors hover:border-foreground"
             >
               {c.label}
               <X className="h-3 w-3" aria-hidden />
             </button>
           ))}
-          <button
-            onClick={() => setF({ sort: f.sort })}
-            className="text-xs font-semibold underline underline-offset-4"
-          >
+          <button onClick={() => setF({ sort: f.sort })} className="link-luxe text-xs font-medium">
             {t("clear_all")}
           </button>
         </div>
       )}
 
-      <div className="lg:grid lg:grid-cols-[15rem_1fr] lg:gap-8">
+      <div className="lg:grid lg:grid-cols-[15rem_1fr] lg:gap-12">
         <aside className="hidden lg:block" aria-label={t("filters")}>
-          <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pe-2">
+          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pe-2">
             <FilterPanel
               value={f}
               onChange={setF}
@@ -303,7 +311,7 @@ export function ProductListing({
           ) : items.length === 0 ? (
             <EmptyState title={t("no_products")} hint={t("no_products_hint")} />
           ) : (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 md:gap-y-14 xl:grid-cols-4">
               {items.map((p) => (
                 <ProductCard key={p.id} p={p} />
               ))}
