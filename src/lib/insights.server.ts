@@ -133,6 +133,7 @@ function runModel(
     messages,
     tools,
     stopWhen: isStepCount(10),
+    maxRetries: 1,
     abortSignal: signal,
   });
 }

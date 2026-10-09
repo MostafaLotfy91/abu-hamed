@@ -236,6 +236,7 @@ ${SIZE_GUIDE}
     messages: messages as ModelMessage[],
     tools,
     stopWhen: isStepCount(12),
+    maxRetries: 1, // the Gemini adapter already switches model on 429; long back-off only kept customers waiting
     abortSignal: request.signal,
   });
 

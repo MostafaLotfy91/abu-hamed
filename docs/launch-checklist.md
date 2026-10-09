@@ -33,6 +33,7 @@ provider's secret store, never in the repo.
 | `SUPABASE_SERVICE_ROLE_KEY`                          | server only    | never prefixed `VITE_`                                                        |
 | `AI_API_KEY`                                         | server only    | AI chat + AI insights. Free Google Gemini key from aistudio.google.com/apikey |
 | `AI_PROVIDER` / `AI_MODEL`                           | server only    | optional: `gemini` (default), `groq`, `openrouter`, `openai`; model override  |
+| `AI_FALLBACK_MODELS`                                 | server only    | optional, Gemini: models tried on "too many requests" (default `gemini-flash-lite-latest`) |
 | `RATE_LIMIT_SALT`                                    | server only    | random, 16+ chars                                                             |
 | `LOVABLE_CRON_SECRET` (+ `_PREVIOUS` while rotating) | server only    | scheduled jobs                                                                |
 | `TRUSTED_IP_HEADER`                                  | server         | only if behind a proxy that sets it                                           |

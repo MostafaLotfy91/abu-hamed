@@ -16,7 +16,14 @@ describe("aiConfig", () => {
       baseURL: AI_PRESETS.gemini.baseURL,
       apiKey: "k",
       model: "gemini-flash-latest",
+      fallbackModels: ["gemini-flash-lite-latest"],
     });
+    expect(aiConfig({ AI_API_KEY: "k", AI_FALLBACK_MODELS: "" })?.fallbackModels).toEqual([]);
+    expect(
+      aiConfig({ AI_API_KEY: "k", AI_FALLBACK_MODELS: " a , gemini-flash-latest,b" })
+        ?.fallbackModels,
+    ).toEqual(["a", "b"]);
+    expect(aiConfig({ AI_API_KEY: "k", AI_PROVIDER: "groq" })?.fallbackModels).toEqual([]);
   });
 
   it("switches provider, model and endpoint from env", () => {
@@ -249,6 +256,58 @@ describe("Gemini compatibility", () => {
     expect(call).toMatchObject({
       id: "call_a",
       extra_content: { google: { thought_signature: "SIG123" } },
+    });
+  });
+
+  it("asks for low reasoning effort, and resends without it if the model rejects it", async () => {
+    const { geminiFetchFor } = await import("../ai-provider.server");
+    const sent: Record<string, unknown>[] = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (_i: unknown, init?: RequestInit) => {
+      sent.push(JSON.parse(String(init?.body)));
+      return new Response("{}", { status: sent.length === 1 ? 400 : 200 });
+    }) as typeof fetch;
+    try {
+      const res = await geminiFetchFor([])("https://x/v1/chat/completions", {
+        method: "POST",
+        body: JSON.stringify({ model: "m", messages: [] }),
+      });
+      expect(res.status).toBe(200);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    expect(sent[0].reasoning_effort).toBe("low");
+    expect(sent[1].reasoning_effort).toBeUndefined();
+  });
+
+  it("on 429 tries the fallback models in order; an unavailable one keeps the earlier answer", async () => {
+    const { geminiFetchFor } = await import("../ai-provider.server");
+    const run = async (answers: Record<string, number>) => {
+      const models: string[] = [];
+      const realFetch = globalThis.fetch;
+      globalThis.fetch = (async (_i: unknown, init?: RequestInit) => {
+        const m = JSON.parse(String(init?.body)).model as string;
+        models.push(m);
+        return new Response("{}", { status: answers[m] });
+      }) as typeof fetch;
+      try {
+        const res = await geminiFetchFor(["lite", "other"])("https://x/v1/chat/completions", {
+          method: "POST",
+          body: JSON.stringify({ model: "main", messages: [] }),
+        });
+        return { status: res.status, models };
+      } finally {
+        globalThis.fetch = realFetch;
+      }
+    };
+    expect(await run({ main: 200 })).toEqual({ status: 200, models: ["main"] });
+    expect(await run({ main: 429, lite: 200, other: 200 })).toEqual({
+      status: 200,
+      models: ["main", "lite"],
+    });
+    expect(await run({ main: 429, lite: 404, other: 429 })).toEqual({
+      status: 429,
+      models: ["main", "lite", "other"],
     });
   });
 
