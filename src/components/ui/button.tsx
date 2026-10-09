@@ -6,22 +6,27 @@ import { cn } from "@/lib/utils";
 import { useHydrated } from "@/lib/use-hydrated";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-[color,background-color,border-color,opacity] duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        /** Solid charcoal (the store's primary colour) with ivory text. */
+        default: "bg-primary text-primary-foreground hover:bg-primary/88",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-input bg-transparent hover:border-foreground hover:bg-accent",
+        /** Secondary call to action: gold hairline frame that fills on hover. */
+        gold: "border border-gold bg-transparent text-foreground hover:bg-gold hover:text-gold-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        /** Text link with the slow drawing underline. */
+        link: "h-auto px-0 py-0 text-foreground link-luxe",
       },
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
+        /** Storefront calls to action: tall, generous, lightly tracked. */
+        xl: "h-12 px-10 text-sm tracking-[0.08em] rtl:tracking-normal",
         icon: "h-9 w-9",
       },
     },

@@ -5,19 +5,28 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * White-label design system. --primary / --brand-secondary are overridden at
- * runtime from store_settings (see src/lib/store-settings.tsx). Everything
- * else derives from them via color-mix so each client's brand flows through.
+ * White-label "warm classic luxury" design system. Two store colours come from store_settings at runtime
+ * (src/lib/store-settings.tsx): --brand-primary (default charcoal #1C1A18: buttons, dark sections) and
+ * --brand-secondary (default antique gold #B08D57: accents, hairlines). The ivory surfaces and taupe lines are
+ * tinted from --brand-secondary, so with the defaults they come out at about #FAF7F2 / #E6DFD5.
  */
 
 @theme inline {
-  --font-sans: "Cairo", "Tajawal", system-ui, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* Body: Tajawal (light/regular). Display: Cormorant Garamond for Latin, Amiri for Arabic (per-glyph fallback). */
+  --font-sans: "Tajawal", "Cairo", system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Amiri", "Noto Naskh Arabic", Georgia, serif;
+  /* Square, quiet corners everywhere (rounded-full stays round for dots, avatars and pills). */
+  --radius-sm: 1px;
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 1px);
+  --radius-3xl: calc(var(--radius) + 2px);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-surface-dark: var(--surface-dark);
+  --color-on-dark: var(--on-dark);
+  --ease-luxe: cubic-bezier(0.22, 0.61, 0.36, 1);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -59,47 +68,61 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --shadow-card: 0 1px 2px oklch(0.2 0 0 / 5%), 0 2px 8px oklch(0.2 0 0 / 4%);
-  --shadow-float: 0 -1px 12px oklch(0.2 0 0 / 6%);
+  /* Almost no shadows: cards are separated by a 1px line; overlays keep a soft lift. */
+  --shadow-card: 0 0 0 1px var(--border);
+  --shadow-float: 0 -1px 0 0 var(--border);
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-md: 0 1px 2px rgb(28 26 24 / 6%);
+  --shadow-lg: 0 10px 30px -12px rgb(28 26 24 / 18%);
+  --shadow-xl: 0 18px 40px -16px rgb(28 26 24 / 22%);
 }
 
 :root {
-  --radius: 0.375rem;
-  /* --brand-primary(-foreground) come from store_settings (inline on <html>); --primary is derived from them. */
-  --primary: var(--brand-primary, oklch(0.18 0 0));
-  --primary-foreground: var(--brand-primary-foreground, oklch(0.99 0 0));
-  --brand-secondary: oklch(0.72 0.12 75);
-  --brand-secondary-foreground: oklch(0.22 0.03 60);
+  --radius: 2px;
+  /* --brand-primary(-foreground) and --brand-secondary(-foreground) come from store_settings (inline on <html>). */
+  --primary: var(--brand-primary, #1c1a18);
+  --primary-foreground: var(--brand-primary-foreground, #faf7f2);
+  --brand-secondary: #b08d57;
+  --brand-secondary-foreground: #1c1a18;
+  --gold: var(--brand-secondary);
+  --gold-foreground: var(--brand-secondary-foreground);
   --whatsapp: #25d366;
   --whatsapp-foreground: #ffffff;
-  --primary-soft: color-mix(in oklch, var(--primary) 12%, white);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.16 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0 0);
-  --secondary: oklch(0.965 0 0);
-  --secondary-foreground: oklch(0.2 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.48 0 0);
-  --accent: color-mix(in oklch, var(--primary) 10%, white);
-  --accent-foreground: oklch(0.2 0 0);
-  --destructive: oklch(0.6 0.22 27);
-  --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.6 0.15 150);
-  --deal: oklch(0.56 0.22 27);
-  --deal-foreground: oklch(0.99 0 0);
-  --border: oklch(0.91 0 0);
-  --input: oklch(0.88 0 0);
-  --ring: var(--primary);
+  /* Surfaces: white warmed by the accent (the defaults give ivory #FAF7F2 and taupe #E6DFD5). */
+  --background: color-mix(in srgb, var(--brand-secondary) 6.5%, #fefdfb);
+  --foreground: #1c1a18;
+  --card: color-mix(in srgb, var(--brand-secondary) 3%, #ffffff);
+  --card-foreground: #1c1a18;
+  --popover: var(--card);
+  --popover-foreground: #1c1a18;
+  --primary-soft: color-mix(in srgb, var(--brand-secondary) 10%, var(--background));
+  --secondary: color-mix(in srgb, var(--brand-secondary) 8%, #f4f1ec);
+  --secondary-foreground: #1c1a18;
+  --muted: color-mix(in srgb, var(--brand-secondary) 8%, #f4f1ec);
+  /* Warm grey with AA contrast on ivory (about 5.6:1). */
+  --muted-foreground: #6b635a;
+  --accent: color-mix(in srgb, var(--brand-secondary) 12%, var(--background));
+  --accent-foreground: #1c1a18;
+  /* Restrained deep red for discounts and errors; muted green for success. */
+  --destructive: #9b2c2c;
+  --destructive-foreground: #faf7f2;
+  --success: #3f6b4e;
+  --deal: #8e2a2a;
+  --deal-foreground: #faf7f2;
+  --border: color-mix(in srgb, var(--brand-secondary) 10%, #ebe6df);
+  --input: color-mix(in srgb, var(--brand-secondary) 18%, #ded7cd);
+  --ring: var(--brand-secondary);
+  /* Dark editorial sections (hero captions, collection banner, footer). */
+  --surface-dark: var(--brand-primary, #1c1a18);
+  --on-dark: #f3eee6;
   --chart-1: var(--primary);
   --chart-2: var(--brand-secondary);
-  --chart-3: oklch(0.6 0.12 230);
-  --chart-4: oklch(0.65 0.18 20);
-  --chart-5: oklch(0.7 0.1 300);
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.16 0 0);
+  --chart-3: #7a8b99;
+  --chart-4: #a3685b;
+  --chart-5: #8c7fa0;
+  --sidebar: var(--card);
+  --sidebar-foreground: #1c1a18;
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: var(--accent);
@@ -108,38 +131,38 @@
   --sidebar-ring: var(--ring);
 }
 
-/* Dark mode: <html class="dark"> (src/lib/theme.tsx). Neutral surfaces; the brand colour keeps its hue. */
+/* Dark mode: <html class="dark"> (src/lib/theme.tsx). Warm charcoal with the gold accent as the action colour. */
 .dark {
   color-scheme: dark;
-  /* Fallback for browsers without relative colours: a light neutral primary. */
-  --primary: oklch(0.88 0 0);
-  --primary-foreground: oklch(0.16 0 0);
-  --primary-soft: color-mix(in oklch, var(--primary) 16%, var(--background));
-  --background: oklch(0.16 0 0);
-  --foreground: oklch(0.94 0 0);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.94 0 0);
-  --popover: oklch(0.21 0 0);
-  --popover-foreground: oklch(0.94 0 0);
-  --secondary: oklch(0.25 0 0);
-  --secondary-foreground: oklch(0.94 0 0);
-  --muted: oklch(0.25 0 0);
-  --muted-foreground: oklch(0.72 0 0);
-  --accent: color-mix(in oklch, var(--primary) 16%, var(--background));
-  --accent-foreground: oklch(0.94 0 0);
-  --destructive: oklch(0.66 0.2 27);
-  --success: oklch(0.72 0.15 150);
-  --deal: oklch(0.68 0.2 27);
-  --border: oklch(0.31 0 0);
-  --input: oklch(0.36 0 0);
-  --sidebar: oklch(0.18 0 0);
-  --sidebar-foreground: oklch(0.94 0 0);
-}
-@supports (color: oklch(from red l c h)) {
-  .dark {
-    /* Same hue as the store's brand colour, but light enough to read on a dark background. */
-    --primary: oklch(from var(--brand-primary, oklch(0.18 0 0)) max(l, 0.8) c h);
-  }
+  --primary: var(--brand-secondary);
+  --primary-foreground: #161412;
+  --gold: color-mix(in srgb, var(--brand-secondary) 85%, #ffffff);
+  --gold-foreground: #161412;
+  --background: #161412;
+  --foreground: #ede7dd;
+  --card: #1d1a17;
+  --card-foreground: #ede7dd;
+  --popover: #201d1a;
+  --popover-foreground: #ede7dd;
+  --primary-soft: color-mix(in srgb, var(--brand-secondary) 14%, var(--background));
+  --secondary: #26221e;
+  --secondary-foreground: #ede7dd;
+  --muted: #26221e;
+  --muted-foreground: #b3aa9e;
+  --accent: color-mix(in srgb, var(--brand-secondary) 16%, var(--background));
+  --accent-foreground: #ede7dd;
+  --destructive: #d2756d;
+  --destructive-foreground: #161412;
+  --success: #8fb79c;
+  --deal: #d98b80;
+  --deal-foreground: #161412;
+  --border: #34302b;
+  --input: #46403a;
+  --ring: var(--gold);
+  --surface-dark: #0f0e0c;
+  --on-dark: #ede7dd;
+  --sidebar: #1a1714;
+  --sidebar-foreground: #ede7dd;
 }
 
 @keyframes nudge {
@@ -172,7 +195,11 @@
     outline-offset: 2px;
   }
   main {
-    animation: page-in 0.25s ease-out;
+    animation: page-in 0.45s var(--ease-luxe);
+  }
+  /* Thin-stroke icons (lucide sets the attribute; CSS wins). */
+  svg.lucide {
+    stroke-width: 1.5;
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -186,6 +213,8 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
 
@@ -232,5 +261,173 @@
     padding: 24px;
     background: white;
     color: black;
+  }
+}
+
+/* ------------------------------------------------------------------ luxury primitives -- */
+
+/* Display headings: large and airy. Arabic gets more line height (taller glyphs) and never tracking. */
+@utility font-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  line-height: 1.15;
+  &:where([dir="rtl"] *, [dir="rtl"]) {
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.5;
+  }
+}
+
+/* Small uppercase label with wide tracking (Latin only: tracking breaks Arabic letter joining). */
+@utility eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  line-height: 1.6;
+  color: var(--color-muted-foreground);
+  &:where([dir="rtl"] *, [dir="rtl"]) {
+    font-size: 0.8125rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+}
+
+/* Refined small label (replaces loud badges): gold hairline frame, readable charcoal text. */
+@utility label-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 60%, transparent);
+  background: color-mix(in srgb, var(--color-gold) 10%, var(--color-background));
+  color: var(--color-foreground);
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  &:where([dir="rtl"] *, [dir="rtl"]) {
+    font-size: 0.75rem;
+    letter-spacing: 0;
+  }
+}
+
+/* Gold hairline divider. */
+@utility hairline {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--color-gold) 70%, transparent) 15%,
+    color-mix(in srgb, var(--color-gold) 70%, transparent) 85%,
+    transparent
+  );
+}
+
+/* Ornamental separator: line, small rotated square, line (pure geometry). Markup: <div class="ornament"><i/></div> */
+@utility ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--color-gold);
+  &::before,
+  &::after {
+    content: "";
+    height: 1px;
+    width: 3.5rem;
+    background: currentColor;
+    opacity: 0.7;
+  }
+  & > i {
+    display: block;
+    width: 6px;
+    height: 6px;
+    border: 1px solid currentColor;
+    transform: rotate(45deg);
+  }
+}
+
+/* Text link with a slow underline that draws from the reading start. */
+@utility link-luxe {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 100% 100%;
+  background-size: 0% 1px;
+  padding-bottom: 2px;
+  transition: background-size 600ms var(--ease-luxe);
+  &:where([dir="ltr"] *) {
+    background-position: 0% 100%;
+  }
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+/* Slow image zoom on hover (on the <img>; the parent clips with overflow-hidden and has class "group"). */
+@utility img-zoom {
+  transition: transform 700ms var(--ease-luxe);
+  :where(.group):hover & {
+    transform: scale(1.045);
+  }
+}
+
+/* Vertical rhythm between storefront sections: 64px phone, 112px tablet, 136px desktop. */
+@utility section-luxe {
+  padding-block: 4rem;
+  @media (width >= 48rem) {
+    padding-block: 7rem;
+  }
+  @media (width >= 80rem) {
+    padding-block: 8.5rem;
+  }
+}
+
+/* Content widths: narrow for reading, wide for imagery. */
+@utility container-text {
+  margin-inline: auto;
+  max-width: 40rem;
+  padding-inline: 1.25rem;
+}
+@utility container-wide {
+  margin-inline: auto;
+  max-width: 90rem;
+  padding-inline: 1.25rem;
+  @media (width >= 48rem) {
+    padding-inline: 2.5rem;
+  }
+}
+
+/* Dark editorial band. */
+@utility surface-dark {
+  background-color: var(--color-surface-dark);
+  color: var(--color-on-dark);
+}
+
+/* Scroll reveal (src/components/luxe/Reveal.tsx). Content is hidden only after JS marks <html> ready, so
+   server-rendered pages and no-JS visitors always see everything. */
+.reveal-ready .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms var(--ease-luxe),
+    transform 700ms var(--ease-luxe);
+}
+.reveal-ready .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-ready .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .img-zoom {
+    transition: none;
+    transform: none !important;
   }
 }
