@@ -244,6 +244,8 @@ test.describe("driver notifications", () => {
           },
         ]);
     } finally {
+      // Cancel the waiting order first: a driver who becomes available is offered waiting orders.
+      await advanceOrder(order.id, "cancelled");
       await db.from("driver_profiles").update({ status: "available" }).eq("user_id", driverId);
     }
   });
