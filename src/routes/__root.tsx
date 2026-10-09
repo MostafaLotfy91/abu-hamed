@@ -85,7 +85,9 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 const FONTS_CSS =
-  "https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:wght@400;500;600&family=Tajawal:wght@300;400;500;700&display=swap";
+  "https://fonts.googleapis.com/css2?family=Amiri&family=Cormorant+Garamond:wght@500&family=Tajawal:wght@400;500;700&display=swap";
+/** Applies the web-font stylesheet without blocking rendering. */
+const FONTS_SCRIPT = `(function(){var l=document.createElement("link");l.rel="stylesheet";l.href=${JSON.stringify(FONTS_CSS)};document.head.appendChild(l);})();`;
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Store settings are loaded on the server so the first HTML already has the store's name, colours and meta.
@@ -127,9 +129,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           ]
         : []),
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      // Body Tajawal, Arabic display Amiri, Latin display Cormorant Garamond. Preloaded; swap avoids invisible text.
+      // Body Tajawal, Arabic display Amiri, Latin display Cormorant Garamond. Preloaded here and applied by
+      // FONTS_SCRIPT below, so the font stylesheet never blocks the first paint (text shows in the fallback
+      // face, then swaps).
       { rel: "preload", as: "style", href: FONTS_CSS },
-      { rel: "stylesheet", href: FONTS_CSS },
       { rel: "stylesheet", href: appCss },
       // App icon (also the installed app's icon): public/icons, made from the store mark.
       { rel: "icon", href: "/icons/favicon-32.png", type: "image/png", sizes: "32x32" },
@@ -159,6 +162,10 @@ function RootShell({ children }: { children: ReactNode }) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: FONTS_SCRIPT }} />
+        <noscript>
+          <link rel="stylesheet" href={FONTS_CSS} />
+        </noscript>
         <HeadContent />
       </head>
       <body>

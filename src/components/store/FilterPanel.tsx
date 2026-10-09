@@ -20,7 +20,7 @@ const pill = (on: boolean) =>
   );
 // Isolated so a count never runs into Latin labels in RTL ("EDP (2)", not "EDP2").
 const Count = ({ n }: { n: number }) => (
-  <bdi className="ms-1.5 text-xs opacity-60 tabular-nums">({n})</bdi>
+  <bdi className="ms-1.5 text-xs text-muted-foreground tabular-nums">({n})</bdi>
 );
 
 function Section({ label, children }: { label: string; children: ReactNode }) {

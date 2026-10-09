@@ -293,7 +293,7 @@ export function ProductListing({
 
       <div className="lg:grid lg:grid-cols-[15rem_1fr] lg:gap-12">
         <aside className="hidden lg:block" aria-label={t("filters")}>
-          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pe-2">
+          <div className="sticky top-24 max-h-[calc(100vh-12rem)] overflow-y-auto pe-2">
             <FilterPanel
               value={f}
               onChange={setF}

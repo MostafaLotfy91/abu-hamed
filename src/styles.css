@@ -134,7 +134,8 @@
 /* Dark mode: <html class="dark"> (src/lib/theme.tsx). Warm charcoal with the gold accent as the action colour. */
 .dark {
   color-scheme: dark;
-  --primary: var(--brand-secondary);
+  /* Fallback without relative colours: the accent mixed toward white (readable on charcoal). */
+  --primary: color-mix(in srgb, var(--brand-secondary) 70%, #ffffff);
   --primary-foreground: #161412;
   --gold: color-mix(in srgb, var(--brand-secondary) 85%, #ffffff);
   --gold-foreground: #161412;
@@ -431,6 +432,15 @@
   .img-zoom {
     transition: none;
     transform: none !important;
+  }
+}
+
+/* Dark mode with relative colours: the accent's own hue, never darker than L 0.78, so charcoal text on it and
+   it as text on the charcoal background both pass WCAG AA whatever accent the store picks. */
+@supports (color: oklch(from red l c h)) {
+  .dark {
+    --primary: oklch(from var(--brand-secondary) max(l, 0.78) c h);
+    --gold: oklch(from var(--brand-secondary) max(l, 0.72) c h);
   }
 }
 

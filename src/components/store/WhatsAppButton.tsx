@@ -62,13 +62,13 @@ export function WhatsAppButton() {
       aria-label={lang === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
       // On mobile product pages the sticky add-to-cart bar carries its own WhatsApp button instead.
       className={cn(
-        "group fixed bottom-20 start-4 z-40 md:bottom-6",
-        hideOnMobile && "hidden md:block",
+        "group fixed bottom-20 start-4 z-40 lg:bottom-6",
+        hideOnMobile && "hidden lg:block",
       )}
     >
       <span className="absolute inset-0 animate-ping rounded-full bg-whatsapp opacity-30" />
-      <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg md:h-14 md:w-14">
-        <WhatsAppIcon className="h-6 w-6 md:h-7 md:w-7" />
+      <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg lg:h-14 lg:w-14">
+        <WhatsAppIcon className="h-6 w-6 lg:h-7 lg:w-7" />
       </span>
       {link.hours && (
         <span className="pointer-events-none absolute bottom-full start-0 mb-2 hidden w-max max-w-[220px] rounded-lg bg-foreground px-3 py-1.5 text-xs text-background shadow group-hover:block">

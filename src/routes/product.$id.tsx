@@ -41,7 +41,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/lib/store-settings";
 import { Ornament, SectionTitle } from "@/components/luxe/Ornament";
-import { Reveal } from "@/components/luxe/Reveal";
 import { usePublishWaContext } from "@/lib/whatsapp";
 import { countLabel } from "@/lib/format";
 
@@ -559,8 +558,8 @@ function ProductPage() {
           aria-labelledby="notes-title"
           className="surface-dark -mx-3 px-6 py-16 md:mx-0 md:py-24"
         >
-          <Reveal className="mx-auto max-w-4xl text-center">
-            <p className="eyebrow text-on-dark/60">
+          <div className="mx-auto max-w-4xl text-center">
+            <p className="eyebrow text-on-dark/70">
               {lang === "ar" ? "الهرم العطري" : "The fragrance"}
             </p>
             <h2 id="notes-title" className="mt-3 font-display text-3xl text-on-dark md:text-4xl">
@@ -579,13 +578,13 @@ function ProductPage() {
               ))}
             </dl>
             {(p.volume_ml || p.concentration) && (
-              <p className="mt-12 text-sm tracking-wide text-on-dark/60">
+              <p className="mt-12 text-sm tracking-wide text-on-dark/70">
                 {[p.concentration, p.volume_ml && `${p.volume_ml} ${lang === "ar" ? "مل" : "ml"}`]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
             )}
-          </Reveal>
+          </div>
         </section>
       )}
 
@@ -748,9 +747,7 @@ function ProductRow({
   if (!products?.length) return null;
   return (
     <section>
-      <Reveal>
-        <SectionTitle eyebrow={eyebrow} title={title} />
-      </Reveal>
+      <SectionTitle eyebrow={eyebrow} title={title} />
       <div className="-mx-3 mt-10 flex snap-x gap-4 overflow-x-auto px-3 pb-2 scrollbar-none md:mx-0 md:gap-6 md:px-0">
         {products.map((r) => (
           <div key={r.id} className="w-[62%] shrink-0 snap-start sm:w-[38%] lg:w-[23%]">

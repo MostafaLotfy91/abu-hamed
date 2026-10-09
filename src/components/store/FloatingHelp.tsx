@@ -52,7 +52,7 @@ export function FloatingHelp() {
   if (!merged || !wa) return null;
   const label = ar ? "مساعدة" : "Help";
   return (
-    <div ref={wrap} className="fixed bottom-20 end-4 z-40 md:hidden">
+    <div ref={wrap} className="fixed bottom-20 end-4 z-40 lg:hidden">
       {open && (
         <div
           id="floating-help-menu"

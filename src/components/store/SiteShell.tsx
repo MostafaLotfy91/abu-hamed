@@ -84,7 +84,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const clear = useAtTop(home) && home;
 
   return (
-    <div className="min-h-screen pb-safe-nav md:pb-0">
+    <div className="min-h-screen pb-safe-nav lg:pb-0">
       <header
         className={cn(
           "top-0 z-40 transition-[background-color,color,border-color] duration-500",
@@ -96,11 +96,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
       >
         <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-3 py-2 md:gap-4 md:px-10 md:py-3">
           <StoreLogo plate={clear} />
-          <div className="flex-1 md:max-w-sm">
+          <div className="flex-1 lg:max-w-sm">
             <SearchBox onImage={clear} />
           </div>
-          <div className="hidden flex-1 md:block" />
-          <nav className="hidden items-center gap-1 md:flex">
+          <div className="hidden flex-1 lg:block" />
+          <nav className="hidden items-center gap-1 lg:flex">
             {NAV.filter((n) => n.to !== "/cart").map((n) => (
               <Link
                 key={n.to}
@@ -149,7 +149,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <button
             onClick={() => cart.setDrawerOpen(true)}
             className={cn(
-              "relative hidden h-10 w-10 items-center justify-center rounded-full md:flex",
+              "relative hidden h-10 w-10 items-center justify-center rounded-full lg:flex",
               clear ? "hover:bg-white/10" : "hover:bg-muted",
             )}
             aria-label={t("cart")}
@@ -167,7 +167,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               size="sm"
               variant="outline"
               className={cn(
-                "hidden md:inline-flex",
+                "hidden lg:inline-flex",
                 clear && "border-white/60 bg-transparent text-white hover:bg-white/10",
               )}
             >
@@ -185,7 +185,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <FloatingHelp />
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t bg-background md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t bg-background lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="grid grid-cols-5">

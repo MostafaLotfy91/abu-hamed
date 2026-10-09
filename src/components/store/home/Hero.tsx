@@ -49,6 +49,9 @@ export function Hero({ banners, loading }: { banners: Banner[]; loading: boolean
   const { t, tx } = useI18n();
   const { settings } = useSettings();
   const [idx, setIdx] = useState(0);
+  // Slides already shown stay mounted (they fade out smoothly); others mount just before their turn.
+  const [shown, setShown] = useState<Set<number>>(() => new Set([0]));
+  useEffect(() => setShown((s) => (s.has(idx) ? s : new Set(s).add(idx))), [idx]);
   const reduced = usePrefersReducedMotion();
   const count = banners.length;
 
@@ -90,29 +93,31 @@ export function Hero({ banners, loading }: { banners: Banner[]; loading: boolean
       aria-label={name}
       className="relative h-[100svh] min-h-[540px] overflow-hidden bg-surface-dark"
     >
-      {banners.map((b, i) => (
-        // The whole picture opens the banner's link (the button below is the keyboard path).
-        <a
-          key={b.id}
-          href={b.link && isSafeLink(b.link) ? b.link : "/products"}
-          tabIndex={-1}
-          aria-hidden={i !== idx || undefined}
-          className={cn("absolute inset-0", i !== idx && "pointer-events-none")}
-        >
-          <img
-            src={b.image_url}
-            alt={i === idx ? tx(b, "title") || name : ""}
-            loading={i === 0 ? "eager" : "lazy"}
-            decoding="async"
-            {...(i === 0 ? { fetchPriority: "high" as const } : {})}
-            className={cn(
-              "h-full w-full object-cover transition-[opacity,transform] ease-[var(--ease-luxe)]",
-              "duration-[1600ms] motion-reduce:transition-none",
-              i === idx ? "scale-100 opacity-100" : "scale-[1.04] opacity-0",
-            )}
-          />
-        </a>
-      ))}
+      {banners.map((b, i) =>
+        !shown.has(i) && i !== (idx + 1) % count ? null : (
+          // The whole picture opens the banner's link (the button below is the keyboard path).
+          <a
+            key={b.id}
+            href={b.link && isSafeLink(b.link) ? b.link : "/products"}
+            tabIndex={-1}
+            aria-hidden={i !== idx || undefined}
+            className={cn("absolute inset-0", i !== idx && "pointer-events-none")}
+          >
+            <img
+              src={b.image_url}
+              alt={i === idx ? tx(b, "title") || name : ""}
+              loading={i === 0 ? "eager" : "lazy"}
+              decoding="async"
+              {...(i === 0 ? { fetchPriority: "high" as const } : {})}
+              className={cn(
+                "h-full w-full object-cover transition-[opacity,transform] ease-[var(--ease-luxe)]",
+                "duration-[1600ms] motion-reduce:transition-none",
+                i === idx ? "scale-100 opacity-100" : "scale-[1.04] opacity-0",
+              )}
+            />
+          </a>
+        ),
+      )}
       {/* Readability: darker at the bottom (text) and a little at the top (header). */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-black/25" />
 

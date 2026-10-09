@@ -11,7 +11,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 function Column({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="space-y-5">
-      <h2 className="eyebrow text-on-dark/60">{title}</h2>
+      <h2 className="eyebrow text-on-dark/70">{title}</h2>
       <ul className="space-y-3 text-sm text-on-dark/85">{children}</ul>
     </div>
   );
@@ -98,7 +98,7 @@ export function SiteFooter() {
       </div>
       <div className="container-wide pb-24 md:pb-10">
         <Ornament className="mb-6" />
-        <p className="text-center text-xs tracking-wide text-on-dark/55">
+        <p className="text-center text-xs tracking-wide text-on-dark/70">
           © {new Date().getFullYear()} {name}
         </p>
       </div>
