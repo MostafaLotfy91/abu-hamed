@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { signInWithGoogle, useGoogleEnabled } from "@/lib/oauth";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { StoreLogo } from "@/components/store/SiteShell";
@@ -123,12 +123,10 @@ function AuthPage() {
     }
   };
 
+  const googleEnabled = useGoogleEnabled().data === true;
   const google = async () => {
-    if (dest !== "/") sessionStorage.setItem("auth.redirect", dest);
-    const r = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (r.error) toast.error(r.error.message);
+    const { error } = await signInWithGoogle(dest);
+    if (error) toast.error(error.message);
   };
 
   return (
@@ -141,14 +139,19 @@ function AuthPage() {
           </Button>
         </div>
         <h1 className="text-2xl font-extrabold">{mode === "in" ? t("sign_in") : t("sign_up")}</h1>
-        <Button variant="outline" className="w-full" onClick={google}>
-          {t("continue_google")}
-        </Button>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="h-px flex-1 bg-border" />
-          {t("or")}
-          <div className="h-px flex-1 bg-border" />
-        </div>
+        {/* Only when Google sign-in is enabled in Supabase (otherwise it would end on an error page). */}
+        {googleEnabled && (
+          <>
+            <Button variant="outline" className="w-full" onClick={google}>
+              {t("continue_google")}
+            </Button>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              {t("or")}
+              <div className="h-px flex-1 bg-border" />
+            </div>
+          </>
+        )}
         <Tabs defaultValue="email">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="email">{t("email")}</TabsTrigger>
