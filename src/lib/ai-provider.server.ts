@@ -10,7 +10,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 export const AI_PRESETS = {
   gemini: {
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
-    model: "gemini-2.5-flash",
+    model: "gemini-flash-latest",
   },
   groq: { baseURL: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
   openrouter: {

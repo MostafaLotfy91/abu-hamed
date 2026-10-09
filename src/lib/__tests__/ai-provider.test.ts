@@ -15,7 +15,7 @@ describe("aiConfig", () => {
       provider: "gemini",
       baseURL: AI_PRESETS.gemini.baseURL,
       apiKey: "k",
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
     });
   });
 
@@ -81,7 +81,7 @@ describe("request sent to the provider", () => {
     expect(text).toBe("hi");
     expect(url).toBe(`${AI_PRESETS.gemini.baseURL}/chat/completions`);
     expect(auth).toBe("Bearer test-key");
-    expect(body.model).toBe("gemini-2.5-flash");
+    expect(body.model).toBe("gemini-flash-latest");
     expect(body.stream).toBe(true);
     const msgs = body.messages as { role: string; content: string }[];
     expect(msgs[0]).toMatchObject({ role: "system", content: "system prompt" });
