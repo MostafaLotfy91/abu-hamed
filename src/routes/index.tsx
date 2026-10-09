@@ -49,6 +49,8 @@ function Home() {
   return (
     <div>
       <Hero banners={heroBanners} loading={banners.isLoading} />
+      {/* The store's own story, first thing under the hero (hidden until written in Admin > Store settings). */}
+      <BrandStory />
       {nothing && (
         <div className="section-luxe container-wide">
           <EmptyState
@@ -78,7 +80,6 @@ function Home() {
         products={season.data}
         loading={season.isLoading}
       />
-      <BrandStory />
       <TrustStrip />
       {(flash.error || best.error || fresh.error || season.error) && (
         <div className="container-wide">
