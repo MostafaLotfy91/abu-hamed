@@ -960,3 +960,20 @@ export async function storedImages(): Promise<string[]> {
   ) ?? []) as { image_url: string }[];
   return rows.map((r) => r.image_url);
 }
+
+/* ------------------------------------------------------------ phone login -- */
+
+/** Deletes a phone account created by a test (by its phone number), if it exists. */
+export async function deletePhoneAccount(normalizedPhone: string) {
+  const db = service();
+  for (let page = 1; page <= 20; page++) {
+    const { data } = await db.auth.admin.listUsers({ page, perPage: 200 });
+    const u = data?.users.find((x) => x.phone === normalizedPhone);
+    if (u) {
+      await db.from("profiles").delete().eq("id", u.id);
+      await db.auth.admin.deleteUser(u.id);
+      return;
+    }
+    if (!data || data.users.length < 200) return;
+  }
+}

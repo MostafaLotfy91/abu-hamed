@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { pageHead } from "@/lib/seo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isPhoneLoginEmail, localPhone } from "@/lib/phone-auth";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: ({ matches }) =>
@@ -30,15 +31,21 @@ export const Route = createFileRoute("/_authenticated/account")({
 function Account() {
   const { t } = useI18n();
   const { user, signOut, isStaff } = useAuth();
+  // Phone accounts: show the phone, not the internal login address.
+  const shownContact = isPhoneLoginEmail(user?.email)
+    ? ((user?.user_metadata?.phone as string) ?? (user?.phone ? localPhone(user.phone) : ""))
+    : (user?.email ?? user?.phone ?? "");
   const nav = useNavigate();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between rounded-3xl bg-primary p-5 text-primary-foreground">
         <div>
           <p className="text-lg font-extrabold">
-            {(user?.user_metadata?.full_name as string) || user?.email || user?.phone}
+            {(user?.user_metadata?.full_name as string) || shownContact}
           </p>
-          <p className="text-sm opacity-80">{user?.email}</p>
+          <p className="text-sm opacity-80" dir="ltr">
+            {shownContact}
+          </p>
         </div>
         <div className="flex gap-2">
           {isStaff && (

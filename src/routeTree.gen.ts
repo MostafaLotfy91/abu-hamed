@@ -22,6 +22,7 @@ import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
 import { Route as ApiAdminInsightsRouteImport } from './routes/api/admin-insights'
 import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
+import { Route as ApiPhoneSignupRouteImport } from './routes/api/phone-signup'
 import { Route as CategoryIdRouteImport } from './routes/category.$id'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
@@ -101,6 +102,11 @@ const ApiAdminInsightsRoute = ApiAdminInsightsRouteImport.update({
 const ApiAssistantRoute = ApiAssistantRouteImport.update({
   id: '/api/assistant',
   path: '/api/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPhoneSignupRoute = ApiPhoneSignupRouteImport.update({
+  id: '/api/phone-signup',
+  path: '/api/phone-signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategoryIdRoute = CategoryIdRouteImport.update({
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/driver': typeof AuthenticatedDriverRoute
   '/api/admin-insights': typeof ApiAdminInsightsRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/phone-signup': typeof ApiPhoneSignupRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/driver': typeof AuthenticatedDriverRoute
   '/api/admin-insights': typeof ApiAdminInsightsRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/phone-signup': typeof ApiPhoneSignupRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -270,6 +278,7 @@ export interface FileRoutesById {
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
   '/api/admin-insights': typeof ApiAdminInsightsRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/phone-signup': typeof ApiPhoneSignupRoute
   '/category/$id': typeof CategoryIdRoute
   '/product/$id': typeof ProductIdRoute
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/api/admin-insights'
     | '/api/assistant'
+    | '/api/phone-signup'
     | '/category/$id'
     | '/product/$id'
     | '/admin/banners'
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/api/admin-insights'
     | '/api/assistant'
+    | '/api/phone-signup'
     | '/category/$id'
     | '/product/$id'
     | '/admin/banners'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/_authenticated/driver'
     | '/api/admin-insights'
     | '/api/assistant'
+    | '/api/phone-signup'
     | '/category/$id'
     | '/product/$id'
     | '/_authenticated/admin/banners'
@@ -390,6 +402,7 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRoute
   ApiAdminInsightsRoute: typeof ApiAdminInsightsRoute
   ApiAssistantRoute: typeof ApiAssistantRoute
+  ApiPhoneSignupRoute: typeof ApiPhoneSignupRoute
   CategoryIdRoute: typeof CategoryIdRoute
   ProductIdRoute: typeof ProductIdRoute
 }
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/api/assistant'
       fullPath: '/api/assistant'
       preLoaderRoute: typeof ApiAssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/phone-signup': {
+      id: '/api/phone-signup'
+      path: '/api/phone-signup'
+      fullPath: '/api/phone-signup'
+      preLoaderRoute: typeof ApiPhoneSignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/category/$id': {
@@ -669,6 +689,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRoute,
   ApiAdminInsightsRoute: ApiAdminInsightsRoute,
   ApiAssistantRoute: ApiAssistantRoute,
+  ApiPhoneSignupRoute: ApiPhoneSignupRoute,
   CategoryIdRoute: CategoryIdRoute,
   ProductIdRoute: ProductIdRoute,
 }

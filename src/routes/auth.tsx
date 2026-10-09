@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { pageHead } from "@/lib/seo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MIN_PASSWORD, phoneLoginEmail } from "@/lib/phone-auth";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: z.object({ redirect: z.string().optional() }),
@@ -35,9 +36,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [phoneSent, setPhoneSent] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -90,19 +88,34 @@ function AuthPage() {
 
   const phoneSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const phone = otpSent ? phoneSent : field(e, "phone").trim();
-    const otp = field(e, "otp").trim();
+    const phoneValue = field(e, "phone").trim();
+    const pw = field(e, "password");
+    const fullName = field(e, "full_name").trim();
+    const loginEmail = phoneLoginEmail(phoneValue);
+    if (!loginEmail) return toast.error(t("invalid_phone"));
     setBusy(true);
     try {
-      if (!otpSent) {
-        const { error } = await supabase.auth.signInWithOtp({ phone });
-        if (error) throw error;
-        setPhoneSent(phone);
-        setOtpSent(true);
-      } else {
-        const { error } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
-        if (error) throw error;
+      if (mode === "up") {
+        const res = await fetch("/api/phone-signup", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ phone: phoneValue, password: pw, full_name: fullName }),
+        });
+        if (!res.ok) {
+          const code = ((await res.json().catch(() => ({}))) as { error?: string }).error;
+          throw new Error(
+            code === "phone_taken"
+              ? t("phone_taken")
+              : code === "invalid_phone"
+                ? t("invalid_phone")
+                : code === "rate_limited"
+                  ? t("try_later")
+                  : t("error_title"),
+          );
+        }
       }
+      const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: pw });
+      if (error) throw new Error(t("phone_login_failed"));
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -201,6 +214,19 @@ function AuthPage() {
           </TabsContent>
           <TabsContent value="phone">
             <form onSubmit={phoneSubmit} className="space-y-3 pt-2">
+              {mode === "up" && (
+                <div>
+                  <Label htmlFor="auth-phone-name">{t("full_name")}</Label>
+                  <Input
+                    id="auth-phone-name"
+                    name="full_name"
+                    autoComplete="name"
+                    className="h-11"
+                    required
+                    maxLength={100}
+                  />
+                </div>
+              )}
               <div>
                 <Label htmlFor="auth-phone">{t("phone")}</Label>
                 <Input
@@ -211,34 +237,36 @@ function AuthPage() {
                   autoComplete="tel"
                   dir="ltr"
                   className="h-11"
-                  placeholder="+20..."
+                  placeholder="01xxxxxxxxx"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
-                  disabled={otpSent}
                 />
               </div>
-              {otpSent && (
-                <div>
-                  <Label htmlFor="auth-otp">{t("otp_code")}</Label>
-                  <Input
-                    id="auth-otp"
-                    name="otp"
-                    dir="ltr"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    className="h-11"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    required
-                    maxLength={6}
-                  />
-                </div>
-              )}
+              <div>
+                <Label htmlFor="auth-phone-password">{t("password")}</Label>
+                <Input
+                  id="auth-phone-password"
+                  name="password"
+                  type="password"
+                  autoComplete={mode === "in" ? "current-password" : "new-password"}
+                  dir="ltr"
+                  className="h-11"
+                  required
+                  minLength={MIN_PASSWORD}
+                />
+              </div>
               <Button type="submit" className="h-11 w-full" disabled={busy}>
-                {otpSent ? t("verify") : t("send_code")}
+                {mode === "in" ? t("sign_in") : t("sign_up")}
               </Button>
             </form>
+            <button
+              className="mt-3 w-full text-center text-sm font-semibold text-primary"
+              onClick={() => setMode(mode === "in" ? "up" : "in")}
+            >
+              {mode === "in" ? t("sign_up") : t("sign_in")}
+            </button>
+            <p className="mt-2 text-center text-xs text-muted-foreground">{t("phone_forgot")}</p>
           </TabsContent>
         </Tabs>
       </div>

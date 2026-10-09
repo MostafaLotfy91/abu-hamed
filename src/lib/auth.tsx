@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { isPhoneLoginEmail } from "@/lib/phone-auth";
 
 let clockWarned = false;
 
@@ -60,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .upsert(
               {
                 id: u.id,
-                email: u.email ?? null,
+                // Phone accounts have an internal login address that is never shown.
+                email: isPhoneLoginEmail(u.email) ? null : (u.email ?? null),
                 phone: u.phone ?? null,
                 full_name: (u.user_metadata?.full_name as string) ?? null,
               },

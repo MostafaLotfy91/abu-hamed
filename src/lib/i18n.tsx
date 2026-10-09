@@ -165,6 +165,23 @@ const dict = {
   send_code: { ar: "أرسل الكود", en: "Send code" },
   verify: { ar: "تأكيد", en: "Verify" },
   otp_code: { ar: "كود التحقق", en: "Verification code" },
+  invalid_phone: {
+    ar: "اكتب رقم موبايل مصري صحيح (01xxxxxxxxx)",
+    en: "Enter a valid Egyptian mobile (01xxxxxxxxx)",
+  },
+  phone_taken: {
+    ar: "الرقم ده عليه حساب بالفعل — سجّل دخول",
+    en: "This number already has an account — sign in",
+  },
+  phone_login_failed: {
+    ar: "رقم الموبايل أو كلمة المرور غير صحيحة",
+    en: "Wrong phone number or password",
+  },
+  phone_forgot: {
+    ar: "نسيت كلمة المرور؟ تواصل مع المتجر وهنساعدك.",
+    en: "Forgot your password? Contact the store and we'll help.",
+  },
+  try_later: { ar: "محاولات كتير، جرّب بعد شوية", en: "Too many attempts, try again shortly" },
   continue_google: { ar: "المتابعة باستخدام Google", en: "Continue with Google" },
   or: { ar: "أو", en: "or" },
   check_email: { ar: "راجع بريدك لتأكيد الحساب", en: "Check your email to confirm your account" },
