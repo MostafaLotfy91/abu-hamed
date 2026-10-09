@@ -90,7 +90,10 @@ describe.skipIf(!url)("parallel dispatch on a real Supabase database", () => {
       if (users.length) {
         await sql`delete from public.driver_profiles where user_id = any(${users})`;
         await sql`delete from public.user_roles where user_id = any(${users})`;
-        await sql`delete from auth.users where id = any(${users})`;
+        // A driver with money history (a delivered order) cannot be deleted: the append-only driver ledger
+        // keeps it (driver_ledger_driver_id_fkey, on delete restrict). Without roles or profile it shows nowhere.
+        await sql`delete from auth.users u where u.id = any(${users})
+                    and not exists (select 1 from public.driver_ledger l where l.driver_id = u.id)`;
       }
       for (const d of pausedDrivers)
         await sql`update public.driver_profiles set status = ${d.status} where user_id = ${d.user_id}`;

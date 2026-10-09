@@ -6,7 +6,7 @@ import { useSettings } from "@/lib/store-settings";
 import { formatCount } from "@/lib/format";
 import { overCashLimit, storeToday, useDriverBalance } from "@/lib/driver-finance";
 import { fromMinor, sumMinor, toMinor } from "@/lib/money";
-import { RowSkeleton } from "@/components/store/states";
+import { ErrorState, RowSkeleton } from "@/components/store/states";
 import { cn } from "@/lib/utils";
 
 type Entry = {
@@ -65,6 +65,17 @@ export function DriverAccount({ driverId, ar }: { driverId: string; ar: boolean 
     },
   });
 
+  const failed = balance.error ?? today.error;
+  if (failed)
+    return (
+      <ErrorState
+        message={(failed as Error).message}
+        onRetry={() => {
+          balance.refetch();
+          today.refetch();
+        }}
+      />
+    );
   if (balance.isLoading || today.isLoading) return <RowSkeleton n={3} />;
   const b = balance.data!;
   const entries = today.data?.entries ?? [];
@@ -82,7 +93,14 @@ export function DriverAccount({ driverId, ar }: { driverId: string; ar: boolean 
   const commissionToday = -sumMinor(
     entries.filter((e) => e.kind === "commission_earned").map((e) => e.amount),
   );
-  const netToday = sumMinor(entries.filter((e) => e.affects_cash).map((e) => e.amount));
+  // Today's deliveries only (cash minus commission kept); settlements show in the balance card above.
+  const netToday = sumMinor(
+    entries
+      .filter(
+        (e) => e.affects_cash && (e.kind === "cod_collected" || e.kind === "commission_earned"),
+      )
+      .map((e) => e.amount),
+  );
   const owed = toMinor(b.owed_to_store);
   const over = overCashLimit(b.cash_held, settings?.driver_cash_limit);
   const keeps = settings?.driver_keeps_commission_from_cash !== false;
@@ -98,7 +116,7 @@ export function DriverAccount({ driverId, ar }: { driverId: string; ar: boolean 
       number: e.order_number,
       cod: 0,
       commission: 0,
-      online: e.payment_method !== "cod",
+      online: e.payment_method === "online",
     };
     if (e.kind === "cod_collected") row.cod += toMinor(e.amount);
     else row.commission -= toMinor(e.amount);
@@ -193,7 +211,7 @@ export function DriverAccount({ driverId, ar }: { driverId: string; ar: boolean 
           <ul className="divide-y rounded-2xl bg-card text-sm shadow-card">
             {[...byOrder.entries()].map(([id, r]) => (
               <li key={id} className="flex items-center justify-between gap-2 p-3">
-                <span className="font-bold">#{r.number}</span>
+                <span className="font-bold">{r.number ? `#${r.number}` : "—"}</span>
                 <span className="text-muted-foreground">
                   {r.online ? (ar ? "مدفوع أونلاين" : "Paid online") : money(fromMinor(r.cod))}
                 </span>

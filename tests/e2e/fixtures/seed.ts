@@ -498,7 +498,7 @@ export type SeededOrder = { id: string; order_number: number };
 /** Places a real order through the place_order RPC, signed in as the customer (COD). */
 export async function placeOrderAs(
   items: { product_id: string; variant_id: string | null; quantity: number }[],
-  opts: { coupon?: string; notes?: string } = {},
+  opts: { coupon?: string; notes?: string; payment?: "cod" | "online" } = {},
 ): Promise<SeededOrder> {
   const ids = await ensureAccounts();
   const addressId = await ensureAddress(ids.customer);
@@ -508,7 +508,7 @@ export async function placeOrderAs(
       _items: items,
       _address_id: addressId,
       _delivery_slot: "asap",
-      _payment_method: "cod",
+      _payment_method: opts.payment ?? "cod",
       _coupon: opts.coupon ?? "",
       _notes: opts.notes ?? "",
     }),
@@ -1014,4 +1014,117 @@ export async function deletePushEndpoints(prefix: string) {
     await service().from("push_subscriptions").delete().like("endpoint", `${prefix}%`),
     "delete push endpoints",
   );
+}
+
+/* ------------------------------------------------------- driver finance -- */
+
+export type LedgerEntry = { type: string; amount: number; affects_cash: boolean };
+
+/** Ledger entries of one order, oldest first (amounts as numbers). */
+export async function ledgerFor(orderId: string) {
+  const rows = (must(
+    await service()
+      .from("driver_ledger")
+      .select("type,amount,affects_cash")
+      .eq("order_id", orderId)
+      .order("created_at"),
+    "ledger",
+  ) ?? []) as LedgerEntry[];
+  return rows.map((r) => ({ ...r, amount: Number(r.amount) }));
+}
+
+/** The driver's balance from the driver_balance view (zeros when there are no entries). */
+export async function driverBalance(driverId: string) {
+  const row = must(
+    await service()
+      .from("driver_balance")
+      .select("owed_to_store,cash_held")
+      .eq("driver_id", driverId)
+      .maybeSingle(),
+    "balance",
+  ) as { owed_to_store: number; cash_held: number } | null;
+  return { owed: Number(row?.owed_to_store ?? 0), cashHeld: Number(row?.cash_held ?? 0) };
+}
+
+/**
+ * Settles whatever the driver owes (or is owed) so a spec starts from zero. The ledger is append-only and
+ * outlives deleted test orders, so earlier runs leave a balance behind.
+ */
+export async function settleDriverToZero(driverId: string) {
+  const { owed } = await driverBalance(driverId);
+  if (owed === 0) return;
+  const admin = await signedIn("admin");
+  must(
+    await admin.rpc("admin_record_settlement", {
+      _driver_id: driverId,
+      _received_amount: owed,
+      _note: "E2E reset",
+    }),
+    "reset balance",
+  );
+  await admin.auth.signOut();
+}
+
+/** The COD confirmation row of an order (null when none). */
+export async function codCollection(orderId: string) {
+  return must(
+    await service()
+      .from("cod_collections")
+      .select("expected_amount,collected_amount,reason,review_status")
+      .eq("order_id", orderId)
+      .maybeSingle(),
+    "cod collection",
+  ) as {
+    expected_amount: number;
+    collected_amount: number;
+    reason: string | null;
+    review_status: string;
+  } | null;
+}
+
+/**
+ * A second driver account (inactive, offline: never offered orders) with one adjustment, so specs can check
+ * that the test driver never sees another driver's money. Ledger rows keep the account (no deletes).
+ */
+export async function ensureSecondDriverWithEntry() {
+  const db = service();
+  const email = ACCOUNTS.driver.email.replace("@", "+second@");
+  let id = await findUserId(email);
+  if (!id) {
+    const res = await db.auth.admin.createUser({
+      email,
+      password: `${ACCOUNTS.driver.password}-2`,
+      email_confirm: true,
+      user_metadata: { full_name: "مندوب اختبار ٢" },
+    });
+    if (res.error) throw new Error(`create second driver: ${res.error.message}`);
+    id = res.data.user.id;
+  }
+  must(
+    await db
+      .from("profiles")
+      .upsert(
+        { id, email, full_name: "مندوب اختبار ٢", phone: "01000000004" },
+        { onConflict: "id" },
+      ),
+    "second driver profile",
+  );
+  await ensureRole(id, "driver");
+  must(
+    await db
+      .from("driver_profiles")
+      .upsert({ user_id: id, is_active: false, status: "offline" }, { onConflict: "user_id" }),
+    "second driver inactive",
+  );
+  const admin = await signedIn("admin");
+  must(
+    await admin.rpc("admin_add_adjustment", {
+      _driver_id: id,
+      _amount: 1,
+      _reason: "E2E isolation check",
+    }),
+    "second driver entry",
+  );
+  await admin.auth.signOut();
+  return id;
 }

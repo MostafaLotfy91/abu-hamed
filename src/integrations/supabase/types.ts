@@ -1684,7 +1684,7 @@ export type Database = {
       };
       store_day_bounds: {
         Args: { _day: string };
-        Returns: { day_end: string; day_start: string }[];
+        Returns: { day_end: string; day_start: string };
       };
       store_today: { Args: never; Returns: string };
       _after_offer_closed: { Args: { _order_id: string }; Returns: string };

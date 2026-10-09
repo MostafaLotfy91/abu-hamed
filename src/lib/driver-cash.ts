@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CashRow } from "./driver-cash-export";
+import { dayBounds } from "./driver-finance";
 
 /** One row per driver for a store-local day (null = today). */
 export function useDriverCash(day: string | null, enabled = true) {
@@ -50,9 +51,7 @@ export function usePendingReviews(enabled = true) {
 
 /** All ledger entries of a store-local day for every driver (daily report), with order numbers. */
 export async function dayEntries(day: string) {
-  const { data: b, error: e1 } = await supabase.rpc("store_day_bounds", { _day: day });
-  if (e1) throw e1;
-  const { day_start, day_end } = (b as { day_start: string; day_end: string }[])[0];
+  const { start: day_start, end: day_end } = await dayBounds(day);
   const { data: rows, error } = await supabase
     .from("driver_ledger")
     .select("id,created_at,driver_id,type,amount,order_id,note,reverses_id")

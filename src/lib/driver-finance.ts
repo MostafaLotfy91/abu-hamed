@@ -45,14 +45,23 @@ export function useDriverBalance(driverId: string | null | undefined, enabled = 
   });
 }
 
+/** A store-local day's [start, end) as timestamps. (A single-row function: PostgREST returns an object.) */
+export async function dayBounds(day: string) {
+  const { data, error } = await supabase.rpc("store_day_bounds", { _day: day });
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as {
+    day_start: string;
+    day_end: string;
+  } | null;
+  if (!row) throw new Error("store_day_bounds returned nothing");
+  return { start: row.day_start, end: row.day_end };
+}
+
 /** The store's current local day and its [start, end) bounds. */
 export async function storeToday() {
   const { data: day, error } = await supabase.rpc("store_today");
   if (error) throw error;
-  const { data: b, error: e2 } = await supabase.rpc("store_day_bounds", { _day: day as string });
-  if (e2) throw e2;
-  const bounds = (b as { day_start: string; day_end: string }[])[0];
-  return { day: day as string, start: bounds.day_start, end: bounds.day_end };
+  return { day: day as string, ...(await dayBounds(day as string)) };
 }
 
 /** Over the store's cash limit (0 = no limit). */

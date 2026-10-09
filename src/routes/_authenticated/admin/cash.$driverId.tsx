@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LEDGER_TYPES, ledgerTypeLabel } from "@/lib/ledger-labels";
-import { useDriverBalance } from "@/lib/driver-finance";
+import { dayBounds, useDriverBalance } from "@/lib/driver-finance";
 import { downloadWorkbook, ledgerRows } from "@/lib/driver-cash-export";
 import { fromMinor, parseAmountInput, sumMinor, toMinor } from "@/lib/money";
 import {
@@ -40,14 +40,9 @@ function Page() {
 
 /** Store-local [start of `from`, end of `to`) as timestamps. */
 async function bounds(from: string, to: string) {
-  const get = async (d: string) => {
-    const { data, error } = await supabase.rpc("store_day_bounds", { _day: d });
-    if (error) throw error;
-    return (data as { day_start: string; day_end: string }[])[0];
-  };
   return {
-    start: from ? (await get(from)).day_start : undefined,
-    end: to ? (await get(to)).day_end : undefined,
+    start: from ? (await dayBounds(from)).start : undefined,
+    end: to ? (await dayBounds(to)).end : undefined,
   };
 }
 
@@ -411,6 +406,9 @@ function PayoutOverride({ driverId, ar }: { driverId: string; ar: boolean }) {
       </select>
       <Input
         aria-label={ar ? "القيمة" : "Value"}
+        placeholder={
+          cur.type === "fixed" ? (ar ? "مثلاً 20" : "e.g. 20") : ar ? "مثلاً 50 (%)" : "e.g. 50 (%)"
+        }
         className="w-28"
         inputMode="decimal"
         dir="ltr"
