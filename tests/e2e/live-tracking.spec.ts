@@ -52,6 +52,7 @@ test.describe("live order tracking", () => {
       await expect(page.getByText(/آخر تحديث:/)).toBeVisible();
 
       await card.getByRole("button", { name: s.delivered }).click();
+      await driver.getByRole("dialog").getByRole("button", { name: s.confirmDelivered }).click();
       await expect(page.getByRole("heading", { name: s.liveTracking })).toHaveCount(0, {
         timeout: 20_000,
       });

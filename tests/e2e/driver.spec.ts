@@ -46,6 +46,8 @@ test.describe("driver app", () => {
     expect(loc.lng).toBeCloseTo(CAIRO.longitude, 3);
 
     await card.getByRole("button", { name: s.delivered }).click();
+    // Cash on delivery: the amount collected is confirmed (prefilled with the order total).
+    await page.getByRole("dialog").getByRole("button", { name: s.confirmDelivered }).click();
     await expect.poll(async () => (await getOrder(order.id)).status).toBe("delivered");
     await page.getByRole("tab", { name: new RegExp(s.driverDone) }).click();
     await expect(card).toBeVisible();

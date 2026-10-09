@@ -44,6 +44,9 @@ import {
 import { OfferAlert, OfferClosedNotice } from "@/components/driver/OfferAlert";
 import { AlertsOnboarding } from "@/components/driver/AlertsOnboarding";
 import { PushSettings } from "@/components/driver/PushSettings";
+import { DriverAccount } from "@/components/driver/DriverAccount";
+import { DeliverDialog, type DeliverOrder } from "@/components/driver/DeliverDialog";
+import { overCashLimit, useDriverBalance } from "@/lib/driver-finance";
 import { devicePushProblem } from "@/lib/push-status";
 import { refreshPushRegistration, type DevicePush } from "@/lib/push";
 import {
@@ -95,7 +98,7 @@ type DriverOrder = {
 
 function DriverApp() {
   const { user, roles, rolesLoading, signOut } = useAuth();
-  const { features, loading: settingsLoading } = useSettings();
+  const { features, settings, loading: settingsLoading } = useSettings();
   const { lang, toggle } = useI18n();
   const ar = lang === "ar";
   const L = ar ? "ar" : "en";
@@ -150,6 +153,7 @@ function DriverApp() {
         () => {
           qc.invalidateQueries({ queryKey: ["driver_orders"] });
           qc.invalidateQueries({ queryKey: ["driver_customers"] });
+          qc.invalidateQueries({ queryKey: ["driver_finance"] });
         },
       )
       .subscribe();
@@ -164,6 +168,8 @@ function DriverApp() {
   const [answering, setAnswering] = useState(false);
   const [needsTap, setNeedsTap] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [deliverFor, setDeliverFor] = useState<DeliverOrder | null>(null);
+  const balance = useDriverBalance(user?.id, enabled);
 
   // A device that already receives push is re-linked to whoever is signed in now; anything wrong with push on
   // this device is shown on the main screen (rechecked when the settings dialog closes).
@@ -281,12 +287,11 @@ function DriverApp() {
     completed: all.filter((o) => o.status === "delivered").slice(0, 20),
   };
   const deactivated = profile.data && !profile.data.is_active;
-  // Today on this phone's calendar: deliveries done and the cash to hand over.
+  // Deliveries today (this phone's calendar) and, from the ledger, the cash the driver holds right now.
   const today = new Date().toDateString();
   const doneToday = groups.completed.filter((o) => new Date(o.updated_at).toDateString() === today);
-  const cashToday = doneToday
-    .filter((o) => o.payment_method === "cod")
-    .reduce((n, o) => n + Number(o.total), 0);
+  const cashHeld = balance.data?.cash_held ?? 0;
+  const overLimit = overCashLimit(cashHeld, settings?.driver_cash_limit);
 
   return (
     <div className="mx-auto min-h-screen max-w-lg bg-background pb-24">
@@ -398,11 +403,24 @@ function DriverApp() {
             <div className="rounded-2xl bg-card p-3 shadow-card">
               <p className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Wallet className="h-3.5 w-3.5" />
-                {ar ? "كاش معاك للتسليم" : "Cash to hand over"}
+                {ar ? "كاش معاك" : "Cash you hold"}
               </p>
-              <p className="mt-1 text-lg font-extrabold">{money(cashToday)}</p>
+              <p className="mt-1 text-lg font-extrabold">{money(cashHeld)}</p>
             </div>
           </section>
+        )}
+        {overLimit && !deactivated && (
+          <button
+            type="button"
+            role="alert"
+            onClick={() => setTab("account")}
+            className="flex w-full items-center gap-2 rounded-2xl bg-destructive/10 p-3 text-start text-sm font-semibold text-destructive"
+          >
+            <Wallet className="h-4 w-4 shrink-0" />
+            {ar
+              ? `الكاش معاك عدّى الحد (${money(settings?.driver_cash_limit)}). سلّم للمحل في أقرب وقت.`
+              : `Your cash is over the limit (${money(settings?.driver_cash_limit)}). Hand it over soon.`}
+          </button>
         )}
 
         {activeDelivery && !deactivated && (
@@ -418,7 +436,7 @@ function DriverApp() {
 
         <Tabs value={tab} onValueChange={setTab}>
           {/* Bottom tab bar: reachable with the thumb. */}
-          <TabsList className="fixed inset-x-0 bottom-0 z-20 mx-auto grid h-auto w-full max-w-lg grid-cols-3 rounded-none border-t bg-background p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))]">
+          <TabsList className="fixed inset-x-0 bottom-0 z-20 mx-auto grid h-auto w-full max-w-lg grid-cols-4 rounded-none border-t bg-background p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))]">
             <TabsTrigger value="new" className="relative h-14 flex-col gap-0.5 text-xs">
               <BellRing className="h-5 w-5" />
               {ar ? "جديدة" : "New"} ({formatCount(groups.new.length + offers.offers.length, L)})
@@ -442,6 +460,10 @@ function DriverApp() {
             <TabsTrigger value="completed" className="h-14 flex-col gap-0.5 text-xs">
               <CheckCircle2 className="h-5 w-5" />
               {ar ? "مكتملة" : "Completed"}
+            </TabsTrigger>
+            <TabsTrigger value="account" className="h-14 flex-col gap-0.5 text-xs">
+              <Wallet className="h-5 w-5" />
+              {ar ? "حسابي" : "My account"}
             </TabsTrigger>
           </TabsList>
           {(["new", "active", "completed"] as const).map((tab) => (
@@ -469,21 +491,36 @@ function DriverApp() {
                         }),
                       )
                     }
-                    onDeliver={() =>
-                      act(() =>
-                        supabase.rpc("driver_set_status", {
-                          _order_id: o.id,
-                          _status: "delivered",
-                        }),
-                      )
-                    }
+                    onDeliver={() => setDeliverFor(o)}
                   />
                 ))
               )}
             </TabsContent>
           ))}
+          <TabsContent value="account">
+            {user && tab === "account" && <DriverAccount driverId={user.id} ar={ar} />}
+          </TabsContent>
         </Tabs>
       </div>
+      <DeliverDialog
+        order={deliverFor}
+        ar={ar}
+        onClose={() => setDeliverFor(null)}
+        onDone={(outcome) => {
+          setDeliverFor(null);
+          toast.success(
+            outcome === "flagged"
+              ? ar
+                ? "اتسلّم، والفرق في المبلغ اتبعت للإدارة"
+                : "Delivered; the amount difference was sent for review"
+              : ar
+                ? "تم التسليم"
+                : "Delivered",
+          );
+          qc.invalidateQueries({ queryKey: ["driver_orders"] });
+          qc.invalidateQueries({ queryKey: ["driver_finance"] });
+        }}
+      />
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent>
           <DialogHeader>
@@ -582,6 +619,11 @@ function OrderCard({
           <p className={cn("mt-1 rounded-lg bg-brand-secondary/20 px-2 py-1 font-extrabold")}>
             {ar ? "المطلوب تحصيله: " : "Collect: "}
             {money(o.total)}
+          </p>
+        )}
+        {!cod && open && (
+          <p className="mt-1 rounded-lg bg-success/10 px-2 py-1 font-extrabold text-success">
+            {ar ? "مدفوع — لا تحصّل أي مبلغ" : "Paid — do not collect"}
           </p>
         )}
       </div>

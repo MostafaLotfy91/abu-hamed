@@ -246,6 +246,45 @@ export type Database = {
           },
         ];
       };
+      cod_collections: {
+        Row: {
+          collected_amount: number;
+          created_at: string;
+          driver_id: string;
+          expected_amount: number;
+          order_id: string;
+          reason: string | null;
+          review_note: string | null;
+          review_status: string;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+        };
+        Insert: {
+          collected_amount: number;
+          created_at?: string;
+          driver_id: string;
+          expected_amount: number;
+          order_id: string;
+          reason?: string | null;
+          review_note?: string | null;
+          review_status?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+        };
+        Update: {
+          collected_amount?: number;
+          created_at?: string;
+          driver_id?: string;
+          expected_amount?: number;
+          order_id?: string;
+          reason?: string | null;
+          review_note?: string | null;
+          review_status?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+        };
+        Relationships: [];
+      };
       coupon_attempts: {
         Row: {
           created_at: string;
@@ -390,6 +429,48 @@ export type Database = {
           },
         ];
       };
+      driver_ledger: {
+        Row: {
+          affects_cash: boolean;
+          amount: number;
+          created_at: string;
+          created_by: string | null;
+          driver_id: string;
+          id: string;
+          note: string | null;
+          order_id: string | null;
+          reverses_id: string | null;
+          settlement_id: string | null;
+          type: string;
+        };
+        Insert: {
+          affects_cash?: boolean;
+          amount: number;
+          created_at?: string;
+          created_by?: string | null;
+          driver_id: string;
+          id?: string;
+          note?: string | null;
+          order_id?: string | null;
+          reverses_id?: string | null;
+          settlement_id?: string | null;
+          type: string;
+        };
+        Update: {
+          affects_cash?: boolean;
+          amount?: number;
+          created_at?: string;
+          created_by?: string | null;
+          driver_id?: string;
+          id?: string;
+          note?: string | null;
+          order_id?: string | null;
+          reverses_id?: string | null;
+          settlement_id?: string | null;
+          type?: string;
+        };
+        Relationships: [];
+      };
       driver_locations: {
         Row: {
           accuracy: number | null;
@@ -434,6 +515,30 @@ export type Database = {
           },
         ];
       };
+      driver_payout_settings: {
+        Row: {
+          commission_type: string;
+          commission_value: number;
+          driver_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          commission_type: string;
+          commission_value: number;
+          driver_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          commission_type?: string;
+          commission_value?: number;
+          driver_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       driver_profiles: {
         Row: {
           is_active: boolean;
@@ -458,6 +563,45 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
           vehicle?: string | null;
+        };
+        Relationships: [];
+      };
+      driver_settlements: {
+        Row: {
+          created_at: string;
+          difference: number | null;
+          driver_id: string;
+          expected_amount: number;
+          id: string;
+          note: string | null;
+          period_end: string;
+          period_start: string;
+          received_amount: number;
+          received_by: string;
+        };
+        Insert: {
+          created_at?: string;
+          difference?: number | null;
+          driver_id: string;
+          expected_amount: number;
+          id?: string;
+          note?: string | null;
+          period_end: string;
+          period_start: string;
+          received_amount: number;
+          received_by: string;
+        };
+        Update: {
+          created_at?: string;
+          difference?: number | null;
+          driver_id?: string;
+          expected_amount?: number;
+          id?: string;
+          note?: string | null;
+          period_end?: string;
+          period_start?: string;
+          received_amount?: number;
+          received_by?: string;
         };
         Relationships: [];
       };
@@ -1247,6 +1391,13 @@ export type Database = {
       };
       store_settings: {
         Row: {
+          driver_cash_limit: number;
+          driver_commission_type: string;
+          driver_commission_value: number;
+          driver_keeps_commission_from_cash: boolean;
+          settlement_mode: string;
+          staff_can_record_settlements: boolean;
+          timezone: string;
           contact_phone: string | null;
           currency_code: string;
           currency_symbol_ar: string;
@@ -1286,6 +1437,13 @@ export type Database = {
           working_hours: Json;
         };
         Insert: {
+          driver_cash_limit?: number;
+          driver_commission_type?: string;
+          driver_commission_value?: number;
+          driver_keeps_commission_from_cash?: boolean;
+          settlement_mode?: string;
+          staff_can_record_settlements?: boolean;
+          timezone?: string;
           contact_phone?: string | null;
           currency_code?: string;
           currency_symbol_ar?: string;
@@ -1325,6 +1483,13 @@ export type Database = {
           working_hours?: Json;
         };
         Update: {
+          driver_cash_limit?: number;
+          driver_commission_type?: string;
+          driver_commission_value?: number;
+          driver_keeps_commission_from_cash?: boolean;
+          settlement_mode?: string;
+          staff_can_record_settlements?: boolean;
+          timezone?: string;
           contact_phone?: string | null;
           currency_code?: string;
           currency_symbol_ar?: string;
@@ -1414,6 +1579,20 @@ export type Database = {
       };
     };
     Views: {
+      driver_balance: {
+        Row: {
+          adjustments: number | null;
+          cash_collected: number | null;
+          cash_held: number | null;
+          commission_earned: number | null;
+          commission_payable: number | null;
+          driver_id: string | null;
+          last_settlement_at: string | null;
+          owed_to_store: number | null;
+          settlements_paid: number | null;
+        };
+        Relationships: [];
+      };
       category_display_images: {
         Row: {
           category_id: string | null;
@@ -1424,6 +1603,90 @@ export type Database = {
       };
     };
     Functions: {
+      admin_add_adjustment: {
+        Args: { _amount: number; _driver_id: string; _order_id?: string; _reason: string };
+        Returns: string;
+      };
+      admin_driver_cash: {
+        Args: { _day?: string };
+        Returns: {
+          adjustments: number;
+          cash_held: number;
+          cod_total: number;
+          commission_earned: number;
+          commission_payable: number;
+          driver_id: string;
+          full_name: string | null;
+          is_active: boolean;
+          last_settlement_at: string | null;
+          orders_delivered: number;
+          over_limit: boolean;
+          owed_to_store: number;
+          pending_reviews: number;
+          phone: string | null;
+          settlements_paid: number;
+          unsettled_from_before: boolean;
+        }[];
+      };
+      admin_record_settlement: {
+        Args: { _driver_id: string; _note?: string; _received_amount: number };
+        Returns: {
+          balance_after: number;
+          difference: number;
+          expected_amount: number;
+          received_amount: number;
+          settlement_id: string;
+        }[];
+      };
+      admin_resolve_cod_review: {
+        Args: { _adjustment?: number; _note?: string; _order_id: string };
+        Returns: undefined;
+      };
+      admin_reverse_delivery: {
+        Args: { _order_id: string; _reason: string };
+        Returns: number;
+      };
+      driver_commission: {
+        Args: { _delivery_fee: number; _type: string; _value: number };
+        Returns: number;
+      };
+      driver_daily_summary: {
+        Args: { _days?: number; _driver_id: string };
+        Returns: {
+          adjustments: number;
+          cash_collected: number;
+          commission_earned: number;
+          day: string;
+          net_to_store: number;
+          orders_delivered: number;
+          settlements_paid: number;
+        }[];
+      };
+      driver_ledger_entries: {
+        Args: { _driver_id: string; _from?: string; _to?: string; _types?: string[] };
+        Returns: {
+          affects_cash: boolean;
+          amount: number;
+          created_at: string;
+          id: string;
+          kind: string;
+          note: string | null;
+          order_id: string | null;
+          order_number: number | null;
+          payment_method: string | null;
+          settlement_id: string | null;
+          type: string;
+        }[];
+      };
+      driver_mark_delivered: {
+        Args: { _collected?: number; _order_id: string; _reason?: string };
+        Returns: string;
+      };
+      store_day_bounds: {
+        Args: { _day: string };
+        Returns: { day_end: string; day_start: string }[];
+      };
+      store_today: { Args: never; Returns: string };
       _after_offer_closed: { Args: { _order_id: string }; Returns: string };
       _close_offer: {
         Args: { _note?: string; _offer: string; _status: string };
