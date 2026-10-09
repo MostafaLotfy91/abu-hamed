@@ -91,25 +91,32 @@ export function Hero({ banners, loading }: { banners: Banner[]; loading: boolean
       className="relative h-[100svh] min-h-[540px] overflow-hidden bg-surface-dark"
     >
       {banners.map((b, i) => (
-        <img
+        // The whole picture opens the banner's link (the button below is the keyboard path).
+        <a
           key={b.id}
-          src={b.image_url}
-          alt={i === idx ? tx(b, "title") || name : ""}
+          href={b.link && isSafeLink(b.link) ? b.link : "/products"}
+          tabIndex={-1}
           aria-hidden={i !== idx || undefined}
-          loading={i === 0 ? "eager" : "lazy"}
-          decoding="async"
-          {...(i === 0 ? { fetchPriority: "high" as const } : {})}
-          className={cn(
-            "absolute inset-0 h-full w-full object-cover transition-[opacity,transform] ease-[var(--ease-luxe)]",
-            "duration-[1600ms] motion-reduce:transition-none",
-            i === idx ? "scale-100 opacity-100" : "scale-[1.04] opacity-0",
-          )}
-        />
+          className={cn("absolute inset-0", i !== idx && "pointer-events-none")}
+        >
+          <img
+            src={b.image_url}
+            alt={i === idx ? tx(b, "title") || name : ""}
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
+            {...(i === 0 ? { fetchPriority: "high" as const } : {})}
+            className={cn(
+              "h-full w-full object-cover transition-[opacity,transform] ease-[var(--ease-luxe)]",
+              "duration-[1600ms] motion-reduce:transition-none",
+              i === idx ? "scale-100 opacity-100" : "scale-[1.04] opacity-0",
+            )}
+          />
+        </a>
       ))}
       {/* Readability: darker at the bottom (text) and a little at the top (header). */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-black/25" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-black/25" />
 
-      <div className="absolute inset-x-0 bottom-0 pb-24 md:pb-28">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 pb-24 md:pb-28 [&_a]:pointer-events-auto">
         <div className="container-wide">
           <div key={current.id} className="max-w-3xl animate-[hero-in_900ms_var(--ease-luxe)_both]">
             <p className="eyebrow text-white/75">{name}</p>
@@ -129,7 +136,7 @@ export function Hero({ banners, loading }: { banners: Banner[]; loading: boolean
       </div>
 
       {count > 1 && (
-        <div className="absolute inset-x-0 bottom-10 flex justify-center gap-3 md:bottom-12">
+        <div className="absolute inset-x-0 bottom-10 z-10 flex justify-center gap-3 md:bottom-12">
           {banners.map((b, i) => (
             <button
               key={b.id}

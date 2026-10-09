@@ -22,6 +22,13 @@ export function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Already on screen when the page becomes interactive: show at once (no flicker, nothing half-faded);
+    // only content further down fades in as it is scrolled to.
+    if (el.getBoundingClientRect().top < window.innerHeight) {
+      el.classList.add("is-visible");
+      document.documentElement.classList.add("reveal-ready");
+      return;
+    }
     document.documentElement.classList.add("reveal-ready");
     if (!("IntersectionObserver" in window)) {
       el.classList.add("is-visible");
