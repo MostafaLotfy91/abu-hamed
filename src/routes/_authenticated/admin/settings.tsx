@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { ContactSocialSettings } from "@/components/admin/ContactSocialSettings";
 import { useBi } from "@/lib/bilingual";
 import { financeSettingsError } from "@/lib/finance-settings";
@@ -110,6 +111,30 @@ function Page() {
         {txt("name_en", "Store name (EN)")}
         {txt("tagline_ar", "الشعار النصي")}
         {txt("tagline_en", "Tagline (EN)")}
+        {/* Home page "our story" block (kept in the features JSON: no extra column needed). */}
+        {(["ar", "en"] as const).map((l) => {
+          const key = `brand_story_${l}`;
+          const story = (s.features ?? {}) as Record<string, unknown>;
+          return (
+            <div key={key} className="sm:col-span-2">
+              <Label htmlFor={`settings-${key}`}>
+                {bi(
+                  l === "ar"
+                    ? "قصة البراند (الرئيسية) / Brand story (AR)"
+                    : "قصة البراند بالإنجليزي / Brand story (EN)",
+                )}
+              </Label>
+              <Textarea
+                id={`settings-${key}`}
+                rows={4}
+                maxLength={1200}
+                dir={l === "ar" ? "rtl" : "ltr"}
+                value={String(story[key] ?? "")}
+                onChange={(e) => set("features", { ...story, [key]: e.target.value } as never)}
+              />
+            </div>
+          );
+        })}
         <div>
           <Label>Logo</Label>
           <ImageInput

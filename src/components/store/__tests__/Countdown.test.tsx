@@ -18,6 +18,6 @@ describe("Countdown", () => {
     vi.setSystemTime(Date.parse("2026-10-09T10:00:00Z"));
     render(<Countdown to="2026-10-11T15:12:09Z" />);
     expect(screen.getByRole("timer")).toHaveTextContent("يومان");
-    expect(screen.getByRole("timer")).toHaveTextContent("٠٥١٢٠٩");
+    expect(screen.getByRole("timer")).toHaveTextContent("٠٥:١٢:٠٩");
   });
 });

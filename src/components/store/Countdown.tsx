@@ -30,16 +30,10 @@ export function Countdown({ to }: { to: string }) {
   const { days, h, m, s } = timeLeft(to, now);
   return (
     <span className="inline-flex items-center gap-1 tabular-nums" role="timer">
-      {days > 0 && <span className="text-xs font-bold">{countLabel(days, lang, "day")}</span>}
-      <span dir="ltr" className="inline-flex gap-1">
-        {[h, m, s].map((x, i) => (
-          <span
-            key={i}
-            className="rounded-md bg-deal px-1.5 py-0.5 text-xs font-bold text-deal-foreground"
-          >
-            {two.format(x)}
-          </span>
-        ))}
+      {days > 0 && <span className="font-medium">{countLabel(days, lang, "day")}</span>}
+      {/* Quiet digits (no coloured boxes): hh:mm:ss, always left to right. */}
+      <span dir="ltr" className="font-medium">
+        {[h, m, s].map((x) => two.format(x)).join(":")}
       </span>
     </span>
   );

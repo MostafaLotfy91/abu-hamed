@@ -33,7 +33,14 @@ export const socialLinksQuery = {
   staleTime: 5 * 60_000,
 };
 
-export function SocialIcons({ className = "" }: { className?: string }) {
+/** `onDark`: hairline circles for the dark footer. */
+export function SocialIcons({
+  className = "",
+  onDark = false,
+}: {
+  className?: string;
+  onDark?: boolean;
+}) {
   const { data } = useQuery(socialLinksQuery);
   const links = (data ?? []).filter((l) => l.is_active && l.url && isSafeHttpsUrl(l.url));
   if (!links.length) return null;
@@ -48,7 +55,11 @@ export function SocialIcons({ className = "" }: { className?: string }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={l.platform}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+            className={
+              onDark
+                ? "flex h-10 w-10 items-center justify-center rounded-full border border-on-dark/25 text-on-dark transition-colors duration-500 hover:border-gold hover:text-gold"
+                : "flex h-10 w-10 items-center justify-center rounded-full bg-accent text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+            }
           >
             <Icon className="h-5 w-5" />
           </a>

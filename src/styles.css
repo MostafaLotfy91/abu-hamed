@@ -375,14 +375,15 @@
   }
 }
 
-/* Vertical rhythm between storefront sections: 64px phone, 112px tablet, 136px desktop. */
+/* Vertical rhythm: each section pads half the gap, so neighbours sit 80px apart on phones, 112px on tablets and
+   136px on desktop. */
 @utility section-luxe {
-  padding-block: 4rem;
+  padding-block: 2.5rem;
   @media (width >= 48rem) {
-    padding-block: 7rem;
+    padding-block: 3.5rem;
   }
   @media (width >= 80rem) {
-    padding-block: 8.5rem;
+    padding-block: 4.25rem;
   }
 }
 
@@ -429,5 +430,17 @@
   .img-zoom {
     transition: none;
     transform: none !important;
+  }
+}
+
+/* Hero text: rises softly with each slide. */
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }

@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/lib/theme";
 import { formatCount } from "@/lib/format";
 import { usableImage } from "@/lib/category-image";
+import { useAtTop } from "@/lib/hero-header";
 
 const NAV: {
   to: "/" | "/categories" | "/cart" | "/orders" | "/account";
@@ -40,7 +41,8 @@ const NAV: {
   { to: "/account", icon: User, key: "account" },
 ];
 
-export function StoreLogo() {
+/** `plate`: a light backing for logos drawn for light backgrounds (dark mode, or over the hero image). */
+export function StoreLogo({ plate = false }: { plate?: boolean } = {}) {
   const { settings } = useSettings();
   const { tx } = useI18n();
   const name = tx(settings as Record<string, unknown> | null, "name");
@@ -55,14 +57,15 @@ export function StoreLogo() {
           width={160}
           height={44}
           // Logos are usually drawn for a light background: give them a light plate in dark mode.
-          className="h-9 w-auto max-w-[120px] object-contain md:h-11 md:max-w-[160px] dark:rounded-md dark:bg-white dark:p-0.5"
+          className={cn(
+            "h-9 w-auto max-w-[120px] object-contain md:h-11 md:max-w-[160px] dark:rounded-sm dark:bg-white dark:p-0.5",
+            plate && "rounded-sm bg-white/90 p-0.5",
+          )}
         />
       ) : (
-        <span className="max-w-[40vw] truncate text-lg font-extrabold tracking-tight sm:hidden">
-          {name}
-        </span>
+        <span className="max-w-[40vw] truncate font-display text-xl sm:hidden">{name}</span>
       )}
-      <span className="hidden max-w-[16rem] truncate whitespace-nowrap text-xl font-extrabold tracking-tight sm:inline">
+      <span className="hidden max-w-[16rem] truncate whitespace-nowrap font-display text-2xl sm:inline">
         {name}
       </span>
     </Link>
@@ -76,22 +79,34 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const isDriver = roles.includes("driver");
   const nav = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  // Home: the header floats over the full-screen hero, transparent until the page scrolls.
+  const home = path === "/";
+  const clear = useAtTop(home) && home;
 
   return (
     <div className="min-h-screen pb-safe-nav md:pb-0">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 md:px-6">
-          <StoreLogo />
-          <div className="flex-1">
-            <SearchBox />
+      <header
+        className={cn(
+          "top-0 z-40 transition-[background-color,color,border-color] duration-500",
+          home ? "fixed inset-x-0" : "sticky",
+          clear
+            ? "bg-gradient-to-b from-black/50 via-black/20 to-transparent text-white [&_button:hover]:bg-white/10"
+            : "border-b bg-background/95 text-foreground backdrop-blur",
+        )}
+      >
+        <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-3 py-2 md:gap-4 md:px-10 md:py-3">
+          <StoreLogo plate={clear} />
+          <div className="flex-1 md:max-w-sm">
+            <SearchBox onImage={clear} />
           </div>
+          <div className="hidden flex-1 md:block" />
           <nav className="hidden items-center gap-1 md:flex">
             {NAV.filter((n) => n.to !== "/cart").map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
-                className="px-3 py-2 text-sm font-semibold underline-offset-8 hover:underline"
-                activeProps={{ className: "underline" }}
+                className="link-luxe mx-3 py-1 text-sm font-medium"
+                activeProps={{ style: { backgroundSize: "100% 1px" } }}
                 activeOptions={{ exact: n.to === "/" }}
               >
                 {t(n.key)}
@@ -133,7 +148,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </Button>
           <button
             onClick={() => cart.setDrawerOpen(true)}
-            className="relative hidden h-10 w-10 items-center justify-center rounded-full hover:bg-muted md:flex"
+            className={cn(
+              "relative hidden h-10 w-10 items-center justify-center rounded-full md:flex",
+              clear ? "hover:bg-white/10" : "hover:bg-muted",
+            )}
             aria-label={t("cart")}
           >
             <ShoppingCart className="h-5 w-5" />
@@ -144,14 +162,23 @@ export function SiteShell({ children }: { children: ReactNode }) {
             )}
           </button>
           {!user && (
-            <Button asChild size="sm" variant="outline" className="hidden md:inline-flex">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className={cn(
+                "hidden md:inline-flex",
+                clear && "border-white/60 bg-transparent text-white hover:bg-white/10",
+              )}
+            >
               <Link to="/auth">{t("sign_in")}</Link>
             </Button>
           )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-3 py-4 md:px-6">{children}</main>
+      {/* The home page lays out its own full-bleed sections; other pages use the standard column. */}
+      <main className={home ? undefined : "mx-auto max-w-7xl px-3 py-4 md:px-6"}>{children}</main>
       <SiteFooter />
       <ShoppingAssistant />
       <WhatsAppButton />
@@ -169,7 +196,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 key={n.to}
                 to={n.to}
                 className={cn(
-                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-semibold",
+                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium",
                   active ? "text-foreground" : "text-muted-foreground",
                 )}
               >
@@ -250,8 +277,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
 export function SectionHeader({ title, action }: { title: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-4 flex items-end justify-between gap-2">
-      <h2 className="text-lg font-bold tracking-tight md:text-2xl">{title}</h2>
+    <div className="mb-6 flex items-end justify-between gap-2 md:mb-8">
+      <h2 className="font-display text-2xl md:text-3xl">{title}</h2>
       {action}
     </div>
   );

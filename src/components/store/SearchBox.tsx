@@ -4,10 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Clock, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 const LS = "app.recentSearches";
 
-export function SearchBox() {
+/** `onImage`: light text and line, for the transparent header over the home hero. */
+export function SearchBox({ onImage = false }: { onImage?: boolean } = {}) {
   const { t, tx } = useI18n();
   const nav = useNavigate();
   const [q, setQ] = useState("");
@@ -65,9 +67,14 @@ export function SearchBox() {
           e.preventDefault();
           submit(q);
         }}
-        className="flex h-11 items-center gap-2 rounded-xl bg-secondary px-3"
+        className={cn(
+          "flex h-11 items-center gap-2 border-b px-1 transition-colors duration-500",
+          onImage ? "border-white/55 text-white" : "border-input focus-within:border-foreground",
+        )}
       >
-        <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <Search
+          className={cn("h-4 w-4 shrink-0", onImage ? "text-white/85" : "text-muted-foreground")}
+        />
         <input
           value={q}
           onChange={(e) => {
@@ -77,7 +84,10 @@ export function SearchBox() {
           onFocus={() => setOpen(true)}
           onClick={() => setOpen(true)}
           placeholder={t("search_placeholder")}
-          className="h-full w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className={cn(
+            "h-full w-full bg-transparent text-sm outline-none",
+            onImage ? "placeholder:text-white/75" : "placeholder:text-muted-foreground",
+          )}
         />
         {q && (
           <button type="button" onClick={() => setQ("")} aria-label="clear">
