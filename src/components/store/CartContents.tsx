@@ -56,7 +56,7 @@ export function CartLines({
             <ProductImage
               src={i.image}
               alt={tx(i, "name")}
-              className="aspect-[4/5] w-20 rounded-md bg-muted"
+              className="aspect-[4/5] w-24 bg-muted"
             />
           </Link>
           <div className="min-w-0 flex-1 space-y-2">
@@ -66,7 +66,7 @@ export function CartLines({
                   to="/product/$id"
                   params={{ id: i.productId }}
                   onClick={onNavigate}
-                  className="line-clamp-2 text-sm font-medium hover:underline"
+                  className="line-clamp-2 text-[13px] leading-5 transition-colors hover:text-foreground/70"
                 >
                   {tx(i, "name")}
                 </Link>
@@ -94,7 +94,9 @@ export function CartLines({
                   onChange={(q) => cart.setQty(i.key, q)}
                 />
               </div>
-              <span className="font-semibold">{money(i.price * i.quantity)}</span>
+              <span className="text-sm font-medium tabular-nums">
+                {money(i.price * i.quantity)}
+              </span>
             </div>
             {editableNotes && (
               <Input
@@ -130,7 +132,7 @@ export function CartTotals({ discount = 0 }: { discount?: number }) {
       {discount > 0 && (
         <Row label={t("discount")} value={`- ${money(discount)}`} className="text-success" />
       )}
-      <div className="flex justify-between border-t pt-3 text-base font-bold">
+      <div className="flex justify-between border-t pt-4 text-base font-medium">
         <span>{t("total")}</span>
         <span>{money(cart.subtotal + fee - discount)}</span>
       </div>
@@ -154,7 +156,7 @@ function Row({ label, value, className }: { label: string; value: string; classN
   return (
     <div className={`flex justify-between ${className ?? ""}`}>
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold">{value}</span>
+      <span className="tabular-nums">{value}</span>
     </div>
   );
 }
@@ -208,8 +210,8 @@ export function FreeDeliveryBar({ subtotal, threshold }: { subtotal: number; thr
           ? t("free_delivery_unlocked")
           : t("free_delivery_left").replace("{n}", money(threshold - subtotal))}
       </p>
-      <div className="h-1 overflow-hidden rounded-full bg-muted">
-        <div className="h-full bg-success transition-all" style={{ width: `${pct}%` }} />
+      <div className="h-px overflow-hidden bg-border">
+        <div className="h-full bg-gold transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

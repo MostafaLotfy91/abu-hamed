@@ -25,14 +25,14 @@ export function StatusBadge({ status }: { status: string }) {
   const { t } = useI18n();
   const tone =
     status === "delivered"
-      ? "bg-success/15 text-success"
+      ? "border-success/40 text-success"
       : status === "cancelled"
-        ? "bg-destructive/10 text-destructive"
+        ? "border-destructive/40 text-destructive"
         : status === "pending"
-          ? "bg-brand-secondary/25 text-brand-secondary-foreground"
-          : "bg-primary-soft text-primary";
+          ? "border-gold/70 text-foreground"
+          : "border-foreground/30 text-foreground";
   return (
-    <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-bold", tone)}>
+    <span className={cn("border px-2 py-0.5 text-[11px] font-medium tracking-wide", tone)}>
       {t(statusKey(status))}
     </span>
   );
@@ -58,9 +58,9 @@ export function OrderTimeline({
       : "";
   if (status === "cancelled")
     return (
-      <div className="flex items-center gap-3 rounded-2xl bg-destructive/10 p-4 text-destructive">
+      <div className="flex items-center gap-3 border border-destructive/30 p-4 text-destructive">
         <X className="h-5 w-5" />
-        <span className="font-bold">{t("status_cancelled")}</span>
+        <span className="font-medium">{t("status_cancelled")}</span>
         <span className="text-xs">{fmt(at("cancelled"))}</span>
       </div>
     );
@@ -74,21 +74,21 @@ export function OrderTimeline({
             <div className="flex flex-col items-center">
               <span
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full border-2",
+                  "mt-1 flex h-5 w-5 items-center justify-center rounded-full border",
                   done
-                    ? "border-primary bg-primary text-primary-foreground"
+                    ? "border-foreground bg-foreground text-background"
                     : "border-border bg-card",
-                  i === idx && "ring-4 ring-primary/20",
+                  i === idx && "ring-4 ring-gold/25",
                 )}
               >
-                {done && <Check className="h-4 w-4" />}
+                {done && <Check className="h-3 w-3" strokeWidth={2} />}
               </span>
               {i < ORDER_FLOW.length - 1 && (
-                <span className={cn("h-8 w-0.5", i < idx ? "bg-primary" : "bg-border")} />
+                <span className={cn("h-9 w-px", i < idx ? "bg-foreground" : "bg-border")} />
               )}
             </div>
             <div className="pt-0.5">
-              <p className={cn("text-sm font-bold", !done && "text-muted-foreground")}>
+              <p className={cn("text-sm font-medium", !done && "text-muted-foreground")}>
                 {t(statusKey(s))}
               </p>
               <p className="text-xs text-muted-foreground">{fmt(at(s))}</p>

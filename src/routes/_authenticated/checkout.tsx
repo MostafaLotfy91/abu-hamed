@@ -35,9 +35,9 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3 border-b pb-6">
-      <h2 className="flex items-center gap-3 font-semibold">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
+    <section className="space-y-4 border-b pb-8">
+      <h2 className="flex items-center gap-3 font-display text-xl">
+        <span className="flex h-7 w-7 items-center justify-center border border-foreground font-sans text-xs font-medium">
           {step}
         </span>
         {title}
@@ -48,8 +48,8 @@ function Card({
 }
 const choice = (on: boolean) =>
   cn(
-    "rounded-md border p-3 text-sm font-medium transition",
-    on ? "border-foreground ring-1 ring-foreground" : "border-border hover:border-foreground",
+    "border p-4 text-sm transition-colors duration-300",
+    on ? "border-foreground bg-accent" : "border-border hover:border-foreground",
   );
 
 function Checkout() {
@@ -151,9 +151,9 @@ function Checkout() {
   };
 
   return (
-    <div className="grid gap-8 pb-28 lg:grid-cols-[1fr_400px] lg:pb-0">
+    <div className="grid gap-10 pb-28 lg:grid-cols-[1fr_400px] lg:gap-16 lg:pb-0">
       <div className="space-y-6">
-        <h1 className="text-xl font-bold tracking-tight md:text-2xl">{t("checkout")}</h1>
+        <h1 className="font-display text-3xl md:text-4xl">{t("checkout")}</h1>
         <Card step={1} title={t("delivery_address")}>
           {addresses.isLoading ? (
             <RowSkeleton n={2} />
@@ -252,8 +252,8 @@ function Checkout() {
           />
         </Card>
       </div>
-      <aside className="h-fit space-y-4 rounded-md border p-5 lg:sticky lg:top-20">
-        <h2 className="font-semibold">{t("order_summary")}</h2>
+      <aside className="h-fit space-y-5 border bg-card p-6 lg:sticky lg:top-24">
+        <h2 className="font-display text-2xl">{t("order_summary")}</h2>
         <div className="max-h-60 overflow-y-auto">
           <CartLines editableNotes={false} />
         </div>
@@ -271,7 +271,7 @@ function Checkout() {
         <CartTotals discount={cart.coupon ? discount : 0} />
         <Button
           size="lg"
-          className="hidden h-12 w-full font-semibold lg:flex"
+          className="hidden h-12 w-full tracking-[0.06em] lg:flex rtl:tracking-normal"
           disabled={blocked}
           onClick={place}
         >
@@ -285,9 +285,9 @@ function Checkout() {
       <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t bg-background/95 p-3 backdrop-blur lg:hidden">
         <div>
           <p className="text-xs text-muted-foreground">{t("total")}</p>
-          <p className="font-bold">{money(total)}</p>
+          <p className="font-medium tabular-nums">{money(total)}</p>
         </div>
-        <Button size="lg" className="h-12 flex-1 font-semibold" disabled={blocked} onClick={place}>
+        <Button size="lg" className="h-12 flex-1" disabled={blocked} onClick={place}>
           {t("place_order")}
         </Button>
       </div>

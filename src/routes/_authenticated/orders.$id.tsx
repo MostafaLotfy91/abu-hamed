@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { Ornament } from "@/components/luxe/Ornament";
 import { formatCount } from "@/lib/format";
 import { VariantLine } from "@/components/store/CartContents";
 import { ReturnSection } from "@/components/store/ReturnRequest";
@@ -133,29 +134,36 @@ function OrderDetail() {
     else q.refetch();
   };
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:gap-10">
       <div className="space-y-4">
         {placed && (
-          <section role="status" className="rounded-3xl border border-success/30 bg-success/10 p-4">
-            <p className="text-lg font-extrabold">
+          <section role="status" className="border bg-card px-6 py-12 text-center md:py-16">
+            <p className="eyebrow">{lang === "ar" ? "شكراً لك" : "Thank you"}</p>
+            <p className="mt-3 font-display text-3xl md:text-4xl">
               {t("order_placed")} #{o.order_number}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <Ornament className="mt-5" />
+            <p className="mx-auto mt-5 max-w-md leading-relaxed text-muted-foreground">
               {lang === "ar"
                 ? "هنراجع طلبك ونأكده قريباً، وتقدر تتابع حالته من هنا. الدفع عند الاستلام."
                 : "We'll review and confirm your order shortly; track its status here. Payment is cash on delivery."}
             </p>
-            <Link
-              to="/products"
-              className="mt-3 inline-flex h-10 items-center rounded-md border bg-background px-4 text-sm font-semibold"
-            >
-              {lang === "ar" ? "متابعة التسوق" : "Continue shopping"}
-            </Link>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
+              <Link
+                to="/products"
+                className="inline-flex h-12 items-center bg-primary px-8 text-sm text-primary-foreground transition-colors hover:bg-primary/88"
+              >
+                {lang === "ar" ? "متابعة التسوق" : "Continue shopping"}
+              </Link>
+              <Link to="/orders" className="link-luxe text-sm">
+                {t("orders")}
+              </Link>
+            </div>
           </section>
         )}
-        <section className="rounded-3xl bg-card p-4 shadow-card">
+        <section className="bg-card p-5 shadow-card md:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h1 className="text-xl font-extrabold">
+            <h1 className="font-display text-2xl md:text-3xl">
               {t("order")} #{o.order_number}
             </h1>
             <div className="flex items-center gap-2">
@@ -174,13 +182,13 @@ function OrderDetail() {
         {features.delivery_tracking && o.status === "out_for_delivery" && o.driver_id && (
           <LiveTracking orderId={o.id} />
         )}
-        <section className="rounded-3xl bg-card p-4 shadow-card">
+        <section className="bg-card p-5 shadow-card md:p-6">
           <ul className="divide-y">
             {o.order_items.map((i) => (
               <li key={i.id} className="flex gap-3 py-3">
-                <ProductImage src={i.image_url} alt="" className="h-14 w-14 rounded-xl" />
+                <ProductImage src={i.image_url} alt="" className="aspect-[4/5] w-16" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">{tx(i, "name")}</p>
+                  <p className="text-[13px]">{tx(i, "name")}</p>
                   <VariantLine
                     size={i.size}
                     colorName={tx(i, "color")}
@@ -192,7 +200,7 @@ function OrderDetail() {
                   </p>
                   {i.notes && <p className="text-xs italic text-muted-foreground">{i.notes}</p>}
                 </div>
-                <span className="font-bold">{money(i.line_total)}</span>
+                <span className="text-sm font-medium tabular-nums">{money(i.line_total)}</span>
               </li>
             ))}
           </ul>
@@ -212,7 +220,7 @@ function OrderDetail() {
           />
         )}
       </div>
-      <aside className="h-fit space-y-3 rounded-3xl bg-card p-4 text-sm shadow-card">
+      <aside className="h-fit space-y-3 bg-card p-5 text-sm shadow-card md:p-6">
         <p>
           <span className="text-muted-foreground">{t("delivery_address")}: </span>
           {addressLine(addr)}
@@ -240,7 +248,7 @@ function OrderDetail() {
               <span>- {money(o.discount)}</span>
             </div>
           )}
-          <div className="flex justify-between text-base font-extrabold">
+          <div className="flex justify-between border-t pt-2 text-base font-medium">
             <span>{t("total")}</span>
             <span>{money(o.total)}</span>
           </div>

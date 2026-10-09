@@ -56,19 +56,19 @@ function Orders() {
     );
   return (
     <div className="space-y-3">
-      <h1 className="text-xl font-extrabold">{t("orders")}</h1>
+      <h1 className="pb-2 font-display text-3xl md:text-4xl">{t("orders")}</h1>
       {orders.map((o) => (
-        <div key={o.id} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+        <div key={o.id} className="flex items-center gap-3 bg-card p-5 shadow-card">
           <Link to="/orders/$id" params={{ id: o.id }} className="flex-1 space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-bold">#{o.order_number}</span>
+              <span className="font-medium">#{o.order_number}</span>
               <StatusBadge status={o.status} />
             </div>
             <p className="text-xs text-muted-foreground">
               {new Date(o.created_at).toLocaleString(lang === "ar" ? "ar-EG" : "en-US")} ·{" "}
               {(o.order_items as unknown as { count: number }[])[0]?.count ?? 0} {t("items")}
             </p>
-            <p className="font-extrabold text-primary">{money(o.total)}</p>
+            <p className="font-medium tabular-nums">{money(o.total)}</p>
           </Link>
         </div>
       ))}

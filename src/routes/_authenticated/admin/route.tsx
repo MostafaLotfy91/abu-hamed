@@ -191,7 +191,7 @@ function AdminLayout() {
           </Link>
         </nav>
       </aside>
-      <main className="min-w-0 flex-1 p-4 md:p-8">
+      <main data-dense className="min-w-0 flex-1 p-4 md:p-8">
         <Outlet />
       </main>
     </div>

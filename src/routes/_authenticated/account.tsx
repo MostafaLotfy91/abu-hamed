@@ -37,10 +37,10 @@ function Account() {
     : (user?.email ?? user?.phone ?? "");
   const nav = useNavigate();
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-3xl bg-primary p-5 text-primary-foreground">
-        <div>
-          <p className="text-lg font-extrabold">
+    <div className="space-y-6">
+      <div className="surface-dark flex flex-wrap items-center justify-between gap-4 p-6 md:p-8">
+        <div className="space-y-1">
+          <p className="font-display text-2xl md:text-3xl">
             {(user?.user_metadata?.full_name as string) || shownContact}
           </p>
           <p className="text-sm opacity-80" dir="ltr">
@@ -122,7 +122,7 @@ function Profile() {
     else toast.success(t("saved"));
   };
   return (
-    <div className="space-y-3 rounded-3xl bg-card p-4 shadow-card">
+    <div className="space-y-3 bg-card p-5 shadow-card md:p-6">
       <div>
         <Label htmlFor="profile-name">{t("full_name")}</Label>
         <Input
@@ -170,7 +170,7 @@ function Addresses() {
   return (
     <div className="space-y-3">
       {editing ? (
-        <div className="rounded-3xl bg-card p-4 shadow-card">
+        <div className="bg-card p-5 shadow-card md:p-6">
           <AddressForm
             initial={editing === "new" ? null : editing}
             onCancel={() => setEditing(null)}
@@ -187,7 +187,7 @@ function Addresses() {
         <EmptyState icon={<MapPin className="h-8 w-8" />} title={t("no_addresses")} />
       )}
       {q.data?.map((a) => (
-        <div key={a.id} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+        <div key={a.id} className="flex items-center gap-3 bg-card p-5 shadow-card">
           <MapPin className="h-5 w-5 text-primary" />
           <div className="flex-1">
             <p className="font-semibold">{a.label}</p>
