@@ -35,3 +35,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Local build/CLI output
+.vercel/
+supabase/.temp/
