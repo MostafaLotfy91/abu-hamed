@@ -53,7 +53,7 @@ export function StoreLogo({ plate = false }: { plate?: boolean } = {}) {
       {usableImage(settings?.logo_url) ? (
         <span
           className={cn(
-            "flex h-10 w-full max-w-[128px] shrink-0 items-center justify-center rounded-lg border border-white/70 bg-white/90 px-1.5 py-0.5 shadow-md shadow-black/15 backdrop-blur-sm md:h-12 md:max-w-[160px]",
+            "flex h-10 w-full max-w-[128px] shrink-0 items-center justify-center rounded-lg border border-white/70 bg-white/90 px-1.5 py-0.5 shadow-md shadow-black/15 backdrop-blur-sm md:h-[52px] md:max-w-[184px]",
             plate && "border-white/90 bg-white shadow-lg shadow-black/30 ring-1 ring-white/80",
           )}
         >
@@ -62,7 +62,7 @@ export function StoreLogo({ plate = false }: { plate?: boolean } = {}) {
             alt=""
             width={160}
             height={44}
-            className="h-full w-full scale-[1.35] object-contain"
+            className="h-full w-full scale-[1.35] object-contain md:scale-[1.55]"
           />
         </span>
       ) : (
