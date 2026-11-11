@@ -62,7 +62,7 @@ export function StoreLogo({ plate = false }: { plate?: boolean } = {}) {
             alt=""
             width={160}
             height={44}
-            className="h-full w-full object-contain"
+            className="h-full w-full scale-[1.35] object-contain"
           />
         </span>
       ) : (
