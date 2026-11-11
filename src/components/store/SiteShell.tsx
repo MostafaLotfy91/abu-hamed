@@ -49,19 +49,22 @@ export function StoreLogo({ plate = false }: { plate?: boolean } = {}) {
   return (
     // Logo keeps its own proportions (wide wordmarks or square marks); the name shows when there is no logo,
     // and next to the logo from tablet width up.
-    <Link to="/" aria-label={name} className="flex min-h-11 shrink-0 items-center gap-2">
+    <Link to="/" aria-label={name} className="flex min-h-11 shrink-0 items-center gap-3 md:gap-4">
       {usableImage(settings?.logo_url) ? (
-        <img
-          src={usableImage(settings?.logo_url)!}
-          alt=""
-          width={160}
-          height={44}
-          // Logos are usually drawn for a light background: give them a light plate in dark mode.
+        <span
           className={cn(
-            "h-9 w-auto max-w-[120px] object-contain md:h-11 md:max-w-[160px] dark:rounded-sm dark:bg-white dark:p-0.5",
-            plate && "rounded-sm bg-white/90 p-0.5",
+            "flex h-11 w-full max-w-[148px] shrink-0 items-center justify-center rounded-md border border-black/10 bg-white p-1 shadow-sm ring-1 ring-white/60 md:h-[52px] md:max-w-[184px]",
+            plate && "border-white/80 shadow-lg shadow-black/30 ring-2 ring-white/80",
           )}
-        />
+        >
+          <img
+            src={usableImage(settings?.logo_url)!}
+            alt=""
+            width={160}
+            height={44}
+            className="h-full w-full object-contain"
+          />
+        </span>
       ) : (
         <span className="max-w-[40vw] truncate font-display text-xl sm:hidden">{name}</span>
       )}
